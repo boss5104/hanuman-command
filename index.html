@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#0a1128">
     <title>HANUMAN TACTICAL COMMAND | ระบบบริหารจัดการภารกิจและกำลังพล</title>
     <!-- Google Fonts: Prompt & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -252,6 +253,259 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* =====================================================================
+           PREMIUM THEME LAYER  (ปรับโฉมทั้งระบบ: หรูหรา ทันสมัย เป็นทางการ)
+           ===================================================================== */
+        :root {
+            --hn-navy: #0a1128;
+            --hn-navy-2: #122240;
+            --hn-gold: #c5a059;
+            --hn-gold-soft: #e6c25b;
+            --hn-gold-pale: #f3d98b;
+            --hn-line: rgba(214, 222, 235, 0.9);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Sarabun', 'Prompt', sans-serif;
+            line-height: 1.6;
+            letter-spacing: 0.005em;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        h1, h2, h3, h4, button, th, .font-sans { font-family: 'Prompt', 'Sarabun', sans-serif; }
+        .font-body { font-family: 'Sarabun', 'Prompt', sans-serif; }
+        ::selection { background: var(--hn-gold-soft); color: var(--hn-navy); }
+
+        button:focus-visible, a:focus-visible, [tabindex]:focus-visible, summary:focus-visible {
+            outline: 2px solid var(--hn-gold);
+            outline-offset: 2px;
+        }
+        button { transition: transform .12s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease; }
+        button:not(:disabled):active { transform: translateY(1px) scale(0.99); }
+
+        input[type=text], input[type=number], input[type=date], input[type=month],
+        input[type=tel], input[type=url], select, textarea {
+            transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--hn-gold) !important;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.22);
+        }
+
+        /* Header */
+        .luxury-header {
+            position: relative;
+            background:
+                radial-gradient(900px 180px at 88% -60%, rgba(197, 160, 89, 0.22), transparent 65%),
+                radial-gradient(600px 160px at 5% 140%, rgba(39, 70, 128, 0.35), transparent 70%),
+                linear-gradient(135deg, #050914 0%, #0a1128 55%, #122240 100%);
+        }
+        header.luxury-header::after {
+            content: '';
+            position: absolute; left: 0; right: 0; bottom: -2px; height: 2px;
+            background: linear-gradient(90deg, transparent, #a3803b 12%, #f3d98b 50%, #a3803b 88%, transparent);
+            pointer-events: none;
+        }
+
+        /* Cards */
+        .glass-card {
+            border-radius: 1.1rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249,250,252,0.96));
+            border: 1px solid var(--hn-line);
+            box-shadow: 0 1px 2px rgba(10, 17, 40, 0.04), 0 14px 34px -14px rgba(10, 17, 40, 0.14);
+        }
+        .gold-border-top {
+            border-top: 1px solid var(--hn-line);
+            box-shadow: inset 0 3px 0 0 var(--hn-gold), 0 1px 2px rgba(10, 17, 40, 0.04), 0 14px 34px -14px rgba(10, 17, 40, 0.16);
+        }
+        .nav-btn-card .fa-arrow-right { transition: transform .25s ease; }
+        .nav-btn-card:hover .fa-arrow-right { transform: translateX(5px); }
+        .nav-btn-card:hover { box-shadow: inset 0 3px 0 0 var(--hn-gold), 0 24px 40px -16px rgba(10, 17, 40, 0.22); }
+
+        .gold-divider { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+        .gold-divider::before, .gold-divider::after { content: ''; height: 1px; width: 90px; background: linear-gradient(90deg, transparent, var(--hn-gold)); }
+        .gold-divider::after { background: linear-gradient(270deg, transparent, var(--hn-gold)); }
+        .gold-divider span { width: 7px; height: 7px; transform: rotate(45deg); background: var(--hn-gold); display: block; }
+
+        /* Tables */
+        thead.bg-navy-900 { background: linear-gradient(90deg, #050914, #0a1128 50%, #122240) !important; }
+        thead.bg-navy-900 th { color: var(--hn-gold-pale); border-bottom: 2px solid var(--hn-gold); font-weight: 600; letter-spacing: .04em; text-transform: none; }
+        thead th { font-weight: 600; letter-spacing: .03em; }
+        tbody tr { transition: background-color .15s ease; }
+        tbody tr:nth-child(even) { background-color: rgba(15, 23, 42, 0.018); }
+        tbody tr:hover { background-color: rgba(197, 160, 89, 0.08); }
+
+        /* Modals */
+        #modalDialogBox, #settingsModal > div, #quickImageModal > div { border-radius: 1.25rem; }
+        #formModal:not(.hidden) #modalDialogBox { animation: popBounceIn .3s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        /* Page transition (เฉพาะตอนเปลี่ยนหน้า) */
+        @keyframes pageFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        #appContent.page-enter > * { animation: pageFadeUp .42s ease both; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #b6bfce, #94a3b8); }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #c5a059, #a3803b); }
+
+        /* Footer */
+        footer.bg-navy-950 { position: relative; letter-spacing: .04em; }
+        footer.bg-navy-950::before {
+            content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 1px;
+            background: linear-gradient(90deg, transparent, #c5a059, transparent);
+        }
+
+        /* Buttons (ใช้ในแผนผัง) */
+        .btn-gold { background: linear-gradient(135deg, #c5a059, #e6c25b); color: #050914; font-weight: 600; box-shadow: 0 8px 16px -8px rgba(163, 128, 59, 0.8); }
+        .btn-gold:hover { background: linear-gradient(135deg, #d4b068, #f3d98b); }
+        .btn-navy { background: linear-gradient(135deg, #0a1128, #1c335e); color: var(--hn-gold-pale); font-weight: 600; box-shadow: 0 8px 16px -8px rgba(10, 17, 40, 0.7); }
+        .btn-navy:hover { background: linear-gradient(135deg, #122240, #274680); }
+        .btn-ghost { background: #fff; color: var(--hn-navy); border: 1px solid #d9dee8; font-weight: 600; }
+        .btn-ghost:hover { background: #f8fafc; border-color: var(--hn-gold); }
+        body.theme-dark .btn-ghost { background: #1e293b; color: #f1f5f9; border-color: #475569; }
+        body.theme-eyecare .btn-ghost { background: #fcf7ed; color: #3b3126; border-color: #dfd1b8; }
+
+        /* =====================================================================
+           ORG CHART  (แผนภาพสายการบังคับบัญชา) — แผ่นเอกสารสีสว่างเสมอเพื่อให้ส่งออกสวยเหมือนกันทุกโหมด
+           ===================================================================== */
+        .oc-shell { display: block; }
+        .oc-shell.oc-fs {
+            position: fixed; inset: 0; z-index: 45; padding: 12px;
+            display: flex; flex-direction: column; gap: 10px; background: #eef2f7; overflow: hidden;
+        }
+        body.theme-dark .oc-shell.oc-fs { background: #0b1120; }
+        body.theme-eyecare .oc-shell.oc-fs { background: #f3ead8; }
+        .oc-shell.oc-fs #orgChartViewport { flex: 1 1 auto; max-height: none; }
+
+        #orgChartViewport { cursor: grab; touch-action: pan-x pan-y; padding: 24px; }
+        #orgChartViewport.oc-grabbing { cursor: grabbing; user-select: none; }
+        @media (max-width: 640px) { #orgChartViewport { padding: 8px; } }
+        .oc-sizer { position: relative; margin: 0 auto; }
+
+        .oc-sheet {
+            position: absolute; top: 0; left: 0; width: 1080px; box-sizing: border-box;
+            transform-origin: top left;
+            padding: 44px 46px 30px;
+            display: flex; flex-direction: column; align-items: center; gap: 62px;
+            color: #0a1128; font-family: 'Prompt', 'Sarabun', sans-serif;
+            background:
+                radial-gradient(700px 260px at 50% 0%, rgba(197, 160, 89, 0.12), transparent 70%),
+                linear-gradient(180deg, #ffffff 0%, #fbf8f0 100%);
+            border: 1px solid #e7dcc0; border-radius: 22px;
+            box-shadow: 0 34px 60px -34px rgba(10, 17, 40, 0.45), 0 0 0 6px rgba(197, 160, 89, 0.07);
+        }
+        .oc-sheet::before {
+            content: ''; position: absolute; inset: 11px; border: 1px solid rgba(197, 160, 89, 0.5);
+            border-radius: 14px; pointer-events: none;
+        }
+        .oc-sheet.oc-exporting { transform: none !important; box-shadow: none; }
+        .oc-sheet.oc-exporting .no-export { display: none !important; }
+        .oc-svg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0; overflow: visible; }
+
+        .oc-head { position: relative; z-index: 2; text-align: center; margin-bottom: -14px; }
+        .oc-crest {
+            width: 60px; height: 60px; margin: 0 auto 10px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 24px; color: #e6c25b;
+            background: radial-gradient(circle at 30% 25%, #1c335e, #050914);
+            border: 2px solid #c5a059; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.18), 0 10px 20px -8px rgba(5, 9, 20, 0.55);
+        }
+        .oc-eyebrow { font-size: 11px; letter-spacing: .32em; color: #a3803b; font-weight: 600; }
+        .oc-title { font-size: 27px; font-weight: 700; color: #0a1128; margin: 2px 0 0; line-height: 1.25; }
+        .oc-subtitle { font-family: 'Sarabun', sans-serif; font-size: 14.5px; color: #475569; }
+        .oc-orn { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
+        .oc-orn i { display: block; height: 1px; width: 120px; background: linear-gradient(90deg, transparent, #c5a059); }
+        .oc-orn i:last-child { background: linear-gradient(270deg, transparent, #c5a059); }
+        .oc-orn b { width: 8px; height: 8px; transform: rotate(45deg); background: #c5a059; display: block; }
+
+        .oc-row { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .oc-row-body { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
+        .oc-row { position: relative; }
+        .oc-ctl { position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+        .oc-chip {
+            font: 600 11px 'Prompt', sans-serif; padding: 4px 13px; border-radius: 999px; letter-spacing: .03em;
+            background: #0a1128; color: #e6c25b; border: 1px solid rgba(197, 160, 89, 0.55);
+        }
+        .oc-add {
+            font: 600 11px 'Prompt', sans-serif; padding: 4px 11px; border-radius: 999px; cursor: pointer;
+            background: #fff; color: #0a1128; border: 1px solid #d9c9a1;
+        }
+        .oc-add:hover { background: #c5a059; color: #050914; border-color: #c5a059; }
+        .oc-empty { font: 400 12px 'Sarabun', sans-serif; color: #94a3b8; padding: 12px 22px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #fff; }
+
+        .oc-card {
+            position: relative; z-index: 2; width: 232px; box-sizing: border-box;
+            padding: 18px 14px 14px; text-align: center; overflow: hidden;
+            background: #ffffff; border: 1px solid #e3d9bf; border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(10, 17, 40, 0.06), 0 12px 24px -14px rgba(10, 17, 40, 0.32);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .oc-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #a3803b, #f3d98b, #a3803b); }
+        .oc-card:hover { transform: translateY(-2px); border-color: #c5a059; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.06), 0 20px 30px -14px rgba(10, 17, 40, 0.38); }
+        .oc-photo { width: 76px; height: 76px; margin: 4px auto 0; border-radius: 50%; padding: 3px; background: conic-gradient(from 210deg, #a3803b, #f3d98b, #c5a059, #a3803b); }
+        .oc-photo img { width: 100%; height: 100%; display: block; border-radius: 50%; object-fit: cover; background: #fff; border: 2px solid #fff; }
+        .oc-name { font: 600 14px/1.35 'Prompt', sans-serif; color: #0a1128; margin-top: 10px; }
+        .oc-pos { font: 400 12.5px/1.4 'Sarabun', sans-serif; color: #475569; margin-top: 2px; }
+        .oc-badge { display: inline-block; margin-top: 9px; padding: 2px 12px; border-radius: 999px; font: 600 10.5px 'Prompt', sans-serif; letter-spacing: .03em; background: #0a1128; color: #e6c25b; }
+
+        .oc-card-row1 { width: 270px; background: linear-gradient(160deg, #0a1128, #122240 70%); border-color: #c5a059; box-shadow: 0 22px 36px -18px rgba(5, 9, 20, 0.7); }
+        .oc-card-row1 .oc-photo { width: 90px; height: 90px; }
+        .oc-card-row1 .oc-name { color: #ffffff; font-size: 16px; }
+        .oc-card-row1 .oc-pos { color: #f3d98b; }
+        .oc-card-row1 .oc-badge { background: rgba(197, 160, 89, 0.16); border: 1px solid rgba(197, 160, 89, 0.65); }
+        .oc-card-row2 { width: 252px; background: linear-gradient(180deg, #fffdf7, #f8f1de); border-color: #c5a059; }
+
+        .oc-actions { position: absolute; top: 9px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: opacity .15s ease; z-index: 5; }
+        .oc-card:hover .oc-actions, .oc-card:focus-within .oc-actions { opacity: 1; }
+        @media (hover: none) { .oc-actions { opacity: 1; } }
+        .oc-act { width: 24px; height: 24px; border-radius: 50%; border: 0; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+        .oc-act.edit { background: #fef3c7; color: #92400e; }
+        .oc-act.edit:hover { background: #fde68a; }
+        .oc-act.del { background: #fee2e2; color: #b91c1c; }
+        .oc-act.del:hover { background: #fecaca; }
+
+        .oc-teams { position: relative; z-index: 2; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; align-items: stretch; }
+        .oc-team {
+            position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 22px;
+            padding: 0 18px 24px; overflow: hidden; border-radius: 20px; border: 1.5px solid var(--tc);
+            background: linear-gradient(180deg, var(--tb), #ffffff 40%);
+            box-shadow: 0 22px 38px -26px rgba(10, 17, 40, 0.5);
+        }
+        .oc-team-A { --tc: #b45a5a; --tb: #fbeeee; --ta: #8f2f35; }
+        .oc-team-B { --tc: #c79a3b; --tb: #fbf3df; --ta: #9a6f12; }
+        .oc-team-C { --tc: #4b6aa8; --tb: #e9eff9; --ta: #1c335e; }
+        .oc-team-head {
+            align-self: stretch; margin: 0 -18px; padding: 15px 10px 13px; text-align: center;
+            background: linear-gradient(135deg, var(--ta), #0a1128); border-bottom: 2px solid #c5a059;
+        }
+        .oc-team-title { font: 700 24px/1.1 'Prompt', sans-serif; color: #f3d98b; letter-spacing: .16em; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
+        .oc-team-sub { font: 400 12px 'Sarabun', sans-serif; color: rgba(255, 255, 255, 0.8); margin-top: 4px; }
+
+        .oc-level { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .oc-level-head { width: 100%; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .oc-level-label { font: 600 11.5px 'Prompt', sans-serif; letter-spacing: .06em; color: var(--ta); white-space: nowrap; }
+        .oc-level-count { font: 600 10px 'Prompt', sans-serif; min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 999px; background: var(--ta); color: #fff; }
+        .oc-level-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--tc), transparent); }
+        .oc-level-body { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; width: 100%; }
+        .oc-level-body.stack { flex-direction: column; align-items: center; }
+        .oc-team .oc-card { width: 100%; max-width: 238px; }
+
+        .oc-foot {
+            position: relative; z-index: 2; width: 100%; display: flex; justify-content: space-between; gap: 12px;
+            font: 400 11px 'Sarabun', sans-serif; color: #64748b; border-top: 1px solid #e5dcc3; padding-top: 12px; margin-top: -20px;
+        }
+
+        /* พิมพ์แผนภาพ */
+        @media print {
+            @page { size: A3 landscape; margin: 8mm; }
+            body.printing-org { background: #fff !important; }
+            body.printing-org header, body.printing-org footer, body.printing-org #breadcrumbBar,
+            body.printing-org .oc-no-print, body.printing-org .no-export { display: none !important; }
+            body.printing-org main { max-width: none !important; padding: 0 !important; }
+            body.printing-org #orgChartViewport { max-height: none !important; overflow: visible !important; border: 0 !important; box-shadow: none !important; background: #fff !important; padding: 0 !important; }
+            body.printing-org .oc-sizer { width: 1080px !important; height: auto !important; zoom: .86; }
+            body.printing-org .oc-sheet { position: relative !important; transform: none !important; box-shadow: none !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -684,7 +938,7 @@
             try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
         }
         let db = safeLoadJSON('hanuman_db') || defaultDB;
-        if (!db.orgHierarchy) db.orgHierarchy = JSON.parse(JSON.stringify(defaultDB.orgHierarchy));
+        ensureOrgHierarchy();
 
         // State สำหรับรายงาน ทม.
         let tmReportState = {
@@ -789,6 +1043,7 @@
         }
 
         function syncPersonnelToOrgChart() {
+            ensureOrgHierarchy();
             const updateNode = (node) => {
                 if (!node.personnelId) return node;
                 const p = db.personnel.find(x => x.id === node.personnelId);
@@ -880,7 +1135,7 @@
                         });
                     }
                     db = remoteData;
-                    if (!db.orgHierarchy) db.orgHierarchy = JSON.parse(JSON.stringify(defaultDB.orgHierarchy));
+                    ensureOrgHierarchy();
                     syncPersonnelToOrgChart();
                     try {
                         localStorage.setItem('hanuman_db', JSON.stringify(db));
@@ -911,6 +1166,7 @@
             }
             currentRoute = { page, params };
             render();
+            triggerPageEnter();
 
             if (params.highlightId) {
                 setTimeout(() => {
@@ -982,6 +1238,10 @@
         function render() {
             const app = document.getElementById('appContent');
             const { page, params } = currentRoute;
+            if (page !== 'personnel_chart' && orgChartFullscreen) {
+                orgChartFullscreen = false;
+                document.body.style.overflow = '';
+            }
 
             switch (page) {
                 case 'home': renderHome(app); break;
@@ -1172,7 +1432,8 @@
                 <div class="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
                     <span class="px-3.5 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-semibold tracking-widest uppercase border border-gold-500/30 shadow-sm">Command Center</span>
                     <h2 class="text-2xl sm:text-3xl font-bold text-navy-900 mt-3">ศูนย์บริหารจัดการข้อมูลหน่วยปฏิบัติการหนุมาน</h2>
-                    <p class="text-gray-500 text-xs sm:text-sm mt-2">ค้นหาข้อมูลทุกหัวข้อได้ทันที หรือเลือกหมวดหมู่ที่ต้องการตรวจสอบ</p>
+                    <p class="text-gray-500 text-xs sm:text-sm mt-2">ค้นหาข้อมูลทุกหัวข้อได้ทันที หรือเลือกหมวดหมู่ที่ต้องการตรวจสอบ (กด / เพื่อค้นหาอย่างรวดเร็ว)</p>
+                    <div class="gold-divider"><span></span></div>
                 </div>
 
                 <!-- ช่องค้นหาข้อมูลครอบคลุมทุกหัวข้อ (Global Search) -->
@@ -2885,22 +3146,75 @@ ${st.leader2Name}
         }
 
         // ==========================================
-        // 3.4 5-TIER COMMAND HIERARCHY + FREE MOBILE/IPAD ZOOM & PAN
+        // 3.4 5-TIER COMMAND HIERARCHY (ผังสายการบังคับบัญชา)
+        //     - เส้นโยงแตะเฉพาะ "กรอบนอก" กับ "กรอบนอก" (การ์ดผู้บังคับบัญชา / กรอบทีม) ไม่ลากเข้าไปในกรอบทีม
+        //     - ซูมด้วยปุ่ม / จีบนิ้ว / Ctrl+ล้อเมาส์ เลื่อนด้วยการลาก
         // ==========================================
-        function setOrgChartZoom(newZoom) {
-            orgChartZoom = Math.max(0.35, Math.min(2.2, Number(newZoom.toFixed(2))));
+        let orgChartUserZoomed = false;
+        let orgChartFullscreen = false;
+        const orgDragState = { active: false, startX: 0, startY: 0, scrollL: 0, scrollT: 0, vp: null };
+
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // ทำให้โครงสร้างข้อมูลแผนภาพครบถ้วนเสมอ (กันข้อมูลจาก Google Sheet ไม่ครบ)
+        function ensureOrgHierarchy() {
+            if (typeof db.orgHierarchy === 'string') {
+                try { db.orgHierarchy = JSON.parse(db.orgHierarchy); } catch (e) { db.orgHierarchy = null; }
+            }
+            if (!db.orgHierarchy || typeof db.orgHierarchy !== 'object') {
+                db.orgHierarchy = JSON.parse(JSON.stringify(defaultDB.orgHierarchy));
+            }
+            const oh = db.orgHierarchy;
+            ['row1', 'row2'].forEach(k => { if (!Array.isArray(oh[k])) oh[k] = []; });
+            ['row3', 'row4', 'row5'].forEach(k => {
+                if (!oh[k] || typeof oh[k] !== 'object' || Array.isArray(oh[k])) oh[k] = {};
+                ['A', 'B', 'C'].forEach(t => { if (!Array.isArray(oh[k][t])) oh[k][t] = []; });
+            });
+            if (typeof oh.links === 'string') {
+                try { oh.links = JSON.parse(oh.links); } catch (e) { oh.links = []; }
+            }
+            if (!Array.isArray(oh.links)) oh.links = [];
+        }
+
+        // ---- ซูม / เลื่อน ----
+        function syncOrgSizer() {
+            const canvas = document.getElementById('orgChartCanvas');
+            const sizer = document.getElementById('orgChartSizer');
+            if (!canvas || !sizer) return;
+            sizer.style.width = Math.round(canvas.offsetWidth * orgChartZoom) + 'px';
+            sizer.style.height = Math.round(canvas.offsetHeight * orgChartZoom) + 'px';
+        }
+
+        function setOrgChartZoom(newZoom, opts = {}) {
+            const viewport = document.getElementById('orgChartViewport');
             const canvas = document.getElementById('orgChartCanvas');
             const label = document.getElementById('orgZoomPercentLabel');
-            if (canvas) {
-                canvas.style.transform = `translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom})`;
+            const oldZoom = orgChartZoom || 1;
+            const z = Math.max(0.2, Math.min(2.5, Number(Number(newZoom).toFixed(2))));
+            orgChartZoom = z;
+            if (label) label.innerText = `${Math.round(z * 100)}%`;
+            if (!canvas) return;
+
+            let cx = 0, cy = 0;
+            const anchor = viewport && !opts.noAnchor;
+            if (anchor) {
+                cx = (viewport.scrollLeft + viewport.clientWidth / 2) / oldZoom;
+                cy = (viewport.scrollTop + viewport.clientHeight / 2) / oldZoom;
             }
-            if (label) {
-                label.innerText = `${Math.round(orgChartZoom * 100)}%`;
+            canvas.style.transform = `scale(${z})`;
+            syncOrgSizer();
+            if (anchor) {
+                viewport.scrollLeft = Math.max(0, cx * z - viewport.clientWidth / 2);
+                viewport.scrollTop = Math.max(0, cy * z - viewport.clientHeight / 2);
             }
-            setTimeout(drawOrgConnectorLines, 40);
         }
 
         function stepOrgChartZoom(delta) {
+            orgChartUserZoomed = true;
             setOrgChartZoom(orgChartZoom + delta);
         }
 
@@ -2908,70 +3222,109 @@ ${st.leader2Name}
             const viewport = document.getElementById('orgChartViewport');
             const canvas = document.getElementById('orgChartCanvas');
             if (!viewport || !canvas) return;
-            orgChartPan = { x: 0, y: 0 };
-            const vw = viewport.clientWidth - 24;
-            const cw = 980;
-            const fitScale = Math.min(1, Math.max(0.38, vw / cw));
-            setOrgChartZoom(fitScale);
-            viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+            orgChartUserZoomed = false;
+            const cs = getComputedStyle(viewport);
+            const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+            const avail = viewport.clientWidth - padX - 4;
+            if (avail <= 0 || !canvas.offsetWidth) return;
+            setOrgChartZoom(Math.min(1, avail / canvas.offsetWidth), { noAnchor: true });
+            viewport.scrollTo({ left: 0, top: 0 });
         }
 
         function resetOrgChartZoom() {
-            orgChartPan = { x: 0, y: 0 };
-            setOrgChartZoom(1);
+            orgChartUserZoomed = true;
+            setOrgChartZoom(1, { noAnchor: true });
             const viewport = document.getElementById('orgChartViewport');
             if (viewport) viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
         }
 
-        function setupOrgChartTouchGestures() {
-            const viewport = document.getElementById('orgChartViewport');
-            const canvas = document.getElementById('orgChartCanvas');
-            if (!viewport || !canvas) return;
+        function toggleOrgChartFullscreen(force) {
+            const shell = document.getElementById('orgChartShell');
+            if (!shell) return;
+            orgChartFullscreen = typeof force === 'boolean' ? force : !orgChartFullscreen;
+            shell.classList.toggle('oc-fs', orgChartFullscreen);
+            document.body.style.overflow = orgChartFullscreen ? 'hidden' : '';
+            const icon = document.getElementById('orgFsIcon');
+            const lbl = document.getElementById('orgFsLabel');
+            if (icon) icon.className = orgChartFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+            if (lbl) lbl.innerText = orgChartFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ';
+            setTimeout(() => {
+                if (!orgChartUserZoomed) fitOrgChartToViewport();
+                else syncOrgSizer();
+            }, 60);
+        }
 
-            let initialPinchDist = 0;
-            let initialScale = orgChartZoom;
-            let isDragging = false;
-            let startX = 0, startY = 0;
-            let startPanX = 0, startPanY = 0;
+        function printOrgChart() {
+            const prevZoom = orgChartZoom;
+            const prevUser = orgChartUserZoomed;
+            document.body.classList.add('printing-org');
+            setOrgChartZoom(1, { noAnchor: true });
+            const restore = () => {
+                document.body.classList.remove('printing-org');
+                setOrgChartZoom(prevZoom, { noAnchor: true });
+                orgChartUserZoomed = prevUser;
+                window.removeEventListener('afterprint', restore);
+            };
+            window.addEventListener('afterprint', restore);
+            setTimeout(() => window.print(), 150);
+        }
 
-            const getDistance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        function setupOrgChartInteractions() {
+            const vp = document.getElementById('orgChartViewport');
+            if (!vp) return;
+            let pinchDist = 0, pinchBase = 1;
+            const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 
-            viewport.addEventListener('touchstart', (e) => {
+            vp.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 2) {
-                    initialPinchDist = getDistance(e.touches[0], e.touches[1]);
-                    initialScale = orgChartZoom;
-                    isDragging = false;
-                } else if (e.touches.length === 1) {
-                    isDragging = true;
-                    startX = e.touches[0].clientX;
-                    startY = e.touches[0].clientY;
-                    startPanX = orgChartPan.x;
-                    startPanY = orgChartPan.y;
+                    pinchDist = dist(e.touches[0], e.touches[1]);
+                    pinchBase = orgChartZoom;
                 }
             }, { passive: true });
-
-            viewport.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2 && initialPinchDist > 0) {
+            vp.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && pinchDist > 0) {
                     e.preventDefault();
-                    const currentDist = getDistance(e.touches[0], e.touches[1]);
-                    const ratio = currentDist / initialPinchDist;
-                    setOrgChartZoom(initialScale * ratio);
-                } else if (e.touches.length === 1 && isDragging) {
-                    const dx = e.touches[0].clientX - startX;
-                    const dy = e.touches[0].clientY - startY;
-                    orgChartPan.x = startPanX + dx;
-                    orgChartPan.y = startPanY + dy;
-                    canvas.style.transform = `translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom})`;
+                    orgChartUserZoomed = true;
+                    setOrgChartZoom(pinchBase * (dist(e.touches[0], e.touches[1]) / pinchDist));
+                }
+            }, { passive: false });
+            vp.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchDist = 0; }, { passive: true });
+
+            // Ctrl/⌘ + ล้อเมาส์ (รวมถึงการจีบนิ้วบนแทร็กแพด) เพื่อซูม
+            vp.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    orgChartUserZoomed = true;
+                    setOrgChartZoom(orgChartZoom + (e.deltaY < 0 ? 0.08 : -0.08));
                 }
             }, { passive: false });
 
-            viewport.addEventListener('touchend', () => {
-                initialPinchDist = 0;
-                isDragging = false;
-                drawOrgConnectorLines();
+            // ลากเมาส์เพื่อเลื่อนดูแผนภาพ
+            vp.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                if (e.target.closest('button, a, input, select, textarea')) return;
+                orgDragState.active = true;
+                orgDragState.vp = vp;
+                orgDragState.startX = e.clientX;
+                orgDragState.startY = e.clientY;
+                orgDragState.scrollL = vp.scrollLeft;
+                orgDragState.scrollT = vp.scrollTop;
+                vp.classList.add('oc-grabbing');
             });
         }
 
+        document.addEventListener('mousemove', (e) => {
+            if (!orgDragState.active || !orgDragState.vp) return;
+            orgDragState.vp.scrollLeft = orgDragState.scrollL - (e.clientX - orgDragState.startX);
+            orgDragState.vp.scrollTop = orgDragState.scrollT - (e.clientY - orgDragState.startY);
+        });
+        document.addEventListener('mouseup', () => {
+            if (!orgDragState.active) return;
+            orgDragState.active = false;
+            if (orgDragState.vp) orgDragState.vp.classList.remove('oc-grabbing');
+        });
+
+        // ---- วาดแผนภาพ ----
         function renderPersonnelChart(container) {
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
@@ -2979,196 +3332,262 @@ ${st.leader2Name}
                 { label: '4.6 แผนภาพสายการบังคับบัญชา' }
             ]);
 
-            if (window.innerWidth < 1024 && orgChartZoom === 1 && orgChartPan.x === 0 && orgChartPan.y === 0) {
-                orgChartZoom = Math.max(0.42, Number(((window.innerWidth - 40) / 980).toFixed(2)));
-            }
-
+            ensureOrgHierarchy();
             const oh = db.orgHierarchy;
+            const teams = ['A', 'B', 'C'];
 
-            const renderNodeCard = (node, rowKey, teamKey = null) => `
-                <div id="org-node-${node.id}" class="org-node-card w-48 sm:w-52 bg-white border-2 border-navy-900/20 rounded-2xl p-3.5 text-center shadow-md group">
-                    <div class="no-export absolute top-1.5 right-1.5 opacity-95 sm:opacity-0 sm:group-hover:opacity-100 transition flex space-x-1 z-30">
-                        <button onclick="openHierarchyNodeModal('${rowKey}', ${teamKey ? `'${teamKey}'` : 'null'}, '${node.id}')" class="w-6 h-6 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-[11px] flex items-center justify-center shadow-sm" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteHierarchyNode('${rowKey}', ${teamKey ? `'${teamKey}'` : 'null'}, '${node.id}')" class="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-700 text-[11px] flex items-center justify-center shadow-sm" title="ลบ"><i class="fa-solid fa-xmark"></i></button>
+            const prevVp = document.getElementById('orgChartViewport');
+            const prevScroll = prevVp ? { l: prevVp.scrollLeft, t: prevVp.scrollTop } : null;
+
+            const countTeam = (t) => oh.row3[t].length + oh.row4[t].length + oh.row5[t].length;
+            const totalAll = oh.row1.length + oh.row2.length + teams.reduce((s, t) => s + countTeam(t), 0);
+
+            const now = new Date();
+            const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const teamBadgeText = (team) => {
+                const t = String(team || '');
+                if (!t) return '';
+                if (t === 'กองบัญชาการ') return t;
+                return t.startsWith('ทีม') ? t : 'ทีม ' + t;
+            };
+
+            const nodeCard = (node, rowKey, teamKey = null) => {
+                const tk = teamKey ? `'${teamKey}'` : 'null';
+                const photo = node.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(node.name || 'O')}&background=0a1128&color=c5a059&size=150`;
+                const showBadge = !teamKey && node.team;
+                return `
+                    <div id="org-node-${node.id}" class="oc-card oc-card-${rowKey}">
+                        <div class="no-export oc-actions">
+                            <button type="button" class="oc-act edit" onclick="openHierarchyNodeModal('${rowKey}', ${tk}, '${node.id}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" class="oc-act del" onclick="deleteHierarchyNode('${rowKey}', ${tk}, '${node.id}')" title="ลบ"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="oc-photo"><img src="${escHtml(photo)}" alt="" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059&size=150'"></div>
+                        <div class="oc-name">${escHtml(node.name)}</div>
+                        <div class="oc-pos">${escHtml(node.position)}</div>
+                        ${showBadge ? `<div class="oc-badge">${escHtml(teamBadgeText(node.team))}</div>` : ''}
                     </div>
-                    <div class="relative inline-block">
-                        <img src="${node.photo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(node.name || 'O')}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto object-cover border-2 border-gold-500 shadow">
+                `;
+            };
+
+            const topRow = (rowKey, chipText, emptyText) => `
+                <div class="oc-row">
+                    <div class="oc-ctl no-export">
+                        <span class="oc-chip">${chipText}</span>
+                        <button type="button" class="oc-add" onclick="openHierarchyNodeModal('${rowKey}', null, null, 'horizontal')"><i class="fa-solid fa-plus"></i> เพิ่ม</button>
                     </div>
-                    <div class="font-bold text-navy-900 text-xs sm:text-sm mt-2 leading-snug">${node.name}</div>
-                    <div class="text-[11px] text-gray-600 mt-0.5 leading-tight">${node.position}</div>
-                    <div class="mt-2 inline-block px-2.5 py-0.5 rounded-full bg-navy-900 text-gold-400 text-[10px] font-semibold">
-                        ${node.team === 'กองบัญชาการ' ? 'กองบัญชาการ' : (node.team.startsWith('ทีม') ? node.team : 'ทีม ' + node.team)}
+                    <div class="oc-row-body">
+                        ${oh[rowKey].map(n => nodeCard(n, rowKey, null)).join('') || `<div class="oc-empty">${emptyText}</div>`}
                     </div>
                 </div>
             `;
 
-            const renderTeamColumn = (team) => {
-                const teamColors = {
-                    A: 'border-red-500/40 bg-red-50/20',
-                    B: 'border-amber-500/40 bg-amber-50/20',
-                    C: 'border-blue-500/40 bg-blue-50/20'
-                };
-                const badgeColors = {
-                    A: 'bg-red-700 text-white',
-                    B: 'bg-amber-600 text-white',
-                    C: 'bg-navy-800 text-gold-400'
-                };
-
-                return `
-                    <div class="flex-1 min-w-[270px] rounded-2xl border-2 ${teamColors[team]} p-4 flex flex-col items-center space-y-8 relative z-10">
-                        <div class="w-full flex items-center justify-between border-b border-gray-200/80 pb-2">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColors[team]} shadow-sm">สายงานปฏิบัติการ ทีม ${team}</span>
-                            <span class="text-[11px] text-gray-500 font-medium">แถว 3 - 5</span>
-                        </div>
-
-                        <div class="w-full flex flex-col items-center">
-                            <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-2">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">สารวัตร</span>
-                                <div class="flex gap-1">
-                                    <button onclick="openHierarchyNodeModal('row3', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
-                                    <button onclick="openHierarchyNodeModal('row4', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
-                                </div>
-                            </div>
-                            <div class="flex flex-wrap justify-center gap-4">
-                                ${oh.row3[team].map(n => renderNodeCard(n, 'row3', team)).join('') || '<div class="text-xs text-gray-400 py-3 border border-dashed rounded-xl px-4 bg-white">ว่าง</div>'}
-                            </div>
-                        </div>
-
-                        <div class="w-full flex flex-col items-center pt-2">
-                            <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-2">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">รองสารวัตร</span>
-                                <div class="flex gap-1">
-                                    <button onclick="openHierarchyNodeModal('row4', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
-                                    <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
-                                </div>
-                            </div>
-                            <div class="flex flex-wrap justify-center gap-4">
-                                ${oh.row4[team].map(n => renderNodeCard(n, 'row4', team)).join('') || '<div class="text-xs text-gray-400 py-3 border border-dashed rounded-xl px-4 bg-white">ว่าง</div>'}
-                            </div>
-                        </div>
-
-                        <div class="w-full flex flex-col items-center pt-2">
-                            <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-3">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">กำลังพล (${oh.row5[team].length})</span>
-                                <div class="flex gap-1">
-                                    <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
-                                    <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-center space-y-6 w-full">
-                                ${oh.row5[team].map(n => renderNodeCard(n, 'row5', team)).join('') || '<div class="text-xs text-gray-400 py-4 border border-dashed rounded-xl px-6 bg-white">ว่าง</div>'}
-                            </div>
-                        </div>
+            const teamLevel = (rowKey, team, label, stack) => `
+                <div class="oc-level">
+                    <div class="oc-level-head">
+                        <span class="oc-level-label">${label}</span>
+                        <span class="oc-level-count">${oh[rowKey][team].length}</span>
+                        <span class="oc-level-rule"></span>
+                        <button type="button" class="oc-add no-export" onclick="openHierarchyNodeModal('${rowKey}', '${team}', null, 'horizontal')" title="เพิ่ม${label}"><i class="fa-solid fa-plus"></i></button>
                     </div>
-                `;
-            };
+                    <div class="oc-level-body ${stack ? 'stack' : ''}">
+                        ${oh[rowKey][team].map(n => nodeCard(n, rowKey, team)).join('') || '<div class="oc-empty">ว่าง</div>'}
+                    </div>
+                </div>
+            `;
+
+            const teamFrame = (team) => `
+                <section id="org-team-${team}" class="oc-team oc-team-${team}">
+                    <header class="oc-team-head">
+                        <div class="oc-team-title">ทีม ${team}</div>
+                        <div class="oc-team-sub">กำลังพล ${countTeam(team)} นาย</div>
+                    </header>
+                    ${teamLevel('row3', team, 'สารวัตร', false)}
+                    ${teamLevel('row4', team, 'รองสารวัตร', false)}
+                    ${teamLevel('row5', team, 'กำลังพล', true)}
+                </section>
+            `;
+
+            const visibleLinkCount = getResolvedOrgLinks().length;
 
             container.innerHTML = `
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">แผนภาพสายการบังคับบัญชา (5 ระดับ)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">ใช้นิ้วจีบย่อ-ขยาย หรือเลื่อนดูได้อย่างอิสระบนโทรศัพท์และไอแพต พร้อมส่งออก JPEG / PDF</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">จีบนิ้วหรือ Ctrl + ล้อเมาส์เพื่อย่อ-ขยาย ลากเพื่อเลื่อนดู พร้อมส่งออก JPEG / PDF / พิมพ์</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="refreshOrgChart()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-100 text-navy-900 border border-gray-300 font-semibold text-xs sm:text-sm shadow-xs flex items-center">
+                        <button type="button" onclick="refreshOrgChart()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center">
                             <i class="fa-solid fa-arrows-rotate mr-1.5 text-gold-600"></i> รีเฟรช
                         </button>
-                        <button onclick="openExportOrgChartModal()" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm shadow flex items-center">
+                        <button type="button" onclick="printOrgChart()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center">
+                            <i class="fa-solid fa-print mr-1.5 text-gold-600"></i> พิมพ์
+                        </button>
+                        <button type="button" onclick="openExportOrgChartModal()" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm shadow flex items-center">
                             <i class="fa-solid fa-file-export mr-1.5"></i> ส่งออก (JPEG / PDF / LINE)
                         </button>
-                        <button onclick="openAddLinkModal()" class="px-3 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold text-xs shadow">
+                        <button type="button" onclick="openAddLinkModal()" class="btn-gold px-3.5 py-2 rounded-xl text-xs">
                             <i class="fa-solid fa-diagram-project mr-1"></i> + เส้นโยง
                         </button>
-                        <button onclick="openManageLinksModal()" class="px-3 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-xs shadow">
-                            <i class="fa-solid fa-scissors mr-1"></i> ลบเส้น (${oh.links.length})
+                        <button type="button" onclick="openManageLinksModal()" class="btn-navy px-3.5 py-2 rounded-xl text-xs">
+                            <i class="fa-solid fa-scissors mr-1"></i> ลบเส้น (${visibleLinkCount})
                         </button>
                     </div>
                 </div>
 
-                <div class="glass-card rounded-2xl p-2.5 sm:p-3 mb-4 flex flex-wrap items-center justify-between gap-2 border border-gold-500/30">
-                    <div class="flex items-center gap-1.5 text-xs text-navy-900 font-medium">
-                        <i class="fa-solid fa-hand-pointer text-gold-600"></i>
-                        <span>ควบคุมมุมมองแผนผัง (จีบนิ้วย่อ-ขยาย หรือเลื่อนอิสระได้):</span>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+                    <div class="glass-card gold-border-top rounded-xl px-3.5 py-2.5">
+                        <div class="text-[11px] text-gray-500">กำลังพลในแผนภาพ</div>
+                        <div class="text-lg font-bold text-navy-900">${totalAll} <span class="text-xs font-medium">นาย</span></div>
                     </div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <button type="button" onclick="stepOrgChartZoom(-0.15)" class="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-navy-900 text-xs font-bold border" title="ย่อขนาด">
-                            <i class="fa-solid fa-magnifying-glass-minus"></i> ย่อ
-                        </button>
-                        <span id="orgZoomPercentLabel" class="px-2.5 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs font-bold min-w-[52px] text-center">
-                            ${Math.round(orgChartZoom * 100)}%
-                        </span>
-                        <button type="button" onclick="stepOrgChartZoom(0.15)" class="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-navy-900 text-xs font-bold border" title="ขยายขนาด">
-                            <i class="fa-solid fa-magnifying-glass-plus"></i> ขยาย
-                        </button>
-                        <button type="button" onclick="fitOrgChartToViewport()" class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300">
-                            <i class="fa-solid fa-compress mr-1"></i> พอดีจอ
-                        </button>
-                        <button type="button" onclick="resetOrgChartZoom()" class="px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 text-xs font-semibold">
-                            100%
-                        </button>
+                    ${teams.map(t => `
+                        <div class="glass-card rounded-xl px-3.5 py-2.5">
+                            <div class="text-[11px] text-gray-500">ทีม ${t}</div>
+                            <div class="text-lg font-bold text-navy-900">${countTeam(t)} <span class="text-xs font-medium">นาย</span></div>
+                        </div>
+                    `).join('')}
+                    <div class="glass-card rounded-xl px-3.5 py-2.5 col-span-2 sm:col-span-1">
+                        <div class="text-[11px] text-gray-500">เส้นสายบังคับบัญชา</div>
+                        <div class="text-lg font-bold text-navy-900">${visibleLinkCount} <span class="text-xs font-medium">เส้น</span></div>
                     </div>
                 </div>
 
-                <div id="orgChartViewport" class="glass-card rounded-2xl border-2 border-gold-500/30 overflow-auto p-3 sm:p-8 relative max-h-[78vh]">
-                    <div id="orgChartCanvas" style="transform: translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom}); transform-origin: top left; transition: transform 0.12s ease-out;" class="relative w-[960px] flex flex-col items-center space-y-12 pb-8 bg-white/60 rounded-xl p-4">
-                        
-                        <div class="text-center border-b-2 border-gold-500 pb-3 px-8 relative z-20 bg-white/90 rounded-xl shadow-xs">
-                            <h3 class="text-lg font-bold text-navy-900">แผนภาพสายการบังคับบัญชา หน่วยปฏิบัติการพิเศษหนุมาน</h3>
-                            <p class="text-xs text-gray-500">กองบังคับการปราบปราม</p>
+                <div id="orgChartShell" class="oc-shell ${orgChartFullscreen ? 'oc-fs' : ''}">
+                    <div class="glass-card rounded-2xl p-2.5 sm:p-3 mb-3 flex flex-wrap items-center justify-between gap-2 border border-gold-500/30">
+                        <div class="flex items-center gap-1.5 text-xs text-navy-900 font-medium">
+                            <i class="fa-solid fa-hand-pointer text-gold-600"></i>
+                            <span>ควบคุมมุมมองแผนผัง</span>
                         </div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button type="button" onclick="stepOrgChartZoom(-0.1)" class="btn-ghost px-2.5 py-1.5 rounded-xl text-xs" title="ย่อขนาด"><i class="fa-solid fa-magnifying-glass-minus"></i> ย่อ</button>
+                            <span id="orgZoomPercentLabel" class="px-2.5 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs font-bold min-w-[52px] text-center">${Math.round(orgChartZoom * 100)}%</span>
+                            <button type="button" onclick="stepOrgChartZoom(0.1)" class="btn-ghost px-2.5 py-1.5 rounded-xl text-xs" title="ขยายขนาด"><i class="fa-solid fa-magnifying-glass-plus"></i> ขยาย</button>
+                            <button type="button" onclick="fitOrgChartToViewport()" class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-compress mr-1"></i> พอดีจอ</button>
+                            <button type="button" onclick="resetOrgChartZoom()" class="btn-navy px-3 py-1.5 rounded-xl text-xs">100%</button>
+                            <button type="button" onclick="toggleOrgChartFullscreen()" class="btn-ghost px-3 py-1.5 rounded-xl text-xs"><i id="orgFsIcon" class="${orgChartFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand'} mr-1"></i><span id="orgFsLabel">${orgChartFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'}</span></button>
+                        </div>
+                    </div>
 
-                        <svg id="orgSvgLines" class="absolute pointer-events-none z-0" style="top:0;left:0;margin:0 !important;overflow:visible;"></svg>
+                    <div id="orgChartViewport" class="glass-card rounded-2xl border-2 border-gold-500/30 overflow-auto relative max-h-[78vh]">
+                        <div id="orgChartSizer" class="oc-sizer">
+                            <div id="orgChartCanvas" class="oc-sheet" style="transform: scale(${orgChartZoom});">
+                                <svg id="orgSvgLines" class="oc-svg"></svg>
 
-                        <div class="w-full flex flex-col items-center relative z-10">
-                            <div class="no-export flex items-center gap-2 mb-3">
-                                <span class="px-3 py-1 rounded-full bg-navy-950 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">ผู้กำกับการ (ผกก.)</span>
-                                <button onclick="openHierarchyNodeModal('row1', null, null, 'horizontal')" class="text-xs px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 text-navy-900 border font-medium shadow-xs">+ เพิ่มแนวนอน</button>
-                                <button onclick="openHierarchyNodeModal('row2', null, null, 'vertical')" class="text-xs px-2.5 py-1 rounded-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold shadow-xs">+ เพิ่มต่อแนวตั้ง</button>
-                            </div>
-                            <div class="flex flex-wrap justify-center gap-6">
-                                ${oh.row1.map(n => renderNodeCard(n, 'row1', null)).join('') || '<div class="text-xs text-gray-400 py-4 bg-white px-6 rounded-xl border border-dashed">กดปุ่มเพิ่มข้อมูลผู้กำกับการ</div>'}
+                                <div class="oc-head">
+                                    <div class="oc-crest"><i class="fa-solid fa-shield-halved"></i></div>
+                                    <div class="oc-eyebrow">กองบังคับการปราบปราม</div>
+                                    <h3 class="oc-title">แผนภาพสายการบังคับบัญชา</h3>
+                                    <div class="oc-subtitle">หน่วยปฏิบัติการพิเศษหนุมาน</div>
+                                    <div class="oc-orn"><i></i><b></b><i></i></div>
+                                </div>
+
+                                ${topRow('row1', 'ผู้กำกับการ (ผกก.)', 'กดปุ่มเพิ่มข้อมูลผู้กำกับการ')}
+                                ${topRow('row2', 'รองผู้กำกับการ (รอง ผกก.)', 'กดปุ่มเพิ่มข้อมูลรองผู้กำกับการ')}
+
+                                <div class="oc-teams">
+                                    ${teams.map(teamFrame).join('')}
+                                </div>
+
+                                <div class="oc-foot">
+                                    <span>ข้อมูล ณ วันที่ ${formatThaiDateFullYear(todayIso)}</span>
+                                    <span>HANUMAN TACTICAL COMMAND • ระบบฐานข้อมูลปฏิบัติการภายใน</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="w-full flex flex-col items-center relative z-10">
-                            <div class="no-export flex items-center gap-2 mb-3">
-                                <span class="px-3 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">รองผู้กำกับการ (รอง ผกก.)</span>
-                                <button onclick="openHierarchyNodeModal('row2', null, null, 'horizontal')" class="text-xs px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 text-navy-900 border font-medium shadow-xs">+ เพิ่มแนวนอน</button>
-                                <button onclick="openHierarchyNodeModal('row3', 'A', null, 'vertical')" class="text-xs px-2.5 py-1 rounded-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold shadow-xs">+ เพิ่มต่อแนวตั้ง</button>
-                            </div>
-                            <div class="flex flex-wrap justify-center gap-6">
-                                ${oh.row2.map(n => renderNodeCard(n, 'row2', null)).join('') || '<div class="text-xs text-gray-400 py-4 bg-white px-6 rounded-xl border border-dashed">กดปุ่มเพิ่มข้อมูลรองผู้กำกับการ</div>'}
-                            </div>
-                        </div>
-
-                        <div class="w-full grid grid-cols-3 gap-6 items-start relative z-10 pt-2">
-                            ${renderTeamColumn('A')}
-                            ${renderTeamColumn('B')}
-                            ${renderTeamColumn('C')}
-                        </div>
-
                     </div>
                 </div>
             `;
 
-            setupOrgChartTouchGestures();
+            setupOrgChartInteractions();
+
+            const vp = document.getElementById('orgChartViewport');
+            if (orgChartUserZoomed) {
+                setOrgChartZoom(orgChartZoom, { noAnchor: true });
+                if (prevScroll && vp) { vp.scrollLeft = prevScroll.l; vp.scrollTop = prevScroll.t; }
+            } else {
+                fitOrgChartToViewport();
+            }
+
+            drawOrgConnectorLines();
             requestAnimationFrame(() => setTimeout(drawOrgConnectorLines, 80));
-            setTimeout(drawOrgConnectorLines, 400);
-            setTimeout(drawOrgConnectorLines, 1200);
+            setTimeout(drawOrgConnectorLines, 500);
             if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawOrgConnectorLines());
-            const _cv = document.getElementById('orgChartCanvas');
-            if (_cv && window.ResizeObserver) {
+
+            const cv = document.getElementById('orgChartCanvas');
+            if (cv && window.ResizeObserver) {
                 if (window._orgRO) window._orgRO.disconnect();
                 window._orgRO = new ResizeObserver(() => drawOrgConnectorLines());
-                window._orgRO.observe(_cv);
+                window._orgRO.observe(cv);
             }
         }
 
         function refreshOrgChart() {
             syncPersonnelToOrgChart();
             render();
-            setTimeout(drawOrgConnectorLines, 100);
             showStatusPopup('รีเฟรชแผนภาพเรียบร้อย', 'อัปเดตข้อมูลและเส้นสายการบังคับบัญชาล่าสุดแล้ว', 'success', 1500);
+        }
+
+        // ---- เส้นโยง: แปลงปลายเส้นให้เป็น "กรอบนอก" เสมอ ----
+        // - การ์ด ผกก. / รอง ผกก.  => กรอบนอกคือตัวการ์ดเอง
+        // - ตำแหน่งภายในทีม A/B/C   => กรอบนอกคือกรอบทีมนั้น
+        // - 'team:A' (เลือกกรอบทีมโดยตรง)
+        function resolveOrgEndpoint(id) {
+            ensureOrgHierarchy();
+            const oh = db.orgHierarchy;
+            if (typeof id === 'string' && id.startsWith('team:')) {
+                const t = id.slice(5);
+                return { key: 'team:' + t, elId: 'org-team-' + t, label: `กรอบ ทีม ${t}` };
+            }
+            for (const k of ['row1', 'row2']) {
+                const n = oh[k].find(x => x.id === id);
+                if (n) return { key: n.id, elId: 'org-node-' + n.id, label: n.name };
+            }
+            for (const k of ['row3', 'row4', 'row5']) {
+                for (const t of ['A', 'B', 'C']) {
+                    if (oh[k][t].some(x => x.id === id)) {
+                        return { key: 'team:' + t, elId: 'org-team-' + t, label: `กรอบ ทีม ${t}` };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function getResolvedOrgLinks() {
+            ensureOrgHierarchy();
+            const map = new Map();
+            db.orgHierarchy.links.forEach(l => {
+                const a = resolveOrgEndpoint(l.from);
+                const b = resolveOrgEndpoint(l.to);
+                if (!a || !b || a.key === b.key) return; // เส้นที่อยู่ภายในกรอบเดียวกันไม่แสดง
+                const key = a.key + '>' + b.key;
+                if (!map.has(key)) {
+                    map.set(key, { key, from: a, to: b, style: l.style || 'solid', label: l.label || '', ids: [l.id] });
+                } else {
+                    const e = map.get(key);
+                    e.ids.push(l.id);
+                    if (!e.label && l.label) e.label = l.label;
+                }
+            });
+            return Array.from(map.values());
+        }
+
+        function roundedOrthogonalPath(pts, r) {
+            let d = `M ${pts[0][0]} ${pts[0][1]}`;
+            for (let i = 1; i < pts.length - 1; i++) {
+                const p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1];
+                const v1 = [p1[0] - p0[0], p1[1] - p0[1]];
+                const v2 = [p2[0] - p1[0], p2[1] - p1[1]];
+                const l1 = Math.hypot(v1[0], v1[1]);
+                const l2 = Math.hypot(v2[0], v2[1]);
+                if (!l1 || !l2) continue;
+                const rr = Math.min(r, l1 / 2, l2 / 2);
+                const a = [p1[0] - (v1[0] / l1) * rr, p1[1] - (v1[1] / l1) * rr];
+                const b = [p1[0] + (v2[0] / l2) * rr, p1[1] + (v2[1] / l2) * rr];
+                d += ` L ${a[0]} ${a[1]} Q ${p1[0]} ${p1[1]} ${b[0]} ${b[1]}`;
+            }
+            const last = pts[pts.length - 1];
+            d += ` L ${last[0]} ${last[1]}`;
+            return d;
         }
 
         function drawOrgConnectorLines() {
@@ -3176,10 +3595,12 @@ ${st.leader2Name}
             const canvas = document.getElementById('orgChartCanvas');
             if (!svg || !canvas) return;
 
-            svg.setAttribute('width', canvas.offsetWidth);
-            svg.setAttribute('height', canvas.offsetHeight);
+            const W = canvas.offsetWidth, H = canvas.offsetHeight;
+            svg.setAttribute('width', W);
+            svg.setAttribute('height', H);
+            svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-            // ตำแหน่งกรอบเทียบกับ canvas (ไม่ขึ้นกับ zoom/pan/animation)
+            // ตำแหน่งกรอบเทียบกับ canvas (ไม่ขึ้นกับ zoom)
             const boxOf = (el) => {
                 let x = 0, y = 0, cur = el;
                 while (cur && cur !== canvas) {
@@ -3190,103 +3611,105 @@ ${st.leader2Name}
                 return { l: x, t: y, r: x + el.offsetWidth, b: y + el.offsetHeight, w: el.offsetWidth, h: el.offsetHeight };
             };
 
-            let pathsHtml = `
+            let html = `
                 <defs>
-                    <marker id="goldArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
-                        <path d="M0,0 L7,3.5 L0,7 Z" fill="#c5a059" />
+                    <marker id="goldArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+                        <path d="M0,0 L9,4.5 L0,9 L2.2,4.5 Z" fill="#b8913f" />
                     </marker>
-                    <marker id="navyArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
-                        <path d="M0,0 L7,3.5 L0,7 Z" fill="#1c335e" />
+                    <marker id="navyArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+                        <path d="M0,0 L9,4.5 L0,9 L2.2,4.5 Z" fill="#1c335e" />
                     </marker>
                 </defs>
             `;
 
-            db.orgHierarchy.links.forEach(lnk => {
-                const fromEl = document.getElementById(`org-node-${lnk.from}`);
-                const toEl = document.getElementById(`org-node-${lnk.to}`);
+            getResolvedOrgLinks().forEach(lnk => {
+                const fromEl = document.getElementById(lnk.from.elId);
+                const toEl = document.getElementById(lnk.to.elId);
                 if (!fromEl || !toEl) return;
 
                 const A = boxOf(fromEl);
                 const B = boxOf(toEl);
-                const GAP = 1; // ให้ปลายเส้นแตะขอบกรอบพอดี ไม่ล้ำเข้าไปข้างใน
+                let pts, lx, ly, start;
 
-                let d, lx, ly;
                 if (B.t >= A.b + 4) {
-                    // ปลายทางอยู่ต่ำกว่า: ขอบล่างของต้นทาง -> ขอบบนของปลายทาง
-                    const x1 = A.l + A.w / 2, y1 = A.b + GAP;
-                    const x2 = B.l + B.w / 2, y2 = B.t - GAP;
+                    // ปลายทางอยู่ต่ำกว่า: ขอบล่างต้นทาง -> ขอบบนปลายทาง (แตะขอบพอดี)
+                    const x1 = A.l + A.w / 2, y1 = A.b;
+                    const x2 = B.l + B.w / 2, y2 = B.t;
                     const midY = y1 + (y2 - y1) / 2;
-                    d = Math.abs(x1 - x2) < 1
-                        ? `M ${x1} ${y1} L ${x2} ${y2}`
-                        : `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
-                    lx = (x1 + x2) / 2; ly = midY;
+                    pts = Math.abs(x1 - x2) < 1 ? [[x1, y1], [x2, y2]] : [[x1, y1], [x1, midY], [x2, midY], [x2, y2]];
+                    lx = (x1 + x2) / 2; ly = midY; start = [x1, y1];
                 } else if (A.t >= B.b + 4) {
-                    // ปลายทางอยู่สูงกว่า: ขอบบนของต้นทาง -> ขอบล่างของปลายทาง
-                    const x1 = A.l + A.w / 2, y1 = A.t - GAP;
-                    const x2 = B.l + B.w / 2, y2 = B.b + GAP;
+                    // ปลายทางอยู่สูงกว่า
+                    const x1 = A.l + A.w / 2, y1 = A.t;
+                    const x2 = B.l + B.w / 2, y2 = B.b;
                     const midY = y2 + (y1 - y2) / 2;
-                    d = Math.abs(x1 - x2) < 1
-                        ? `M ${x1} ${y1} L ${x2} ${y2}`
-                        : `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
-                    lx = (x1 + x2) / 2; ly = midY;
+                    pts = Math.abs(x1 - x2) < 1 ? [[x1, y1], [x2, y2]] : [[x1, y1], [x1, midY], [x2, midY], [x2, y2]];
+                    lx = (x1 + x2) / 2; ly = midY; start = [x1, y1];
                 } else {
-                    // อยู่แถวเดียวกัน: ขอบข้างของต้นทาง -> ขอบข้างของปลายทาง
+                    // อยู่แถวเดียวกัน: ขอบข้าง -> ขอบข้าง
                     const goRight = B.l >= A.l;
-                    const x1 = goRight ? A.r + GAP : A.l - GAP;
-                    const x2 = goRight ? B.l - GAP : B.r + GAP;
+                    const x1 = goRight ? A.r : A.l;
+                    const x2 = goRight ? B.l : B.r;
                     const y1 = A.t + A.h / 2, y2 = B.t + B.h / 2;
                     const midX = x1 + (x2 - x1) / 2;
-                    d = Math.abs(y1 - y2) < 1
-                        ? `M ${x1} ${y1} L ${x2} ${y2}`
-                        : `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
-                    lx = midX; ly = (y1 + y2) / 2;
+                    pts = Math.abs(y1 - y2) < 1 ? [[x1, y1], [x2, y2]] : [[x1, y1], [midX, y1], [midX, y2], [x2, y2]];
+                    lx = midX; ly = (y1 + y2) / 2; start = [x1, y1];
                 }
 
-                const isDashed = lnk.style === 'dashed';
-                const strokeColor = isDashed ? '#1c335e' : '#c5a059';
-                const dashAttr = isDashed ? 'stroke-dasharray="6,4"' : '';
-                const marker = isDashed ? 'navyArrow' : 'goldArrow';
-                pathsHtml += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round" ${dashAttr} marker-end="url(#${marker})" />`;
+                const dashed = lnk.style === 'dashed';
+                const color = dashed ? '#1c335e' : '#b8913f';
+                const dashAttr = dashed ? 'stroke-dasharray="7,5"' : '';
+                const marker = dashed ? 'navyArrow' : 'goldArrow';
+                html += `<path d="${roundedOrthogonalPath(pts, 12)}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" ${dashAttr} marker-end="url(#${marker})" />`;
+                html += `<circle cx="${start[0]}" cy="${start[1]}" r="3.6" fill="${color}" stroke="#fff" stroke-width="1.2" />`;
 
                 if (lnk.label) {
-                    const safeLabel = String(lnk.label).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-                    pathsHtml += `
-                        <rect x="${lx - 32}" y="${ly - 10}" width="64" height="18" rx="6" fill="#0a1128" />
-                        <text x="${lx}" y="${ly + 3}" font-size="10" fill="#e6c25b" text-anchor="middle" font-family="Prompt">${safeLabel}</text>
+                    const safe = escHtml(lnk.label);
+                    html += `
+                        <rect x="${lx - 34}" y="${ly - 10}" width="68" height="20" rx="7" fill="#0a1128" stroke="#c5a059" stroke-width="0.8" />
+                        <text x="${lx}" y="${ly + 4}" font-size="10.5" fill="#f3d98b" text-anchor="middle" font-family="Prompt, sans-serif">${safe}</text>
                     `;
                 }
             });
 
-            svg.innerHTML = pathsHtml;
+            svg.innerHTML = html;
+            syncOrgSizer();
         }
 
         window.addEventListener('resize', () => {
-            if (currentRoute.page === 'personnel_chart') drawOrgConnectorLines();
+            if (currentRoute.page !== 'personnel_chart') return;
+            if (!orgChartUserZoomed) fitOrgChartToViewport();
+            drawOrgConnectorLines();
         });
 
         async function openExportOrgChartModal() {
             const canvasEl = document.getElementById('orgChartCanvas');
             if (!canvasEl) return;
+            if (typeof html2canvas === 'undefined') {
+                showStatusPopup('ไม่สามารถส่งออกได้', 'ไม่พบไลบรารีส่งออกภาพ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่', 'delete');
+                return;
+            }
 
             const prevTransform = canvasEl.style.transform;
-            canvasEl.style.transform = 'translate(0px, 0px) scale(1)';
-            const savedZoom = orgChartZoom;
-            orgChartZoom = 1;
+            canvasEl.classList.add('oc-exporting');
+            canvasEl.style.transform = 'none';
             drawOrgConnectorLines();
 
-            const noExportEls = canvasEl.querySelectorAll('.no-export');
-            noExportEls.forEach(el => el.style.visibility = 'hidden');
+            const restore = () => {
+                canvasEl.classList.remove('oc-exporting');
+                canvasEl.style.transform = prevTransform;
+                drawOrgConnectorLines();
+            };
 
             try {
+                await new Promise(r => requestAnimationFrame(() => r()));
                 const renderedCanvas = await html2canvas(canvasEl, {
                     scale: 2,
                     useCORS: true,
-                    backgroundColor: '#f8fafc'
+                    backgroundColor: '#ffffff',
+                    logging: false
                 });
-                noExportEls.forEach(el => el.style.visibility = 'visible');
-                orgChartZoom = savedZoom;
-                canvasEl.style.transform = prevTransform;
-                drawOrgConnectorLines();
+                restore();
 
                 exportedCanvasDataUrl = renderedCanvas.toDataURL('image/jpeg', 0.92);
 
@@ -3310,11 +3733,8 @@ ${st.leader2Name}
                 `, { type: 'exportPreview' });
                 document.getElementById('modalSaveBtn').classList.add('hidden');
             } catch (err) {
-                noExportEls.forEach(el => el.style.visibility = 'visible');
-                orgChartZoom = savedZoom;
-                canvasEl.style.transform = prevTransform;
-                drawOrgConnectorLines();
-                showStatusPopup('เกิดข้อผิดพลาด', err.message, 'delete');
+                restore();
+                showStatusPopup('เกิดข้อผิดพลาดในการส่งออก', (err && err.message) ? err.message : 'ไม่สามารถสร้างภาพได้', 'delete');
             }
         }
 
@@ -3393,7 +3813,7 @@ ${st.leader2Name}
                 </option>
             `).join('');
 
-            openModal(`${nodeId ? 'แก้ไข' : (addDirection === 'vertical' ? 'เพิ่มต่อแนวตั้งใน ' : 'เพิ่มแนวนอนใน ')}${rowNames[rowKey]}`, `
+            openModal(`${nodeId ? 'แก้ไข' : 'เพิ่มข้อมูลใน '}${rowNames[rowKey]}`, `
                 <div class="bg-gradient-to-r from-navy-900 to-navy-800 text-white p-4 rounded-xl border border-gold-500/40 mb-4">
                     <div class="text-xs font-bold text-gold-400 uppercase tracking-wide mb-2"><i class="fa-solid fa-database mr-1.5"></i> ดึงข้อมูลจากฐานข้อมูลนายตำรวจ / กำลังพลทั้งหมด</div>
                     <div class="flex flex-col sm:flex-row gap-2">
@@ -3464,17 +3884,27 @@ ${st.leader2Name}
         }
 
         function openAddLinkModal() {
-            const nodes = getAllHierarchyNodes();
-            const opts = nodes.map(n => `<option value="${n.id}">[${n.rowLabel}] ${n.name}</option>`).join('');
+            ensureOrgHierarchy();
+            const oh = db.orgHierarchy;
+            const outer = [
+                ...oh.row1.map(n => ({ id: n.id, label: `[ผกก.] ${n.name}` })),
+                ...oh.row2.map(n => ({ id: n.id, label: `[รอง ผกก.] ${n.name}` })),
+                ...['A', 'B', 'C'].map(t => ({ id: 'team:' + t, label: `[กรอบทีม] ทีม ${t}` }))
+            ];
+            const opts = (selIdx) => outer.map((o, i) => `<option value="${escHtml(o.id)}" ${i === selIdx ? 'selected' : ''}>${escHtml(o.label)}</option>`).join('');
             openModal('เพิ่มเส้นเชื่อมโยงสายการบังคับบัญชา', `
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">จากผู้บังคับบัญชา (จุดเริ่มต้นเส้น)</label>
-                        <select id="f_link_from" class="w-full border rounded-xl px-3 py-2.5 text-sm">${opts}</select>
+                    <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-navy-900">
+                        <i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>
+                        เส้นโยงจะแตะระหว่าง <b>กรอบนอกกับกรอบนอก</b> เท่านั้น (การ์ดผู้บังคับบัญชา และกรอบทีม A / B / C) ไม่ลากเข้าไปภายในกรอบทีม
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1">ไปยังผู้ใต้บังคับบัญชา (ปลายลูกศร)</label>
-                        <select id="f_link_to" class="w-full border rounded-xl px-3 py-2.5 text-sm">${opts}</select>
+                        <label class="block text-sm font-medium mb-1">จากผู้บังคับบัญชา (จุดเริ่มต้นเส้น)</label>
+                        <select id="f_link_from" class="w-full border rounded-xl px-3 py-2.5 text-sm">${opts(0)}</select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">ไปยังผู้ใต้บังคับบัญชา / กรอบทีม (ปลายลูกศร)</label>
+                        <select id="f_link_to" class="w-full border rounded-xl px-3 py-2.5 text-sm">${opts(Math.min(1, outer.length - 1))}</select>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -3486,7 +3916,7 @@ ${st.leader2Name}
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">ป้ายกำกับเส้น (ไม่บังคับ)</label>
-                            <input type="text" id="f_link_label" placeholder="เช่น สั่งการตรง" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+                            <input type="text" id="f_link_label" maxlength="12" placeholder="เช่น สั่งการตรง" class="w-full border rounded-xl px-3 py-2.5 text-sm">
                         </div>
                     </div>
                 </div>
@@ -3494,20 +3924,15 @@ ${st.leader2Name}
         }
 
         function openManageLinksModal() {
-            const nodes = getAllHierarchyNodes();
-            const getName = (id) => {
-                const found = nodes.find(n => n.id === id);
-                return found ? `${found.name} (${found.rowLabel})` : id;
-            };
-
-            const listHtml = db.orgHierarchy.links.map(l => `
+            const links = getResolvedOrgLinks();
+            const listHtml = links.map(l => `
                 <div class="flex items-center justify-between p-3 rounded-xl border bg-gray-50 text-xs sm:text-sm">
                     <div class="min-w-0 pr-2">
-                        <div class="font-semibold text-navy-900 truncate">${getName(l.from)}</div>
-                        <div class="text-gold-600 font-medium my-0.5"><i class="fa-solid fa-arrow-down mr-1"></i> โยงไปยัง ${l.label ? '[' + l.label + ']' : ''}</div>
-                        <div class="font-semibold text-navy-800 truncate">${getName(l.to)}</div>
+                        <div class="font-semibold text-navy-900 truncate">${escHtml(l.from.label)}</div>
+                        <div class="text-gold-600 font-medium my-0.5"><i class="fa-solid fa-arrow-down mr-1"></i> โยงไปยัง ${l.label ? '[' + escHtml(l.label) + ']' : ''} ${l.style === 'dashed' ? '<span class="text-[10px] text-gray-500">(เส้นประ)</span>' : ''}</div>
+                        <div class="font-semibold text-navy-800 truncate">${escHtml(l.to.label)}</div>
                     </div>
-                    <button type="button" onclick="deleteOrgLink('${l.id}')" class="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 font-semibold text-xs shrink-0">
+                    <button type="button" onclick="deleteOrgLinkGroup('${l.ids.join(',')}')" class="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 font-semibold text-xs shrink-0">
                         <i class="fa-solid fa-trash mr-1"></i> ลบเส้น
                     </button>
                 </div>
@@ -3521,14 +3946,16 @@ ${st.leader2Name}
             document.getElementById('modalSaveBtn').classList.add('hidden');
         }
 
-        function deleteOrgLink(linkId) {
-            db.orgHierarchy.links = db.orgHierarchy.links.filter(l => l.id !== linkId);
+        function deleteOrgLinkGroup(idsStr) {
+            const ids = String(idsStr || '').split(',').filter(Boolean);
+            db.orgHierarchy.links = db.orgHierarchy.links.filter(l => !ids.includes(l.id));
             saveDB();
             closeModal();
-            document.getElementById('modalSaveBtn').classList.remove('hidden');
             render();
             showStatusPopup('ลบเส้นเชื่อมโยงเรียบร้อย', 'นำเส้นสายการบังคับบัญชาออกแล้ว', 'delete');
         }
+
+        function deleteOrgLink(linkId) { deleteOrgLinkGroup(linkId); }
 
         // ==========================================
         // 3.5 VEHICLES PAGE
@@ -4354,6 +4781,52 @@ ${st.leader2Name}
                 showStatusPopup('รีเซ็ตเรียบร้อย', 'คืนค่าข้อมูลเริ่มต้นทั้งหมดเรียบร้อยแล้ว', 'success');
             });
         }
+
+        // ==========================================
+        // 6. QUALITY-OF-LIFE EXTRAS
+        // ==========================================
+        function triggerPageEnter() {
+            const app = document.getElementById('appContent');
+            if (!app) return;
+            app.classList.remove('page-enter');
+            void app.offsetWidth;
+            app.classList.add('page-enter');
+            setTimeout(() => app.classList.remove('page-enter'), 600);
+        }
+
+        function isModalOpen(id) {
+            const el = document.getElementById(id);
+            return !!el && !el.classList.contains('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (isModalOpen('statusPopupModal')) return closeStatusPopup();
+                if (isModalOpen('confirmPopupModal')) return closeConfirmPopup();
+                if (isModalOpen('quickImageModal')) return closeQuickImageModal();
+                if (isModalOpen('formModal')) return closeModal();
+                if (isModalOpen('settingsModal')) return closeSettingsModal();
+                if (orgChartFullscreen) return toggleOrgChartFullscreen(false);
+                const dd = document.getElementById('globalSearchResults');
+                if (dd) dd.classList.add('hidden');
+            }
+            if (e.key === '/' && currentRoute.page === 'home') {
+                const tag = (document.activeElement && document.activeElement.tagName) || '';
+                if (!/INPUT|TEXTAREA|SELECT/.test(tag)) {
+                    e.preventDefault();
+                    const input = document.getElementById('globalSearchInput');
+                    if (input) input.focus();
+                }
+            }
+        });
+
+        // คลิกนอกกล่องค้นหาแล้วปิดรายการผลลัพธ์
+        document.addEventListener('click', (e) => {
+            const dd = document.getElementById('globalSearchResults');
+            if (!dd || dd.classList.contains('hidden')) return;
+            if (e.target.closest('#globalSearchResults') || e.target.closest('#globalSearchInput') || e.target.closest('#globalSearchClearBtn')) return;
+            dd.classList.add('hidden');
+        });
 
         // Initial Boot & Auto Sync from Google Sheets
         window.onload = async function() {
