@@ -680,7 +680,10 @@
             ]
         };
 
-        let db = JSON.parse(localStorage.getItem('hanuman_db')) || defaultDB;
+        function safeLoadJSON(key) {
+            try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+        }
+        let db = safeLoadJSON('hanuman_db') || defaultDB;
         if (!db.orgHierarchy) db.orgHierarchy = JSON.parse(JSON.stringify(defaultDB.orgHierarchy));
 
         // State สำหรับรายงาน ทม.
@@ -765,7 +768,7 @@
             leader2Phone: '0922645874'
         };
 
-        let cmdReportState = JSON.parse(localStorage.getItem('hanuman_cmd_report')) || JSON.parse(JSON.stringify(defaultCmdReportState));
+        let cmdReportState = Object.assign(JSON.parse(JSON.stringify(defaultCmdReportState)), safeLoadJSON('hanuman_cmd_report') || {});
         let activeThaiCalPicker = null;
         let thaiCalPickerView = { month: 10, year: 2026 };
 
@@ -1834,29 +1837,25 @@
 
         function selectCmdThaiDate(fieldKey, newDateStr) {
             const oldDateStr = cmdReportState[fieldKey];
+            const changed = !!oldDateStr && oldDateStr !== newDateStr;
 
-            if ((fieldKey === 'sec3StartDate' || fieldKey === 'sec3EndDate' || fieldKey === 'headerDate') && oldDateStr && oldDateStr !== newDateStr) {
-                rolloverSec3AndReset();
-                if (fieldKey === 'headerDate') {
-                    cmdReportState.headerDate = newDateStr;
-                    cmdReportState.sec3StartDate = newDateStr;
+            if (fieldKey === 'sec3StartDate' || fieldKey === 'headerDate') {
+                // เปลี่ยน "ในวันที่" (หรือวันที่หัวรายงาน) => ทบยอด + รีเซ็ตข้อ 3
+                if (changed) rolloverSec3AndReset();
+                cmdReportState.headerDate = newDateStr;
+                cmdReportState.sec3StartDate = newDateStr;
+                if (!cmdReportState.sec3EndDate || cmdReportState.sec3EndDate < newDateStr) {
                     cmdReportState.sec3EndDate = newDateStr;
-                    cmdReportState.sec4EndDate = newDateStr;
-                    cmdReportState.sec5EndDate = newDateStr;
-                    cmdReportState.sec6EndDate = newDateStr;
-                } else if (fieldKey === 'sec3StartDate') {
-                    cmdReportState.sec3StartDate = newDateStr;
-                    if (cmdReportState.sec3EndDate < newDateStr) cmdReportState.sec3EndDate = newDateStr;
-                    cmdReportState.headerDate = newDateStr;
-                    cmdReportState.sec4EndDate = cmdReportState.sec3EndDate;
-                    cmdReportState.sec5EndDate = cmdReportState.sec3EndDate;
-                    cmdReportState.sec6EndDate = cmdReportState.sec3EndDate;
-                } else if (fieldKey === 'sec3EndDate') {
-                    cmdReportState.sec3EndDate = newDateStr;
-                    cmdReportState.sec4EndDate = newDateStr;
-                    cmdReportState.sec5EndDate = newDateStr;
-                    cmdReportState.sec6EndDate = newDateStr;
                 }
+                cmdReportState.sec4EndDate = cmdReportState.sec3EndDate;
+                cmdReportState.sec5EndDate = cmdReportState.sec3EndDate;
+                cmdReportState.sec6EndDate = cmdReportState.sec3EndDate;
+            } else if (fieldKey === 'sec3EndDate') {
+                // เปลี่ยน "ถึงวันที่" => ไม่รีเซ็ตข้อมูล แค่ปรับวันที่สิ้นสุดของข้อ 3-6
+                cmdReportState.sec3EndDate = newDateStr;
+                cmdReportState.sec4EndDate = newDateStr;
+                cmdReportState.sec5EndDate = newDateStr;
+                cmdReportState.sec6EndDate = newDateStr;
             } else {
                 cmdReportState[fieldKey] = newDateStr;
             }
@@ -2031,7 +2030,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">รายงานผลการปฏิบัติ ชป.นก (รายงานผู้บังคับบัญชา)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">เลือกวันที่จากปฏิทินภาษาไทย ยอดข้อ 4, 5 และ 6 สะสมอัตโนมัติ และรีเซ็ตข้อ 3 เป็น 0 เมื่อเปลี่ยนวันถัดไป</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">เลือกวันที่จากปฏิทินภาษาไทย ยอดข้อ 4, 5 และ 6 สะสมอัตโนมัติ และรีเซ็ตข้อ 3 เป็น 0 เมื่อเปลี่ยน "ในวันที่" (การเปลี่ยน "ถึงวันที่" ไม่รีเซ็ต)</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="รวมยอดข้อ 3 สะสมเข้าข้อ 4-6 แล้วรีเซ็ตข้อ 3 เป็น 0">
@@ -3118,7 +3117,7 @@ ${st.leader2Name}
                             <p class="text-xs text-gray-500">กองบังคับการปราบปราม</p>
                         </div>
 
-                        <svg id="orgSvgLines" class="absolute inset-0 w-full h-full pointer-events-none z-0"></svg>
+                        <svg id="orgSvgLines" class="absolute pointer-events-none z-0" style="top:0;left:0;margin:0 !important;overflow:visible;"></svg>
 
                         <div class="w-full flex flex-col items-center relative z-10">
                             <div class="no-export flex items-center gap-2 mb-3">
@@ -3154,6 +3153,15 @@ ${st.leader2Name}
 
             setupOrgChartTouchGestures();
             requestAnimationFrame(() => setTimeout(drawOrgConnectorLines, 80));
+            setTimeout(drawOrgConnectorLines, 400);
+            setTimeout(drawOrgConnectorLines, 1200);
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawOrgConnectorLines());
+            const _cv = document.getElementById('orgChartCanvas');
+            if (_cv && window.ResizeObserver) {
+                if (window._orgRO) window._orgRO.disconnect();
+                window._orgRO = new ResizeObserver(() => drawOrgConnectorLines());
+                window._orgRO.observe(_cv);
+            }
         }
 
         function refreshOrgChart() {
@@ -3168,15 +3176,27 @@ ${st.leader2Name}
             const canvas = document.getElementById('orgChartCanvas');
             if (!svg || !canvas) return;
 
-            const canvasRect = canvas.getBoundingClientRect();
-            const scale = orgChartZoom || 1;
             svg.setAttribute('width', canvas.offsetWidth);
             svg.setAttribute('height', canvas.offsetHeight);
 
+            // ตำแหน่งกรอบเทียบกับ canvas (ไม่ขึ้นกับ zoom/pan/animation)
+            const boxOf = (el) => {
+                let x = 0, y = 0, cur = el;
+                while (cur && cur !== canvas) {
+                    x += cur.offsetLeft;
+                    y += cur.offsetTop;
+                    cur = cur.offsetParent;
+                }
+                return { l: x, t: y, r: x + el.offsetWidth, b: y + el.offsetHeight, w: el.offsetWidth, h: el.offsetHeight };
+            };
+
             let pathsHtml = `
                 <defs>
-                    <marker id="goldArrow" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                    <marker id="goldArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
                         <path d="M0,0 L7,3.5 L0,7 Z" fill="#c5a059" />
+                    </marker>
+                    <marker id="navyArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+                        <path d="M0,0 L7,3.5 L0,7 Z" fill="#1c335e" />
                     </marker>
                 </defs>
             `;
@@ -3186,27 +3206,53 @@ ${st.leader2Name}
                 const toEl = document.getElementById(`org-node-${lnk.to}`);
                 if (!fromEl || !toEl) return;
 
-                const r1 = fromEl.getBoundingClientRect();
-                const r2 = toEl.getBoundingClientRect();
+                const A = boxOf(fromEl);
+                const B = boxOf(toEl);
+                const GAP = 1; // ให้ปลายเส้นแตะขอบกรอบพอดี ไม่ล้ำเข้าไปข้างใน
 
-                const x1 = (r1.left - canvasRect.left + r1.width / 2) / scale;
-                const y1 = (r1.bottom - canvasRect.top) / scale;
-                const x2 = (r2.left - canvasRect.left + r2.width / 2) / scale;
-                const y2 = (r2.top - canvasRect.top) / scale;
+                let d, lx, ly;
+                if (B.t >= A.b + 4) {
+                    // ปลายทางอยู่ต่ำกว่า: ขอบล่างของต้นทาง -> ขอบบนของปลายทาง
+                    const x1 = A.l + A.w / 2, y1 = A.b + GAP;
+                    const x2 = B.l + B.w / 2, y2 = B.t - GAP;
+                    const midY = y1 + (y2 - y1) / 2;
+                    d = Math.abs(x1 - x2) < 1
+                        ? `M ${x1} ${y1} L ${x2} ${y2}`
+                        : `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+                    lx = (x1 + x2) / 2; ly = midY;
+                } else if (A.t >= B.b + 4) {
+                    // ปลายทางอยู่สูงกว่า: ขอบบนของต้นทาง -> ขอบล่างของปลายทาง
+                    const x1 = A.l + A.w / 2, y1 = A.t - GAP;
+                    const x2 = B.l + B.w / 2, y2 = B.b + GAP;
+                    const midY = y2 + (y1 - y2) / 2;
+                    d = Math.abs(x1 - x2) < 1
+                        ? `M ${x1} ${y1} L ${x2} ${y2}`
+                        : `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+                    lx = (x1 + x2) / 2; ly = midY;
+                } else {
+                    // อยู่แถวเดียวกัน: ขอบข้างของต้นทาง -> ขอบข้างของปลายทาง
+                    const goRight = B.l >= A.l;
+                    const x1 = goRight ? A.r + GAP : A.l - GAP;
+                    const x2 = goRight ? B.l - GAP : B.r + GAP;
+                    const y1 = A.t + A.h / 2, y2 = B.t + B.h / 2;
+                    const midX = x1 + (x2 - x1) / 2;
+                    d = Math.abs(y1 - y2) < 1
+                        ? `M ${x1} ${y1} L ${x2} ${y2}`
+                        : `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+                    lx = midX; ly = (y1 + y2) / 2;
+                }
 
-                const midY = y1 + (y2 - y1) / 2;
                 const isDashed = lnk.style === 'dashed';
                 const strokeColor = isDashed ? '#1c335e' : '#c5a059';
                 const dashAttr = isDashed ? 'stroke-dasharray="6,4"' : '';
-
-                const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
-                pathsHtml += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="2.5" ${dashAttr} marker-end="url(#goldArrow)" />`;
+                const marker = isDashed ? 'navyArrow' : 'goldArrow';
+                pathsHtml += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round" ${dashAttr} marker-end="url(#${marker})" />`;
 
                 if (lnk.label) {
-                    const lx = (x1 + x2) / 2;
+                    const safeLabel = String(lnk.label).replace(/&/g, '&amp;').replace(/</g, '&lt;');
                     pathsHtml += `
-                        <rect x="${lx - 32}" y="${midY - 10}" width="64" height="18" rx="6" fill="#0a1128" />
-                        <text x="${lx}" y="${midY + 3}" font-size="10" fill="#e6c25b" text-anchor="middle" font-family="Prompt">${lnk.label}</text>
+                        <rect x="${lx - 32}" y="${ly - 10}" width="64" height="18" rx="6" fill="#0a1128" />
+                        <text x="${lx}" y="${ly + 3}" font-size="10" fill="#e6c25b" text-anchor="middle" font-family="Prompt">${safeLabel}</text>
                     `;
                 }
             });
