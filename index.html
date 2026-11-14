@@ -3024,7 +3024,7 @@ ${st.leader2Name}
 
                         <div class="w-full flex flex-col items-center">
                             <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-2">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">แถว 3 : สารวัตร</span>
+                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">สารวัตร</span>
                                 <div class="flex gap-1">
                                     <button onclick="openHierarchyNodeModal('row3', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
                                     <button onclick="openHierarchyNodeModal('row4', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
@@ -3037,7 +3037,7 @@ ${st.leader2Name}
 
                         <div class="w-full flex flex-col items-center pt-2">
                             <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-2">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">แถว 4 : รองสารวัตร</span>
+                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">รองสารวัตร</span>
                                 <div class="flex gap-1">
                                     <button onclick="openHierarchyNodeModal('row4', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
                                     <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
@@ -3050,7 +3050,7 @@ ${st.leader2Name}
 
                         <div class="w-full flex flex-col items-center pt-2">
                             <div class="no-export flex flex-wrap items-center justify-between gap-1 w-full mb-3">
-                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">แถว 5 : กำลังพล (${oh.row5[team].length})</span>
+                                <span class="text-[11px] font-bold text-navy-800 bg-white px-2 py-0.5 rounded border">กำลังพล (${oh.row5[team].length})</span>
                                 <div class="flex gap-1">
                                     <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'horizontal')" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 text-gold-400 hover:bg-navy-800">+ แนวนอน</button>
                                     <button onclick="openHierarchyNodeModal('row5', '${team}', null, 'vertical')" class="text-[10px] px-2 py-0.5 rounded bg-gold-500 text-navy-950 font-semibold hover:bg-gold-400">+ แนวตั้ง</button>
@@ -3122,7 +3122,7 @@ ${st.leader2Name}
 
                         <div class="w-full flex flex-col items-center relative z-10">
                             <div class="no-export flex items-center gap-2 mb-3">
-                                <span class="px-3 py-1 rounded-full bg-navy-950 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">แถวที่ 1 : ผู้กำกับการ (ผกก.)</span>
+                                <span class="px-3 py-1 rounded-full bg-navy-950 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">ผู้กำกับการ (ผกก.)</span>
                                 <button onclick="openHierarchyNodeModal('row1', null, null, 'horizontal')" class="text-xs px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 text-navy-900 border font-medium shadow-xs">+ เพิ่มแนวนอน</button>
                                 <button onclick="openHierarchyNodeModal('row2', null, null, 'vertical')" class="text-xs px-2.5 py-1 rounded-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold shadow-xs">+ เพิ่มต่อแนวตั้ง</button>
                             </div>
@@ -3133,7 +3133,7 @@ ${st.leader2Name}
 
                         <div class="w-full flex flex-col items-center relative z-10">
                             <div class="no-export flex items-center gap-2 mb-3">
-                                <span class="px-3 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">แถวที่ 2 : รองผู้กำกับการ (รอง ผกก.)</span>
+                                <span class="px-3 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-bold border border-gold-500/40 shadow">รองผู้กำกับการ (รอง ผกก.)</span>
                                 <button onclick="openHierarchyNodeModal('row2', null, null, 'horizontal')" class="text-xs px-2.5 py-1 rounded-full bg-white hover:bg-gray-100 text-navy-900 border font-medium shadow-xs">+ เพิ่มแนวนอน</button>
                                 <button onclick="openHierarchyNodeModal('row3', 'A', null, 'vertical')" class="text-xs px-2.5 py-1 rounded-full bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold shadow-xs">+ เพิ่มต่อแนวตั้ง</button>
                             </div>
@@ -4069,6 +4069,7 @@ ${st.leader2Name}
                             <option value="A" ${p.team==='A'?'selected':''}>ทีม A</option>
                             <option value="B" ${p.team==='B'?'selected':''}>ทีม B</option>
                             <option value="C" ${p.team==='C'?'selected':''}>ทีม C</option>
+                            <option value="-" ${p.team === '-' ? 'selected' : ''}>-</option>
                         </select>
                     </div>
                 </div>
