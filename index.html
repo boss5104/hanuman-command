@@ -69,6 +69,8 @@
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
             background-size: 22px 22px;
             background-color: #f8fafc;
+            touch-action: pan-x pan-y pinch-zoom;
+            -webkit-overflow-scrolling: touch;
         }
         .org-node-card {
             transition: all 0.25s ease;
@@ -82,7 +84,31 @@
             border-color: #c5a059;
         }
 
-        /* Thai Elegant Calendar Style (ตามภาพตัวอย่าง) */
+        /* Highlight Pulse Animation เมื่อค้นหาแล้วเด้งไปยังเป้าหมาย */
+        @keyframes searchHighlightPulse {
+            0% { box-shadow: 0 0 0 0 rgba(230, 194, 91, 0.95); background-color: rgba(254, 243, 199, 0.95); transform: scale(1.01); }
+            50% { box-shadow: 0 0 0 12px rgba(230, 194, 91, 0); background-color: rgba(253, 230, 138, 0.85); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 194, 91, 0); background-color: rgba(254, 243, 199, 0.55); transform: scale(1); }
+        }
+        .search-target-highlight {
+            animation: searchHighlightPulse 1.4s ease-in-out 3;
+            outline: 3px solid #c5a059 !important;
+            border-radius: 0.75rem;
+            position: relative;
+            z-index: 25;
+        }
+
+        /* Elegant Popup Animation */
+        @keyframes popBounceIn {
+            0% { opacity: 0; transform: scale(0.82) translateY(12px); }
+            70% { opacity: 1; transform: scale(1.03) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop-in {
+            animation: popBounceIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Thai Elegant Calendar Style */
         .thai-cal-box {
             background: linear-gradient(180deg, #fdf2f4 0%, #fff9fa 100%);
             border: 1px solid #f3d5dc;
@@ -254,7 +280,7 @@
                     </button>
                 </div>
 
-                <button onclick="loadFromGoogleSheets()" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="รีเฟรชข้อมูลล่าสุดจาก Google Sheet">
+                <button onclick="loadFromGoogleSheets(true)" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="รีเฟรชข้อมูลล่าสุดจาก Google Sheet">
                     <i class="fa-solid fa-rotate text-sm"></i>
                 </button>
                 <button onclick="openSettingsModal()" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="ตั้งค่าการเชื่อมต่อ Google Sheet">
@@ -312,16 +338,16 @@
                 <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="p-6 space-y-4 text-sm">
-                <p class="text-gray-600">ระบบเชื่อมต่อกับ <b>Google Apps Script Web App URL</b> อัตโนมัติ ข้อมูลทั้งหมดจะถูกซิงค์ไปยัง Google Sheets ทันทีที่มีการเพิ่มหรือแก้ไข</p>
+                <p class="text-gray-600">ระบบเชื่อมต่อกับ <b>Google Apps Script Web App URL</b> อัตโนมัติ ข้อมูลทั้งหมดและรูปภาพจะถูกซิงค์ไปยัง Google Sheets ทันทีที่มีการเพิ่มหรือแก้ไข</p>
                 <div>
                     <label class="block font-medium text-gray-700 mb-1">Google Apps Script Web App URL</label>
                     <input type="url" id="gasUrlInput" class="w-full px-3 py-2.5 border rounded-xl text-xs bg-gray-50 focus:ring-2 focus:ring-gold-500 focus:outline-none">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="loadFromGoogleSheets(); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-sm">
+                    <button type="button" onclick="loadFromGoogleSheets(true); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-sm">
                         <i class="fa-solid fa-cloud-arrow-down mr-1"></i> ดึงข้อมูลจาก Sheet
                     </button>
-                    <button type="button" onclick="syncToGoogleSheets(); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 text-xs font-medium shadow-sm">
+                    <button type="button" onclick="syncToGoogleSheets(true); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 text-xs font-medium shadow-sm">
                         <i class="fa-solid fa-cloud-arrow-up mr-1"></i> อัปโหลดขึ้น Sheet
                     </button>
                 </div>
@@ -336,9 +362,103 @@
         </div>
     </div>
 
+    <!-- Beautiful Status Popup Modal (แก้ไขเรียบร้อย / ลบเรียบร้อย / อัปโหลดรูปภาพเสร็จสิ้น) -->
+    <div id="statusPopupModal" class="fixed inset-0 bg-navy-950/60 backdrop-blur-xs hidden z-[70] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-gold-500/40 animate-pop-in">
+            <div id="statusPopupIconWrap" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-emerald-100 text-emerald-600">
+                <i id="statusPopupIcon" class="fa-solid fa-circle-check"></i>
+            </div>
+            <h4 id="statusPopupTitle" class="text-xl font-bold text-navy-900 mb-1.5">ดำเนินการเรียบร้อย</h4>
+            <p id="statusPopupDesc" class="text-sm text-gray-600 font-body mb-5">ข้อมูลถูกบันทึกเรียบร้อยแล้ว</p>
+            <button type="button" onclick="closeStatusPopup()" class="w-full py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-semibold text-sm shadow transition">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- Beautiful Confirm Delete Modal -->
+    <div id="confirmPopupModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-xs hidden z-[65] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-red-500/30 animate-pop-in">
+            <div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-red-100 text-red-600">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h4 id="confirmPopupTitle" class="text-lg font-bold text-navy-900 mb-1.5">ยืนยันการลบข้อมูล</h4>
+            <p id="confirmPopupDesc" class="text-sm text-gray-600 font-body mb-6">คุณต้องการลบข้อมูลรายการนี้ใช่หรือไม่?</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="closeConfirmPopup()" class="py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold text-sm transition">
+                    ยกเลิก
+                </button>
+                <button type="button" id="confirmPopupOkBtn" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow transition">
+                    ยืนยันการลบ
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ==========================================
-        // 0. THEME MANAGEMENT (LIGHT / DARK / EYECARE)
+        // 0. POPUP NOTIFICATION & CONFIRM SYSTEM
+        // ==========================================
+        let statusPopupTimer = null;
+
+        function showStatusPopup(title, desc = '', type = 'success', autoCloseMs = 2200) {
+            const modal = document.getElementById('statusPopupModal');
+            const iconWrap = document.getElementById('statusPopupIconWrap');
+            const iconEl = document.getElementById('statusPopupIcon');
+            const titleEl = document.getElementById('statusPopupTitle');
+            const descEl = document.getElementById('statusPopupDesc');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc || 'ระบบได้บันทึกและซิงค์ข้อมูลเรียบร้อยแล้ว';
+
+            iconWrap.className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md';
+            if (type === 'delete') {
+                iconWrap.classList.add('bg-red-100', 'text-red-600');
+                iconEl.className = 'fa-solid fa-trash-can';
+            } else if (type === 'edit') {
+                iconWrap.classList.add('bg-amber-100', 'text-amber-600');
+                iconEl.className = 'fa-solid fa-pen-to-square';
+            } else if (type === 'upload') {
+                iconWrap.classList.add('bg-sky-100', 'text-sky-600');
+                iconEl.className = 'fa-solid fa-cloud-arrow-up';
+            } else {
+                iconWrap.classList.add('bg-emerald-100', 'text-emerald-600');
+                iconEl.className = 'fa-solid fa-circle-check';
+            }
+
+            modal.classList.remove('hidden');
+            if (statusPopupTimer) clearTimeout(statusPopupTimer);
+            if (autoCloseMs > 0) {
+                statusPopupTimer = setTimeout(() => {
+                    closeStatusPopup();
+                }, autoCloseMs);
+            }
+        }
+
+        function closeStatusPopup() {
+            const modal = document.getElementById('statusPopupModal');
+            if (modal) modal.classList.add('hidden');
+            if (statusPopupTimer) clearTimeout(statusPopupTimer);
+        }
+
+        function showConfirmPopup(title, desc, onConfirm) {
+            const modal = document.getElementById('confirmPopupModal');
+            document.getElementById('confirmPopupTitle').innerText = title;
+            document.getElementById('confirmPopupDesc').innerText = desc;
+            const okBtn = document.getElementById('confirmPopupOkBtn');
+            okBtn.onclick = () => {
+                closeConfirmPopup();
+                onConfirm();
+            };
+            modal.classList.remove('hidden');
+        }
+
+        function closeConfirmPopup() {
+            document.getElementById('confirmPopupModal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 0.1 THEME MANAGEMENT (LIGHT / DARK / EYECARE)
         // ==========================================
         function setAppTheme(theme) {
             document.body.classList.remove('theme-dark', 'theme-eyecare');
@@ -367,6 +487,7 @@
         let currentRoute = { page: 'home', params: {} };
         let currentModalContext = null;
         let orgChartZoom = 1;
+        let orgChartPan = { x: 0, y: 0 };
         let exportedCanvasDataUrl = '';
 
         const DEFAULT_TM_WEAPONS = [
@@ -529,7 +650,7 @@
             ]
         };
 
-        // State สำหรับรายงานผู้บังคับบัญชา (รองรับสะสมยอดและรีเซ็ตเมื่อเปลี่ยนวันที่)
+        // State สำหรับรายงานผู้บังคับบัญชา
         const defaultCmdReportState = {
             headerDate: '2026-11-14',
             sec3StartDate: '2026-11-14',
@@ -546,7 +667,6 @@
             sec4EndDate: '2026-11-14',
             sec4EndTime: '19.00 น.',
             sec4EndCustomTime: false,
-            // ยอดสะสมฐานของข้อ 4 (จะถูกบวกเพิ่มด้วยยอดข้อ 3 แบบเรียลไทม์ และทบยอดเมื่อเปลี่ยนวัน)
             sec4BaseData: [
                 { area: 'พระตำหนักราชฤทธิ์รุ่งโรจน์', dead: 61, injured: 34 },
                 { area: 'พระที่นั่งวิมานเมฆ', dead: 517, injured: 231 },
@@ -560,11 +680,9 @@
             sec5EndDate: '2026-11-14',
             sec5EndTime: '19.00 น.',
             sec5EndCustomTime: false,
-            // ยอดสะสมฐานของข้อ 5 (รวมยอดสะสมก่อนหน้า + ข้อ 4 ฐาน)
             sec5BaseDead: 7448,
             sec5BaseInjured: 3467,
             sec6EndDate: '2026-11-14',
-            // ยอดสะสมฐานของข้อ 6 (พระตำหนักราชฤทธิ์รุ่งโรจน์)
             sec6BaseDead: 458,
             sec6BaseInjured: 238,
             leader1Date: '14-15 พ.ย.69',
@@ -578,7 +696,6 @@
         };
 
         let cmdReportState = JSON.parse(localStorage.getItem('hanuman_cmd_report')) || JSON.parse(JSON.stringify(defaultCmdReportState));
-        // สถานะเปิด/ปิดปฏิทินไทยของแต่ละช่องในหน้ารายงานผู้บังคับบัญชา
         let activeThaiCalPicker = null;
         let thaiCalPickerView = { month: 10, year: 2026 };
 
@@ -595,7 +712,7 @@
             } catch (err) {
                 console.warn('LocalStorage quota warning:', err);
             }
-            if (GAS_WEB_APP_URL) syncToGoogleSheets();
+            if (GAS_WEB_APP_URL) syncToGoogleSheets(false);
         }
 
         function syncPersonnelToOrgChart() {
@@ -619,46 +736,72 @@
             });
         }
 
-        async function syncToGoogleSheets() {
+        // บันทึกข้อมูลและรูปภาพ Base64 ลง Google Sheets พร้อมรองรับการแจ้งเตือน Popup
+        async function syncToGoogleSheets(showPopupAfter = false) {
             const statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังบันทึกขึ้น Sheet...';
             try {
+                // เตรียมข้อมูลให้มั่นใจว่ารูปภาพกำลังพลทุกนายถูกส่งไปยัง Google Sheet ด้วย
+                const payload = {
+                    action: 'syncAll',
+                    data: {
+                        ...db,
+                        personnel: db.personnel.map(p => ({
+                            ...p,
+                            photo: p.photo || ''
+                        }))
+                    }
+                };
                 await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'syncAll', data: db })
+                    body: JSON.stringify(payload)
                 });
                 if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> บันทึกลง Google Sheets แล้ว';
+                if (showPopupAfter) {
+                    showStatusPopup('อัปโหลดขึ้น Google Sheets เรียบร้อย', 'ข้อมูลและรูปภาพกำลังพลทั้งหมดถูกบันทึกลงฐานข้อมูลแล้ว', 'upload');
+                }
             } catch (e) {
                 if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5 text-red-400"></i> บันทึกไม่สำเร็จ';
             }
         }
 
-        async function loadFromGoogleSheets() {
+        // ดึงข้อมูลจาก Google Sheets รวมถึงรูปภาพกำลังพลที่บันทึกไว้มาแสดงผล
+        async function loadFromGoogleSheets(showPopupAfter = false) {
             if (!GAS_WEB_APP_URL) return;
             const statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังโหลดข้อมูล...';
             try {
-                const res = await fetch(GAS_WEB_APP_URL + '?action=getAll');
+                const res = await fetch(GAS_WEB_APP_URL + '?action=getAll&t=' + Date.now());
                 const remoteData = await res.json();
                 if (remoteData && Object.keys(remoteData).length > 0 && remoteData.missions) {
-                    if (remoteData.personnel && db.personnel) {
+                    if (remoteData.personnel && Array.isArray(remoteData.personnel)) {
                         remoteData.personnel.forEach(rp => {
-                            const localP = db.personnel.find(lp => lp.id === rp.id);
-                            if ((!rp.photo || rp.photo.includes('ui-avatars')) && localP && localP.photo && localP.photo.startsWith('data:image')) {
+                            const localP = db.personnel ? db.personnel.find(lp => lp.id === rp.id) : null;
+                            // หากใน Google Sheet มีรูปภาพ (data:image หรือ http url) ให้ดึงมาแสดงผลทันที
+                            if (rp.photo && (rp.photo.startsWith('data:image') || rp.photo.startsWith('http'))) {
+                                // ใช้รูปจาก Google Sheet เป็นหลัก
+                            } else if (localP && localP.photo && localP.photo.startsWith('data:image')) {
                                 rp.photo = localP.photo;
+                            } else {
+                                rp.photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(rp.firstName || 'P')}&background=0a1128&color=c5a059&size=150`;
                             }
                         });
                     }
                     db = remoteData;
                     if (!db.orgHierarchy) db.orgHierarchy = JSON.parse(JSON.stringify(defaultDB.orgHierarchy));
                     syncPersonnelToOrgChart();
-                    localStorage.setItem('hanuman_db', JSON.stringify(db));
+                    try {
+                        localStorage.setItem('hanuman_db', JSON.stringify(db));
+                    } catch (err) {}
                     render();
                     if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> อัปเดตจาก Google Sheets แล้ว';
+                    if (showPopupAfter) {
+                        showStatusPopup('ดึงข้อมูลล่าสุดเรียบร้อย', 'อัปเดตข้อมูลและรูปภาพกำลังพลจาก Google Sheets สำเร็จ', 'success');
+                    }
                 } else {
-                    await syncToGoogleSheets();
+                    await syncToGoogleSheets(false);
                 }
             } catch (e) {
                 if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-database mr-1.5 text-amber-400"></i> ข้อมูลในเครื่อง (Offline)';
@@ -666,7 +809,7 @@
         }
 
         // ==========================================
-        // 2. NAVIGATION & ROUTING
+        // 2. NAVIGATION, HIGHLIGHT & ROUTING
         // ==========================================
         function navigate(page, params = {}, addToHistory = true) {
             if (addToHistory && (currentRoute.page !== page || JSON.stringify(currentRoute.params) !== JSON.stringify(params))) {
@@ -675,7 +818,26 @@
             activeThaiCalPicker = null;
             currentRoute = { page, params };
             render();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (params.highlightId) {
+                setTimeout(() => {
+                    highlightTargetElement(params.highlightId);
+                }, 120);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function highlightTargetElement(domId) {
+            const el = document.getElementById(domId);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.remove('search-target-highlight');
+            void el.offsetWidth; // trigger reflow
+            el.classList.add('search-target-highlight');
+            setTimeout(() => {
+                el.classList.remove('search-target-highlight');
+            }, 4600);
         }
 
         function goBack() {
@@ -746,16 +908,203 @@
         }
 
         // ==========================================
-        // 3. HOME & DUTY PAGES
+        // 3. HOME & GLOBAL SEARCH SYSTEM (ข้อ 3)
         // ==========================================
+        function buildGlobalSearchIndex() {
+            const items = [];
+
+            // 1. หมวดหมู่เมนูหลัก
+            items.push(
+                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: '1. ตารางเวร (เวรหนุมาน / เวร ว.5 / รายงาน ทม. / รายงานผู้บังคับบัญชา)', subtitle: 'ระบบจัดการวงรอบเข้าเวรและรายงานประจำวัน', keywords: 'ตารางเวร เวรหนุมาน high low rest ว.5 รายงาน ทม รายงานผู้บังคับบัญชา', action: () => navigate('duty_menu') },
+                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: 'รายงาน ทม. (จัดทำรายงานส่งทาง LINE)', subtitle: 'ปฏิทินเลือกวัน พื้นที่ปฏิบัติการ กำลังพล และอาวุธปืน', keywords: 'รายงาน ทม สวนจิตร ราชฤทธิ์ วิมานเมฆ ปืน กระสุน', action: () => navigate('report_tm') },
+                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: 'รายงานผู้บังคับบัญชา (ผลการปฏิบัติ ชป.นก)', subtitle: 'สรุปยอดสะสมรายพื้นที่และหัวหน้าชุดปฏิบัติ', keywords: 'รายงานผู้บังคับบัญชา ชป.นก ยอดสะสม ผลการปฏิบัติ', action: () => navigate('report_commander') },
+                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: '4.6 แผนภาพสายการบังคับบัญชา (5 ระดับ)', subtitle: 'ผังโครงสร้างสายการบังคับบัญชา ทีม A, B, C', keywords: 'แผนผัง แผนภาพ สายการบังคับบัญชา โครงสร้าง ทีม A B C', action: () => navigate('personnel_chart') }
+            );
+
+            // 2. ตารางเวรหนุมาน
+            db.dutyHanuman.forEach(d => {
+                const startParts = (d.startDate || '').split('-');
+                const m = startParts.length === 3 ? parseInt(startParts[1], 10) - 1 : undefined;
+                const y = startParts.length === 3 ? parseInt(startParts[0], 10) : undefined;
+                items.push({
+                    category: 'ตารางเวรหนุมาน',
+                    badgeColor: 'bg-red-100 text-red-800',
+                    title: `ทีม ${d.team} : สถานะ ${d.status}`,
+                    subtitle: `${formatThaiDateFullYear(d.startDate)} ถึง ${formatThaiDateFullYear(d.endDate)} ${d.note ? '• ' + d.note : ''}`,
+                    keywords: `ตารางเวรหนุมาน ทีม ${d.team} ${d.status} ${d.startDate} ${d.endDate} ${d.note || ''}`,
+                    action: () => navigate('duty_hanuman', { month: m, year: y, highlightId: `dh-row-${d.id}` })
+                });
+            });
+
+            // 3. ตารางเวร ว.5
+            db.dutyW5.forEach(w => {
+                items.push({
+                    category: 'ตารางเวร ว.5',
+                    badgeColor: 'bg-amber-100 text-amber-900',
+                    title: `เวร ว.5 วันที่ ${formatThaiDateFullYear(w.date)} — ${w.officer}`,
+                    subtitle: `ลูกทีม: ${w.teamMembers || '-'} ${w.note ? '• ' + w.note : ''}`,
+                    keywords: `ตารางเวร ว.5 ${w.date} ${formatThaiDateFullYear(w.date)} ${w.officer} ${w.teamMembers || ''} ${w.note || ''}`,
+                    action: () => navigate('duty_w5', { highlightId: `w5-row-${w.id}` })
+                });
+            });
+
+            // 4. ตารางภารกิจ
+            db.missions.forEach(m => {
+                items.push({
+                    category: 'ตารางภารกิจ',
+                    badgeColor: 'bg-indigo-100 text-indigo-800',
+                    title: m.name,
+                    subtitle: `วันที่ ${formatThaiDateFullYear(m.date)} • สนับสนุน: ${m.supportUnit || '-'} • ผู้ควบคุม: ${m.commander || '-'}`,
+                    keywords: `ภารกิจ ${m.name} ${m.date} ${m.supportUnit || ''} ${m.commander || ''} ${m.teamUsed || ''} ${m.personnelList || ''} ${m.vehiclesUsed || ''} ${m.note || ''}`,
+                    action: () => navigate('missions_list', { highlightId: `mission-card-${m.id}` })
+                });
+            });
+
+            // 5. กำลังพลทั้งหมด
+            db.personnel.forEach(p => {
+                const fullName = `${p.rank || ''} ${p.firstName || ''} ${p.lastName || ''}`.trim();
+                const teamLabel = p.team === 'กองบัญชาการ' ? 'กองบัญชาการ' : `ทีม ${p.team}`;
+                items.push({
+                    category: 'ข้อมูลกำลังพล',
+                    badgeColor: 'bg-emerald-100 text-emerald-800',
+                    title: `${fullName} ${p.nickname ? '(' + p.nickname + ')' : ''}`,
+                    subtitle: `${p.position || '-'} • ${teamLabel} ${p.phone ? '• โทร ' + p.phone : ''}`,
+                    keywords: `กำลังพล นายตำรวจ ${fullName} ${p.nickname || ''} ${p.position || ''} ${teamLabel} ${p.phone || ''} ${p.note || ''}`,
+                    action: () => navigate('personnel_list', { filter: 'all', title: 'ข้อมูลกำลังพลทั้งหมด', highlightId: `person-row-${p.id}` })
+                });
+            });
+
+            // 6. แผนผังการบังคับบัญชา
+            getAllHierarchyNodes().forEach(n => {
+                items.push({
+                    category: 'แผนผังบังคับบัญชา',
+                    badgeColor: 'bg-purple-100 text-purple-800',
+                    title: `${n.name} (${n.rowLabel})`,
+                    subtitle: `ตำแหน่ง: ${n.position || '-'} • สังกัด: ${n.team || '-'}`,
+                    keywords: `แผนผัง สายการบังคับบัญชา ${n.name} ${n.position || ''} ${n.team || ''} ${n.rowLabel}`,
+                    action: () => navigate('personnel_chart', { highlightId: `org-node-${n.id}` })
+                });
+            });
+
+            // 7. ยานพาหนะ
+            db.vehicles.forEach(v => {
+                items.push({
+                    category: 'ตารางสถานะรถ',
+                    badgeColor: 'bg-sky-100 text-sky-800',
+                    title: `${v.brand} — ทะเบียน ${v.plate}`,
+                    subtitle: `ประเภท: ${v.type} • สถานะ: ${v.status || 'พร้อมใช้งาน'} ${v.note ? '• ' + v.note : ''}`,
+                    keywords: `รถ ยานพาหนะ ${v.type} ${v.brand} ${v.plate} ${v.status || ''} ${v.note || ''}`,
+                    action: () => navigate('vehicles', { highlightId: `vehicle-card-${v.id}` })
+                });
+            });
+
+            return items;
+        }
+
+        let currentGlobalSearchResults = [];
+
+        function handleGlobalSearchInput(query) {
+            const dropdown = document.getElementById('globalSearchResults');
+            const clearBtn = document.getElementById('globalSearchClearBtn');
+            if (!dropdown) return;
+
+            const q = (query || '').trim().toLowerCase();
+            if (clearBtn) {
+                if (q.length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            if (!q) {
+                dropdown.classList.add('hidden');
+                currentGlobalSearchResults = [];
+                return;
+            }
+
+            const allIndex = buildGlobalSearchIndex();
+            const terms = q.split(/\s+/);
+            currentGlobalSearchResults = allIndex.filter(item => {
+                const hay = (item.title + ' ' + item.subtitle + ' ' + item.keywords + ' ' + item.category).toLowerCase();
+                return terms.every(t => hay.includes(t));
+            });
+
+            if (currentGlobalSearchResults.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="p-6 text-center text-gray-500 text-sm">
+                        <i class="fa-solid fa-magnifying-glass-minus text-2xl text-gray-300 mb-2 block"></i>
+                        ไม่พบข้อมูลที่ตรงกับคำค้นหา "<b>${query}</b>"
+                    </div>
+                `;
+            } else {
+                dropdown.innerHTML = `
+                    <div class="px-4 py-2 bg-gray-50 border-b text-[11px] font-semibold text-gray-500 flex justify-between items-center">
+                        <span>พบข้อมูลที่เกี่ยวข้องทั้งหมด ${currentGlobalSearchResults.length} รายการ (คลิกเพื่อไปยังแหล่งข้อมูล)</span>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+                        ${currentGlobalSearchResults.map((res, idx) => `
+                            <button type="button" onclick="selectGlobalSearchResult(${idx})"
+                                class="w-full text-left px-4 py-3 hover:bg-amber-50/70 transition flex items-start justify-between gap-3 group">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 mb-0.5">
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${res.badgeColor}">${res.category}</span>
+                                        <span class="font-bold text-navy-900 text-xs sm:text-sm truncate group-hover:text-gold-600">${res.title}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 truncate">${res.subtitle}</div>
+                                </div>
+                                <span class="text-xs text-gold-600 font-semibold shrink-0 self-center opacity-80 group-hover:opacity-100">
+                                    ไปยังข้อมูล <i class="fa-solid fa-arrow-right ml-1"></i>
+                                </span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectGlobalSearchResult(idx) {
+            const item = currentGlobalSearchResults[idx];
+            if (!item) return;
+            const dropdown = document.getElementById('globalSearchResults');
+            if (dropdown) dropdown.classList.add('hidden');
+            item.action();
+        }
+
+        function clearGlobalSearch() {
+            const input = document.getElementById('globalSearchInput');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            handleGlobalSearchInput('');
+        }
+
         function renderHome(container) {
             navigationHistory = [];
             updateBreadcrumbs([]);
             container.innerHTML = `
-                <div class="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
+                <div class="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
                     <span class="px-3.5 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-semibold tracking-widest uppercase border border-gold-500/30 shadow-sm">Command Center</span>
                     <h2 class="text-2xl sm:text-3xl font-bold text-navy-900 mt-3">ศูนย์บริหารจัดการข้อมูลหน่วยปฏิบัติการหนุมาน</h2>
-                    <p class="text-gray-500 text-xs sm:text-sm mt-2">เลือกหมวดหมู่ที่ต้องการตรวจสอบหรือบริหารจัดการข้อมูลปฏิบัติการ</p>
+                    <p class="text-gray-500 text-xs sm:text-sm mt-2">ค้นหาข้อมูลทุกหัวข้อได้ทันที หรือเลือกหมวดหมู่ที่ต้องการตรวจสอบ</p>
+                </div>
+
+                <!-- ช่องค้นหาข้อมูลครอบคลุมทุกหัวข้อ (Global Search) -->
+                <div class="max-w-3xl mx-auto mb-8 sm:mb-10 relative z-30">
+                    <div class="glass-card rounded-2xl p-2 sm:p-2.5 border-2 border-gold-500/50 shadow-lg flex items-center gap-2">
+                        <div class="w-10 h-10 rounded-xl bg-navy-900 text-gold-400 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="globalSearchInput"
+                            oninput="handleGlobalSearchInput(this.value)"
+                            onfocus="handleGlobalSearchInput(this.value)"
+                            placeholder="ค้นหาคำจากทุกหัวข้อ เช่น ชื่อกำลังพล, ยศ, เบอร์โทร, ชื่อภารกิจ, ทะเบียนรถ, ตารางเวร..."
+                            class="w-full bg-transparent text-sm sm:text-base text-navy-900 placeholder-gray-400 focus:outline-none px-1">
+                        <button type="button" id="globalSearchClearBtn" onclick="clearGlobalSearch()" class="hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 hover:text-red-600 hover:bg-gray-100 transition shrink-0">
+                            <i class="fa-solid fa-xmark mr-1"></i>ล้าง
+                        </button>
+                    </div>
+                    <!-- Dropdown แสดงผลการค้นหา -->
+                    <div id="globalSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gold-500/40 overflow-hidden z-40"></div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
@@ -904,7 +1253,7 @@
                 if (item.status === 'Rest') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">REST (พักเวร)</span>';
 
                 return `
-                    <tr class="hover:bg-gray-50 border-b">
+                    <tr id="dh-row-${item.id}" class="hover:bg-gray-50 border-b transition">
                         <td class="px-4 py-3 font-bold text-navy-900 whitespace-nowrap">ทีม ${item.team}</td>
                         <td class="px-4 py-3 whitespace-nowrap">${statusBadge}</td>
                         <td class="px-4 py-3 text-sm whitespace-nowrap">${formatThaiDateFullYear(item.startDate)}</td>
@@ -1006,7 +1355,7 @@
             if (filterMonth) filtered = filtered.filter(item => item.date.startsWith(filterMonth));
 
             const rows = filtered.map(item => `
-                <tr class="border-b hover:bg-gray-50">
+                <tr id="w5-row-${item.id}" class="border-b hover:bg-gray-50 transition">
                     <td class="px-5 py-4 font-semibold text-navy-900 whitespace-nowrap">${formatThaiDateFullYear(item.date)}</td>
                     <td class="px-5 py-4 whitespace-nowrap">
                         <span class="px-3 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs sm:text-sm font-medium">${item.officer}</span>
@@ -1071,7 +1420,7 @@
         }
 
         // ==========================================
-        // 3.1.1 หน้า "รายงาน ทม." + ปฏิทินภาษาไทยตามตัวอย่าง + กล่องตัวอย่างด้านขวา
+        // 3.1.1 หน้า "รายงาน ทม."
         // ==========================================
         function renderThaiMiniCalendar(selectedDateStr, viewMonth, viewYear, onSelectFnName, onNavFnName, fieldKey = '') {
             const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -1239,7 +1588,6 @@
                     </div>
                 </div>
 
-                <!-- ส่วนบนสุด: ปฏิทินภาษาไทย + สรุปยอดปืน/กระสุน -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
                     <div class="lg:col-span-5">
                         ${renderThaiMiniCalendar(tmReportState.selectedDate, tmReportState.calMonth, tmReportState.calYear, 'tmSelectDate', 'tmNavMonth')}
@@ -1272,7 +1620,6 @@
                     </div>
                 </div>
 
-                <!-- แบ่ง 2 คอลัมน์: ซ้าย = รายการพื้นที่และกำลังพล / ขวา = ตัวอย่างข้อความรายงาน ทม. ก่อนส่งทาง LINE -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     <div class="lg:col-span-7">
                         ${sectionsHtml}
@@ -1333,10 +1680,12 @@
                 rows: [{ personnelId: '', weapon: weaponDefault }]
             };
             tmReportState.sections.splice(sIdx + 1, 0, newSec);
+            showStatusPopup('เพิ่มพื้นที่เรียบร้อย', 'เพิ่มรายการพื้นที่ปฏิบัติการชุดใหม่แล้ว', 'success', 1500);
             render();
         }
         function removeTmSection(sIdx) {
             tmReportState.sections.splice(sIdx, 1);
+            showStatusPopup('ลบพื้นที่เรียบร้อย', 'ลบพื้นที่ปฏิบัติการรายการนี้แล้ว', 'delete', 1500);
             render();
         }
         function updateTmPreviewBox() {
@@ -1372,7 +1721,7 @@
         }
 
         // ==========================================
-        // 3.1.2 หน้า "รายงานผู้บังคับบัญชา" (ข้อ 2.1 - 2.5)
+        // 3.1.2 หน้า "รายงานผู้บังคับบัญชา"
         // ==========================================
         function toggleThaiCalPicker(fieldKey) {
             if (activeThaiCalPicker === fieldKey) {
@@ -1399,12 +1748,9 @@
             render();
         }
 
-        // เมื่อเลือกวันที่จากปฏิทินภาษาไทยในหน้ารายงานผู้บังคับบัญชา
         function selectCmdThaiDate(fieldKey, newDateStr) {
             const oldDateStr = cmdReportState[fieldKey];
 
-            // ข้อ 2.5: หากเปลี่ยนวันที่ในหัวข้อ 3 (หรือวันที่หลักของรายงาน) เป็นวันถัดไป/วันใหม่
-            // ให้ทบยอดข้อ 3 สะสมเข้าข้อ 4, ข้อ 5 และข้อ 6 แล้วรีเซ็ตจำนวนในข้อ 3 เป็น 0 ทุกช่อง
             if ((fieldKey === 'sec3StartDate' || fieldKey === 'sec3EndDate' || fieldKey === 'headerDate') && oldDateStr && oldDateStr !== newDateStr) {
                 rolloverSec3AndReset();
                 if (fieldKey === 'headerDate') {
@@ -1436,7 +1782,6 @@
             render();
         }
 
-        // ฟังก์ชันทบยอดจากข้อ 3 ไปสะสมในข้อ 4, ข้อ 5 และข้อ 6 แล้วรีเซ็ตข้อ 3 เป็น 0 ทุกช่อง
         function rolloverSec3AndReset() {
             let s3DeadSum = 0;
             let s3InjSum = 0;
@@ -1447,23 +1792,19 @@
                 s3DeadSum += d;
                 s3InjSum += inj;
 
-                // บวกสะสมเข้าข้อ 4 รายพื้นที่
                 if (cmdReportState.sec4BaseData[idx]) {
                     cmdReportState.sec4BaseData[idx].dead = (Number(cmdReportState.sec4BaseData[idx].dead) || 0) + d;
                     cmdReportState.sec4BaseData[idx].injured = (Number(cmdReportState.sec4BaseData[idx].injured) || 0) + inj;
                 }
             });
 
-            // บวกสะสมเข้าข้อ 5 (รวมทุกพื้นที่)
             cmdReportState.sec5BaseDead = (Number(cmdReportState.sec5BaseDead) || 0) + s3DeadSum;
             cmdReportState.sec5BaseInjured = (Number(cmdReportState.sec5BaseInjured) || 0) + s3InjSum;
 
-            // บวกสะสมเข้าข้อ 6 (เฉพาะพื้นที่ พระตำหนักราชฤทธิ์รุ่งโรจน์ index 0)
             const raj3 = cmdReportState.sec3Data[0] || { dead: 0, injured: 0 };
             cmdReportState.sec6BaseDead = (Number(cmdReportState.sec6BaseDead) || 0) + (Number(raj3.dead) || 0);
             cmdReportState.sec6BaseInjured = (Number(cmdReportState.sec6BaseInjured) || 0) + (Number(raj3.injured) || 0);
 
-            // รีเซ็ตจำนวนในหัวข้อ 3 เป็น 0 ทุกช่อง
             cmdReportState.sec3Data = cmdReportState.sec3Data.map(r => ({
                 area: r.area,
                 dead: '0',
@@ -1484,10 +1825,10 @@
             cmdReportState.sec5EndDate = nextStr;
             cmdReportState.sec6EndDate = nextStr;
             saveCmdReportState();
+            showStatusPopup('ขึ้นวันถัดไปเรียบร้อย', 'ทบยอดสะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0 แล้ว', 'success');
             render();
         }
 
-        // สร้างแถวปฏิทินภาษาไทย + ช่องเลือกเวลา (07.00 น. / 19.00 น. + ปุ่มแก้ไขเป็นเวลาอื่นๆ)
         function renderThaiDateTimeRow(label, dateFieldKey, timeFieldKey, customFlagKey) {
             const dateVal = cmdReportState[dateFieldKey];
             const timeVal = cmdReportState[timeFieldKey];
@@ -1497,7 +1838,6 @@
             return `
                 <div class="bg-gray-50 p-3 rounded-xl border space-y-2.5">
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-                        <!-- ปฏิทินภาษาไทย -->
                         <div class="sm:col-span-6">
                             <label class="block text-xs font-bold text-navy-900 mb-1">${label}</label>
                             <button type="button" onclick="toggleThaiCalPicker('${dateFieldKey}')"
@@ -1507,7 +1847,6 @@
                             </button>
                         </div>
 
-                        <!-- ช่องเลือกเวลา 07.00 น. / 19.00 น. + ปุ่มแก้ไขเวลาอื่นๆ -->
                         <div class="sm:col-span-6">
                             <label class="block text-xs font-bold text-navy-900 mb-1">เลือกเวลา</label>
                             <div class="flex items-center gap-1.5">
@@ -1556,7 +1895,6 @@
                 <option value="${p.id}">${p.rank}${p.firstName} ${p.lastName}</option>
             `).join('');
 
-            // แถวกรอกข้อมูลข้อ 3 (ผลการปฏิบัติประจำวัน)
             const renderSec3Inputs = () => st.sec3Data.map((row, idx) => `
                 <div class="grid grid-cols-12 gap-2 items-center py-2 border-b border-gray-100 text-xs sm:text-sm">
                     <div class="col-span-5 sm:col-span-6 font-medium text-navy-900">- พื้นที่ ${row.area}</div>
@@ -1572,7 +1910,6 @@
                 </div>
             `).join('');
 
-            // แถวแสดงยอดสะสมข้อ 4 (ฐานสะสม + ยอดข้อ 3 วันนี้ อัตโนมัติ)
             const renderSec4AccumulatedRows = () => st.sec4BaseData.map((baseRow, idx) => {
                 const addDead = Number(st.sec3Data[idx]?.dead) || 0;
                 const addInj = Number(st.sec3Data[idx]?.injured) || 0;
@@ -1626,9 +1963,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- ฟอร์มกรอกข้อมูลฝั่งซ้าย -->
                     <div class="lg:col-span-7 space-y-6">
-                        <!-- หัวเรื่องและข้อ 1-2 -->
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-bold text-navy-900 text-sm">ประจำวันที่ (หัวรายงาน)</span>
@@ -1650,7 +1985,6 @@
                             </div>
                         </div>
 
-                        <!-- ข้อ 3: ผลการปฏิบัติประจำวัน -->
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-bold text-navy-900 text-sm sm:text-base">3. ผลการปฏิบัติประจำวัน</h3>
@@ -1670,7 +2004,6 @@
                             ${renderSec3Inputs()}
                         </div>
 
-                        <!-- ข้อ 4: ผลการปฏิบัติตั้งแต่ 17 ต.ค.68 ตั้งแต่เวลา 08.00 น. -->
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
                             <h3 class="font-bold text-navy-900 text-sm sm:text-base">4. ผลการปฏิบัติตั้งแต่ 17 ต.ค.68 ตั้งแต่เวลา 08.00 น.</h3>
                             ${renderThaiDateTimeRow('ถึงวันที่', 'sec4EndDate', 'sec4EndTime', 'sec4EndCustomTime')}
@@ -1684,7 +2017,6 @@
                             ${renderSec4AccumulatedRows()}
                         </div>
 
-                        <!-- ข้อ 5 และ ข้อ 6 -->
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-4">
                             <div class="space-y-3">
                                 <h3 class="font-bold text-navy-900 text-sm sm:text-base">5. ผลการปฏิบัติรวมตั้งแต่วันที่ 17 ส.ค.68 เวลา 15.00 น.</h3>
@@ -1729,7 +2061,6 @@
                             </div>
                         </div>
 
-                        <!-- ข้อ 7 หัวหน้าชุดปฏิบัติ -->
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-4">
                             <h3 class="font-bold text-navy-900 text-sm sm:text-base">7. หัวหน้าชุดปฏิบัติประจำวัน (ดึงข้อมูลจากนายตำรวจ)</h3>
                             
@@ -1785,7 +2116,6 @@
                         </div>
                     </div>
 
-                    <!-- กล่องแสดงข้อความตัวอย่างรายงานฝั่งขวา -->
                     <div class="lg:col-span-5">
                         <div class="glass-card rounded-2xl overflow-hidden border-2 border-[#06C755]/40 sticky top-28">
                             <div class="bg-navy-900 px-4 py-3 text-white flex items-center justify-between">
@@ -1801,7 +2131,6 @@
             `;
         }
 
-        // อัปเดตยอดในข้อ 3 และสะสมเข้าข้อ 4, 5, 6 ทันที
         function updateCmdSec3Val(idx, field, val) {
             cmdReportState.sec3Data[idx][field] = val;
             const row = cmdReportState.sec3Data[idx];
@@ -1811,7 +2140,6 @@
             const s3SumEl = document.getElementById(`sec3_row_sum_${idx}`);
             if (s3SumEl) s3SumEl.innerText = (d + inj).toLocaleString();
 
-            // อัปเดตช่องแสดงผลข้อ 4 แถวเดียวกัน
             const base4 = cmdReportState.sec4BaseData[idx];
             const s4Dead = (Number(base4.dead) || 0) + d;
             const s4Inj = (Number(base4.injured) || 0) + inj;
@@ -1822,7 +2150,6 @@
             if (s4InjInput) s4InjInput.value = s4Inj;
             if (s4SumEl) s4SumEl.innerText = (s4Dead + s4Inj).toLocaleString();
 
-            // อัปเดตช่องแสดงผลข้อ 5 รวมทั้งหมด
             const totalS3Dead = cmdReportState.sec3Data.reduce((a, b) => a + (Number(b.dead) || 0), 0);
             const totalS3Inj = cmdReportState.sec3Data.reduce((a, b) => a + (Number(b.injured) || 0), 0);
             const s5DeadInput = document.getElementById('cmd_s5_dead_total');
@@ -1830,7 +2157,6 @@
             if (s5DeadInput) s5DeadInput.value = (Number(cmdReportState.sec5BaseDead) || 0) + totalS3Dead;
             if (s5InjInput) s5InjInput.value = (Number(cmdReportState.sec5BaseInjured) || 0) + totalS3Inj;
 
-            // อัปเดตช่องแสดงผลข้อ 6 (พระตำหนักราชฤทธิ์รุ่งโรจน์ index 0)
             if (idx === 0) {
                 const s6DeadInput = document.getElementById('cmd_s6_dead_total');
                 const s6InjInput = document.getElementById('cmd_s6_inj_total');
@@ -1895,7 +2221,6 @@
             const st = cmdReportState;
             const fmtNum = (n) => Number(n || 0).toLocaleString();
 
-            // คำนวณข้อ 3 (ผลการปฏิบัติประจำวัน)
             let s3DeadTotal = 0, s3InjTotal = 0;
             const s3Lines = st.sec3Data.map(r => {
                 const d = Number(r.dead) || 0;
@@ -1908,7 +2233,6 @@
                 return `- พื้นที่ ${r.area}\nตาย ${dStr} ตัว, บาดเจ็บ ${iStr} ตัว (รวมยิงได้ ${tStr} ตัว)`;
             }).join('\n');
 
-            // คำนวณข้อ 4 (ยอดสะสมฐาน + ยอดข้อ 3)
             let s4DeadTotal = 0, s4InjTotal = 0;
             const s4Lines = st.sec4BaseData.map((baseRow, idx) => {
                 const d = (Number(baseRow.dead) || 0) + (Number(st.sec3Data[idx]?.dead) || 0);
@@ -1918,11 +2242,9 @@
                 return `- พื้นที่ ${baseRow.area}\nตาย ${fmtNum(d)} ตัว, บาดเจ็บ ${fmtNum(inj)} ตัว (รวมยิงได้ ${fmtNum(d + inj)} ตัว)`;
             }).join('\n');
 
-            // ข้อ 5: ผลรวมสะสม + ยอดเพิ่มในข้อ 3
             const s5Dead = (Number(st.sec5BaseDead) || 0) + s3DeadTotal;
             const s5Inj = (Number(st.sec5BaseInjured) || 0) + s3InjTotal;
 
-            // ข้อ 6: ผลรวมสะสมพื้นที่พระตำหนักราชฤทธิ์รุ่งโรจน์ + ยอดเพิ่มของพระตำหนักราชฤทธิ์รุ่งโรจน์ในข้อ 3
             const raj3 = st.sec3Data[0] || { dead: 0, injured: 0 };
             const s6Dead = (Number(st.sec6BaseDead) || 0) + (Number(raj3.dead) || 0);
             const s6Inj = (Number(st.sec6BaseInjured) || 0) + (Number(raj3.injured) || 0);
@@ -1974,7 +2296,7 @@ ${st.leader2Name}
 
         function copyTextToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('คัดลอกข้อความรายงานเรียบร้อยแล้ว สามารถนำไปวางใน LINE ได้ทันทีครับ');
+                showStatusPopup('คัดลอกข้อความเรียบร้อย', 'สามารถนำไปวางใน LINE ได้ทันที', 'success', 1800);
             });
         }
 
@@ -1988,7 +2310,7 @@ ${st.leader2Name}
             ]);
 
             const cards = db.missions.map(m => `
-                <div class="glass-card gold-border-top rounded-2xl p-6 hover:shadow-lg transition flex flex-col justify-between">
+                <div id="mission-card-${m.id}" class="glass-card gold-border-top rounded-2xl p-6 hover:shadow-lg transition flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-3">
                             <span class="px-3 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-semibold">
@@ -2119,11 +2441,11 @@ ${st.leader2Name}
 
             const menus = [
                 { id: '4.1', title: 'ข้อมูลนายตำรวจ', count: `${officerCount} นาย`, desc: 'ทำเนียบชั้นสัญญาบัตร ยศ ชื่อ-สกุล ตำแหน่ง เบอร์โทรศัพท์', icon: 'fa-user-tie', action: "navigate('personnel_list', { filter: 'officer', title: 'ข้อมูลนายตำรวจ' })" },
-                { id: '4.2', title: 'ข้อมูลกำลังพลทั้งหมด', count: `${totalCount} นาย`, desc: 'รายชื่อกำลังพลทุกนายในสังกัดหน่วยปฏิบัติการ พร้อมเบอร์โทร', icon: 'fa-users', action: "navigate('personnel_list', { filter: 'all', title: 'ข้อมูลกำลังพลทั้งหมด' })" },
+                { id: '4.2', title: 'ข้อมูลกำลังพลทั้งหมด', count: `${totalCount} นาย`, desc: 'รายชื่อกำลังพลทุกนายในสังกัดหน่วยปฏิบัติการ พร้อมรูปภาพและเบอร์โทร', icon: 'fa-users', action: "navigate('personnel_list', { filter: 'all', title: 'ข้อมูลกำลังพลทั้งหมด' })" },
                 { id: '4.3', title: 'ข้อมูลกำลังพล ทีม A', count: `${teamACount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ A', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'A', title: 'ข้อมูลกำลังพล ทีม A' })" },
                 { id: '4.4', title: 'ข้อมูลกำลังพล ทีม B', count: `${teamBCount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ B', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'B', title: 'ข้อมูลกำลังพล ทีม B' })" },
                 { id: '4.5', title: 'ข้อมูลกำลังพล ทีม C', count: `${teamCCount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ C', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'C', title: 'ข้อมูลกำลังพล ทีม C' })" },
-                { id: '4.6', title: 'แผนภาพสายการบังคับบัญชา', count: '5 ระดับ', desc: 'ผังโครงสร้าง 5 ระดับ ส่งออก JPEG / PDF และแชร์ทาง LINE', icon: 'fa-sitemap', action: "navigate('personnel_chart')" }
+                { id: '4.6', title: 'แผนภาพสายการบังคับบัญชา', count: '5 ระดับ', desc: 'ผังโครงสร้าง 5 ระดับ ย่อ-ขยายอิสระ ส่งออก JPEG / PDF และแชร์ทาง LINE', icon: 'fa-sitemap', action: "navigate('personnel_chart')" }
             ];
 
             container.innerHTML = `
@@ -2167,7 +2489,7 @@ ${st.leader2Name}
             const rows = list.map(p => {
                 const imgSrc = p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.firstName || 'P')}&background=0a1128&color=c5a059`;
                 return `
-                    <tr class="border-b hover:bg-gray-50/90 transition">
+                    <tr id="person-row-${p.id}" class="border-b hover:bg-gray-50/90 transition">
                         <td class="px-4 py-3">
                             <img src="${imgSrc}" onerror="this.src='https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059'" class="w-12 h-12 rounded-full object-cover border-2 border-gold-500 shadow-sm">
                         </td>
@@ -2239,13 +2561,15 @@ ${st.leader2Name}
         }
 
         function removeFromTeam(id) {
-            if (!confirm('นำกำลังพลนายนี้ออกจากสังกัดทีมนี้ใช่หรือไม่?')) return;
-            const p = db.personnel.find(x => x.id === id);
-            if (p) {
-                p.team = 'กองบัญชาการ';
-                saveDB();
-                render();
-            }
+            showConfirmPopup('นำกำลังพลออกจากทีม', 'ยืนยันการนำกำลังพลนายนี้ออกจากสังกัดทีมนี้ใช่หรือไม่?', () => {
+                const p = db.personnel.find(x => x.id === id);
+                if (p) {
+                    p.team = 'กองบัญชาการ';
+                    saveDB();
+                    render();
+                    showStatusPopup('นำออกจากทีมเรียบร้อย', 'ย้ายกำลังพลกลับไปยังกองบัญชาการแล้ว', 'edit');
+                }
+            });
         }
 
         function openPullPersonnelToTeamModal(targetTeam) {
@@ -2284,8 +2608,93 @@ ${st.leader2Name}
         }
 
         // ==========================================
-        // 3.4 5-TIER COMMAND HIERARCHY
+        // 3.4 5-TIER COMMAND HIERARCHY + FREE MOBILE/IPAD ZOOM & PAN (ข้อ 4)
         // ==========================================
+        function setOrgChartZoom(newZoom) {
+            orgChartZoom = Math.max(0.35, Math.min(2.2, Number(newZoom.toFixed(2))));
+            const canvas = document.getElementById('orgChartCanvas');
+            const label = document.getElementById('orgZoomPercentLabel');
+            if (canvas) {
+                canvas.style.transform = `translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom})`;
+            }
+            if (label) {
+                label.innerText = `${Math.round(orgChartZoom * 100)}%`;
+            }
+            setTimeout(drawOrgConnectorLines, 40);
+        }
+
+        function stepOrgChartZoom(delta) {
+            setOrgChartZoom(orgChartZoom + delta);
+        }
+
+        function fitOrgChartToViewport() {
+            const viewport = document.getElementById('orgChartViewport');
+            const canvas = document.getElementById('orgChartCanvas');
+            if (!viewport || !canvas) return;
+            orgChartPan = { x: 0, y: 0 };
+            const vw = viewport.clientWidth - 24;
+            const cw = 980;
+            const fitScale = Math.min(1, Math.max(0.38, vw / cw));
+            setOrgChartZoom(fitScale);
+            viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        }
+
+        function resetOrgChartZoom() {
+            orgChartPan = { x: 0, y: 0 };
+            setOrgChartZoom(1);
+            const viewport = document.getElementById('orgChartViewport');
+            if (viewport) viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        }
+
+        function setupOrgChartTouchGestures() {
+            const viewport = document.getElementById('orgChartViewport');
+            const canvas = document.getElementById('orgChartCanvas');
+            if (!viewport || !canvas) return;
+
+            let initialPinchDist = 0;
+            let initialScale = orgChartZoom;
+            let isDragging = false;
+            let startX = 0, startY = 0;
+            let startPanX = 0, startPanY = 0;
+
+            const getDistance = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    initialPinchDist = getDistance(e.touches[0], e.touches[1]);
+                    initialScale = orgChartZoom;
+                    isDragging = false;
+                } else if (e.touches.length === 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    startPanX = orgChartPan.x;
+                    startPanY = orgChartPan.y;
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && initialPinchDist > 0) {
+                    e.preventDefault();
+                    const currentDist = getDistance(e.touches[0], e.touches[1]);
+                    const ratio = currentDist / initialPinchDist;
+                    setOrgChartZoom(initialScale * ratio);
+                } else if (e.touches.length === 1 && isDragging) {
+                    const dx = e.touches[0].clientX - startX;
+                    const dy = e.touches[0].clientY - startY;
+                    orgChartPan.x = startPanX + dx;
+                    orgChartPan.y = startPanY + dy;
+                    canvas.style.transform = `translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom})`;
+                }
+            }, { passive: false });
+
+            viewport.addEventListener('touchend', () => {
+                initialPinchDist = 0;
+                isDragging = false;
+                drawOrgConnectorLines();
+            });
+        }
+
         function renderPersonnelChart(container) {
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
@@ -2293,11 +2702,16 @@ ${st.leader2Name}
                 { label: '4.6 แผนภาพสายการบังคับบัญชา' }
             ]);
 
+            // ปรับขนาดอัตโนมัติให้พอดีจอเมื่อเปิดบนมือถือหรือไอแพตครั้งแรก
+            if (window.innerWidth < 1024 && orgChartZoom === 1 && orgChartPan.x === 0 && orgChartPan.y === 0) {
+                orgChartZoom = Math.max(0.42, Number(((window.innerWidth - 40) / 980).toFixed(2)));
+            }
+
             const oh = db.orgHierarchy;
 
             const renderNodeCard = (node, rowKey, teamKey = null) => `
                 <div id="org-node-${node.id}" class="org-node-card w-48 sm:w-52 bg-white border-2 border-navy-900/20 rounded-2xl p-3.5 text-center shadow-md group">
-                    <div class="no-export absolute top-1.5 right-1.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition flex space-x-1 z-30">
+                    <div class="no-export absolute top-1.5 right-1.5 opacity-95 sm:opacity-0 sm:group-hover:opacity-100 transition flex space-x-1 z-30">
                         <button onclick="openHierarchyNodeModal('${rowKey}', ${teamKey ? `'${teamKey}'` : 'null'}, '${node.id}')" class="w-6 h-6 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-[11px] flex items-center justify-center shadow-sm" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteHierarchyNode('${rowKey}', ${teamKey ? `'${teamKey}'` : 'null'}, '${node.id}')" class="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-700 text-[11px] flex items-center justify-center shadow-sm" title="ลบ"><i class="fa-solid fa-xmark"></i></button>
                     </div>
@@ -2374,17 +2788,17 @@ ${st.leader2Name}
             };
 
             container.innerHTML = `
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">แผนภาพสายการบังคับบัญชา (5 ระดับ)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">เส้นเชื่อมโยงแตะขอบกรอบข้อมูลพอดี สามารถเพิ่มข้อมูลแนวนอน/แนวตั้ง และส่งออกเป็น JPEG / PDF แชร์ทาง LINE</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">ใช้นิ้วจีบย่อ-ขยาย หรือเลื่อนดูได้อย่างอิสระบนโทรศัพท์และไอแพต พร้อมส่งออก JPEG / PDF</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <button onclick="refreshOrgChart()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-100 text-navy-900 border border-gray-300 font-semibold text-xs sm:text-sm shadow-xs flex items-center">
-                            <i class="fa-solid fa-arrows-rotate mr-1.5 text-gold-600"></i> รีเฟรชแผนภาพ
+                            <i class="fa-solid fa-arrows-rotate mr-1.5 text-gold-600"></i> รีเฟรช
                         </button>
                         <button onclick="openExportOrgChartModal()" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm shadow flex items-center">
-                            <i class="fa-solid fa-file-export mr-1.5"></i> ส่งออกข้อมูล (JPEG / PDF / LINE)
+                            <i class="fa-solid fa-file-export mr-1.5"></i> ส่งออก (JPEG / PDF / LINE)
                         </button>
                         <button onclick="openAddLinkModal()" class="px-3 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-navy-950 font-semibold text-xs shadow">
                             <i class="fa-solid fa-diagram-project mr-1"></i> + เส้นโยง
@@ -2395,8 +2809,33 @@ ${st.leader2Name}
                     </div>
                 </div>
 
-                <div id="orgChartViewport" class="glass-card rounded-2xl border-2 border-gold-500/30 overflow-x-auto p-4 sm:p-8 relative">
-                    <div id="orgChartCanvas" style="transform: scale(${orgChartZoom}); transform-origin: top center; transition: transform 0.2s ease;" class="relative min-w-[960px] flex flex-col items-center space-y-12 pb-8 bg-white/60 rounded-xl p-4">
+                <!-- แถบควบคุมการย่อ-ขยายอิสระสำหรับโทรศัพท์ / ไอแพต / เดสก์ท็อป -->
+                <div class="glass-card rounded-2xl p-2.5 sm:p-3 mb-4 flex flex-wrap items-center justify-between gap-2 border border-gold-500/30">
+                    <div class="flex items-center gap-1.5 text-xs text-navy-900 font-medium">
+                        <i class="fa-solid fa-hand-pointer text-gold-600"></i>
+                        <span>ควบคุมมุมมองแผนผัง (จีบนิ้วย่อ-ขยาย หรือเลื่อนอิสระได้):</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" onclick="stepOrgChartZoom(-0.15)" class="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-navy-900 text-xs font-bold border" title="ย่อขนาด">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i> ย่อ
+                        </button>
+                        <span id="orgZoomPercentLabel" class="px-2.5 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs font-bold min-w-[52px] text-center">
+                            ${Math.round(orgChartZoom * 100)}%
+                        </span>
+                        <button type="button" onclick="stepOrgChartZoom(0.15)" class="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-navy-900 text-xs font-bold border" title="ขยายขนาด">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> ขยาย
+                        </button>
+                        <button type="button" onclick="fitOrgChartToViewport()" class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300">
+                            <i class="fa-solid fa-compress mr-1"></i> พอดีจอ
+                        </button>
+                        <button type="button" onclick="resetOrgChartZoom()" class="px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 text-xs font-semibold">
+                            100%
+                        </button>
+                    </div>
+                </div>
+
+                <div id="orgChartViewport" class="glass-card rounded-2xl border-2 border-gold-500/30 overflow-auto p-3 sm:p-8 relative max-h-[78vh]">
+                    <div id="orgChartCanvas" style="transform: translate(${orgChartPan.x}px, ${orgChartPan.y}px) scale(${orgChartZoom}); transform-origin: top left; transition: transform 0.12s ease-out;" class="relative w-[960px] flex flex-col items-center space-y-12 pb-8 bg-white/60 rounded-xl p-4">
                         
                         <div class="text-center border-b-2 border-gold-500 pb-3 px-8 relative z-20 bg-white/90 rounded-xl shadow-xs">
                             <h3 class="text-lg font-bold text-navy-900">แผนภาพสายการบังคับบัญชา หน่วยปฏิบัติการพิเศษหนุมาน</h3>
@@ -2437,6 +2876,7 @@ ${st.leader2Name}
                 </div>
             `;
 
+            setupOrgChartTouchGestures();
             requestAnimationFrame(() => setTimeout(drawOrgConnectorLines, 80));
         }
 
@@ -2444,6 +2884,7 @@ ${st.leader2Name}
             syncPersonnelToOrgChart();
             render();
             setTimeout(drawOrgConnectorLines, 100);
+            showStatusPopup('รีเฟรชแผนภาพเรียบร้อย', 'อัปเดตข้อมูลและเส้นสายการบังคับบัญชาล่าสุดแล้ว', 'success', 1500);
         }
 
         function drawOrgConnectorLines() {
@@ -2505,7 +2946,12 @@ ${st.leader2Name}
             const canvasEl = document.getElementById('orgChartCanvas');
             if (!canvasEl) return;
 
+            const prevTransform = canvasEl.style.transform;
+            canvasEl.style.transform = 'translate(0px, 0px) scale(1)';
+            const savedZoom = orgChartZoom;
+            orgChartZoom = 1;
             drawOrgConnectorLines();
+
             const noExportEls = canvasEl.querySelectorAll('.no-export');
             noExportEls.forEach(el => el.style.visibility = 'hidden');
 
@@ -2516,6 +2962,9 @@ ${st.leader2Name}
                     backgroundColor: '#f8fafc'
                 });
                 noExportEls.forEach(el => el.style.visibility = 'visible');
+                orgChartZoom = savedZoom;
+                canvasEl.style.transform = prevTransform;
+                drawOrgConnectorLines();
 
                 exportedCanvasDataUrl = renderedCanvas.toDataURL('image/jpeg', 0.92);
 
@@ -2540,7 +2989,10 @@ ${st.leader2Name}
                 document.getElementById('modalSaveBtn').classList.add('hidden');
             } catch (err) {
                 noExportEls.forEach(el => el.style.visibility = 'visible');
-                alert('เกิดข้อผิดพลาดในการสร้างภาพตัวอย่าง: ' + err.message);
+                orgChartZoom = savedZoom;
+                canvasEl.style.transform = prevTransform;
+                drawOrgConnectorLines();
+                showStatusPopup('เกิดข้อผิดพลาด', err.message, 'delete');
             }
         }
 
@@ -2550,6 +3002,7 @@ ${st.leader2Name}
             a.href = exportedCanvasDataUrl;
             a.download = `แผนภาพสายการบังคับบัญชา_${new Date().toISOString().slice(0,10)}.jpg`;
             a.click();
+            showStatusPopup('ดาวน์โหลด JPEG เรียบร้อย', 'บันทึกไฟล์รูปภาพลงในเครื่องของคุณแล้ว', 'success');
         }
 
         function downloadOrgChartPDF() {
@@ -2561,6 +3014,7 @@ ${st.leader2Name}
                 const pdf = new jsPDF(orientation, 'px', [img.width, img.height]);
                 pdf.addImage(exportedCanvasDataUrl, 'JPEG', 0, 0, img.width, img.height);
                 pdf.save(`แผนภาพสายการบังคับบัญชา_${new Date().toISOString().slice(0,10)}.pdf`);
+                showStatusPopup('ดาวน์โหลด PDF เรียบร้อย', 'บันทึกไฟล์เอกสาร PDF ลงในเครื่องของคุณแล้ว', 'success');
             };
             img.src = exportedCanvasDataUrl;
         }
@@ -2632,12 +3086,13 @@ ${st.leader2Name}
                     <input type="hidden" id="f_personnelId" value="${node.personnelId || ''}">
                 </div>
 
-                <div class="flex items-center space-x-4 mb-4">
-                    <img id="oh_preview" src="${node.photo || 'https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059'}" class="w-20 h-20 rounded-full object-cover border-2 border-gold-500 shadow">
-                    <div>
+                <div class="flex items-center space-x-4 mb-4 bg-gray-50 p-3 rounded-xl border">
+                    <img id="oh_preview" src="${node.photo || 'https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059'}" class="w-20 h-20 rounded-full object-cover border-2 border-gold-500 shadow shrink-0">
+                    <div class="flex-grow">
                         <label class="block text-xs font-medium text-gray-600 mb-1">รูปภาพ (ดึงอัตโนมัติ หรืออัปโหลดใหม่)</label>
-                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'oh_preview')" class="text-xs">
+                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'oh_preview', 'ohUploadProgress')" class="text-xs w-full">
                         <input type="hidden" id="f_photo" value="${node.photo || ''}">
+                        <div id="ohUploadProgress" class="hidden mt-2"></div>
                     </div>
                 </div>
 
@@ -2660,7 +3115,7 @@ ${st.leader2Name}
 
         function applySelectedPersonnelToNode() {
             const pid = document.getElementById('pullPersonnelSelect').value;
-            if (!pid) return alert('กรุณาเลือกรายชื่อกำลังพลจากรายการก่อนครับ');
+            if (!pid) return showStatusPopup('กรุณาเลือกรายชื่อ', 'โปรดเลือกรายชื่อกำลังพลจากรายการก่อนครับ', 'edit', 1800);
             const p = db.personnel.find(x => x.id === pid);
             if (!p) return;
 
@@ -2671,16 +3126,19 @@ ${st.leader2Name}
             const photoUrl = p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.firstName)}&background=0a1128&color=c5a059`;
             document.getElementById('f_photo').value = photoUrl;
             document.getElementById('oh_preview').src = photoUrl;
+            showStatusPopup('ดึงข้อมูลเรียบร้อย', `นำเข้าข้อมูลของ ${p.rank}${p.firstName} ${p.lastName} แล้ว`, 'success', 1500);
         }
 
         function deleteHierarchyNode(rowKey, teamKey, nodeId) {
-            if (!confirm('ลบตำแหน่งนี้ออกจากแผนภาพสายการบังคับบัญชาใช่หรือไม่?')) return;
-            const oh = db.orgHierarchy;
-            if (teamKey) oh[rowKey][teamKey] = oh[rowKey][teamKey].filter(x => x.id !== nodeId);
-            else oh[rowKey] = oh[rowKey].filter(x => x.id !== nodeId);
-            oh.links = oh.links.filter(l => l.from !== nodeId && l.to !== nodeId);
-            saveDB();
-            render();
+            showConfirmPopup('ลบตำแหน่งออกจากแผนผัง', 'ยืนยันการลบตำแหน่งนี้ออกจากแผนภาพสายการบังคับบัญชาใช่หรือไม่?', () => {
+                const oh = db.orgHierarchy;
+                if (teamKey) oh[rowKey][teamKey] = oh[rowKey][teamKey].filter(x => x.id !== nodeId);
+                else oh[rowKey] = oh[rowKey].filter(x => x.id !== nodeId);
+                oh.links = oh.links.filter(l => l.from !== nodeId && l.to !== nodeId);
+                saveDB();
+                render();
+                showStatusPopup('ลบเรียบร้อย', 'ลบตำแหน่งออกจากแผนภาพสายการบังคับบัญชาแล้ว', 'delete');
+            });
         }
 
         function openAddLinkModal() {
@@ -2747,10 +3205,11 @@ ${st.leader2Name}
             closeModal();
             document.getElementById('modalSaveBtn').classList.remove('hidden');
             render();
+            showStatusPopup('ลบเส้นเชื่อมโยงเรียบร้อย', 'นำเส้นสายการบังคับบัญชาออกแล้ว', 'delete');
         }
 
         // ==========================================
-        // 3.5 VEHICLES PAGE (เพิ่มภาพไอคอนตารางสถานะรถ)
+        // 3.5 VEHICLES PAGE
         // ==========================================
         function getVehicleTypeIcon(typeStr = '') {
             const t = typeStr.toLowerCase();
@@ -2793,7 +3252,7 @@ ${st.leader2Name}
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         ${grouped[type].map(v => `
-                            <div class="glass-card rounded-2xl overflow-hidden border border-gray-200 hover:border-gold-500 transition flex flex-col">
+                            <div id="vehicle-card-${v.id}" class="glass-card rounded-2xl overflow-hidden border border-gray-200 hover:border-gold-500 transition flex flex-col">
                                 <div class="h-48 bg-gray-100 relative overflow-hidden">
                                     <img src="${v.photo || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle'}" class="w-full h-full object-cover">
                                     <span class="absolute top-3 left-3 w-9 h-9 rounded-xl bg-navy-950/85 text-gold-400 border border-gold-500/40 flex items-center justify-center text-sm shadow">
@@ -2843,7 +3302,6 @@ ${st.leader2Name}
                     </button>
                 </div>
 
-                <!-- แถบภาพไอคอนสรุปสถานะยานพาหนะ -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <div class="glass-card rounded-2xl p-4 flex items-center gap-3.5 border-l-4 border-navy-900">
                         <div class="w-11 h-11 rounded-xl bg-navy-900 text-gold-400 flex items-center justify-center text-lg shrink-0">
@@ -2888,7 +3346,7 @@ ${st.leader2Name}
         }
 
         // ==========================================
-        // 4. MODALS & CRUD OPERATIONS
+        // 4. MODALS, IMAGE UPLOAD WITH PROGRESS BAR & CRUD (ข้อ 1 & ข้อ 2)
         // ==========================================
         function openModal(title, formHtml, context) {
             document.getElementById('modalTitle').innerText = title;
@@ -2905,31 +3363,77 @@ ${st.leader2Name}
         }
 
         function deleteItem(collection, id) {
-            if (!confirm('ยืนยันการลบข้อมูลรายการนี้ใช่หรือไม่?')) return;
-            db[collection] = db[collection].filter(item => item.id !== id);
-            saveDB();
-            render();
+            showConfirmPopup('ยืนยันการลบข้อมูล', 'คุณต้องการลบข้อมูลรายการนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้', () => {
+                db[collection] = db[collection].filter(item => item.id !== id);
+                saveDB();
+                render();
+                showStatusPopup('ลบเรียบร้อย', 'ลบข้อมูลออกจากระบบและฐานข้อมูลแล้ว', 'delete');
+            });
         }
 
-        function handleImageUpload(input, targetInputId, previewId) {
+        // ฟังก์ชันอัปโหลดรูปภาพพร้อมแถบความคืบหน้า (Progress Bar) และป้อปอัพแจ้งเตือน "อัปโหลดรูปภาพเสร็จสิ้น"
+        function handleImageUpload(input, targetInputId, previewId, progressWrapId = null) {
             const file = input.files[0];
             if (!file) return;
+
+            const progWrap = progressWrapId ? document.getElementById(progressWrapId) : null;
+            if (progWrap) {
+                progWrap.classList.remove('hidden');
+                progWrap.innerHTML = `
+                    <div class="flex justify-between text-[11px] font-semibold text-navy-900 mb-1">
+                        <span><i class="fa-solid fa-spinner fa-spin text-gold-600 mr-1"></i>กำลังประมวลผลและอัปโหลดรูปภาพ...</span>
+                        <span id="${progressWrapId}_pct">10%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                        <div id="${progressWrapId}_bar" class="bg-gradient-to-r from-navy-900 via-gold-500 to-emerald-500 h-2.5 rounded-full transition-all duration-200" style="width: 10%"></div>
+                    </div>
+                `;
+            }
+
+            const updateProgress = (pct, labelText = null) => {
+                if (!progWrap) return;
+                const bar = document.getElementById(`${progressWrapId}_bar`);
+                const pctEl = document.getElementById(`${progressWrapId}_pct`);
+                if (bar) bar.style.width = `${pct}%`;
+                if (pctEl) pctEl.innerText = `${pct}%`;
+                if (labelText) {
+                    const spanLabel = progWrap.querySelector('span:first-child');
+                    if (spanLabel) spanLabel.innerHTML = labelText;
+                }
+            };
+
             const reader = new FileReader();
+            reader.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.min(60, Math.round((e.loaded / e.total) * 60));
+                    updateProgress(percent);
+                }
+            };
+
             reader.onload = function(e) {
+                updateProgress(75);
                 const img = new Image();
                 img.onload = function() {
+                    updateProgress(90);
                     const canvas = document.createElement('canvas');
-                    const maxW = 320;
+                    // ปรับขนาดรูปภาพให้คมชัดและขนาดเหมาะสมสำหรับบันทึกลงเซลล์ Google Sheet ได้อย่างสมบูรณ์
+                    const maxW = 240;
                     const scale = Math.min(1, maxW / img.width);
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.72);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.68);
+
                     const hiddenEl = document.getElementById(targetInputId);
                     if (hiddenEl) hiddenEl.value = compressedBase64;
                     const prevEl = document.getElementById(previewId);
                     if (prevEl) prevEl.src = compressedBase64;
+
+                    setTimeout(() => {
+                        updateProgress(100, '<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>อัปโหลดรูปภาพเสร็จสิ้น พร้อมบันทึกลง Google Sheet');
+                        showStatusPopup('อัปโหลดรูปภาพเสร็จสิ้น', 'กรุณากดปุ่ม "บันทึกข้อมูล" เพื่อบันทึกรูปภาพลงฐานข้อมูล Google Sheet', 'upload', 2400);
+                    }, 220);
                 };
                 img.src = e.target.result;
             };
@@ -3060,20 +3564,21 @@ ${st.leader2Name}
                 category: defaultFilter === 'officer' ? 'officer' : 'trooper',
                 team: ['A', 'B', 'C'].includes(defaultFilter) ? defaultFilter : 'A'
             };
-            const previewUrl = p.photo || 'https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059';
 
-            openModal(id ? 'แก้ไขข้อมูลกำลังพล' : 'เพิ่มข้อมูลกำลังพล', `
-                <div class="flex items-center space-x-4 mb-4 bg-gray-50 p-3 rounded-xl border">
-                    <img id="p_preview" src="${previewUrl}" class="w-16 h-16 rounded-full object-cover border-2 border-gold-500 shadow">
-                    <div>
-                        <label class="block text-xs font-bold text-navy-900 mb-1">อัปโหลดรูปภาพกำลังพล (บันทึกถาวร)</label>
-                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'p_preview')" class="text-xs">
+            openModal(id ? 'แก้ไขข้อมูลกำลังพล' : 'เพิ่มข้อมูลกำลังพลใหม่', `
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 bg-gray-50 p-3.5 rounded-xl border">
+                    <img id="p_preview" src="${p.photo || 'https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059'}" class="w-20 h-20 rounded-full object-cover border-2 border-gold-500 shadow shrink-0 mx-auto sm:mx-0">
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold text-navy-900 mb-1">อัปโหลดรูปภาพกำลังพล (บันทึกลง Google Sheet อัตโนมัติ)</label>
+                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'p_preview', 'pUploadProgress')" class="text-xs w-full">
                         <input type="hidden" id="f_photo" value="${p.photo || ''}">
+                        <!-- แถบความคืบหน้าการอัปโหลดรูปภาพ -->
+                        <div id="pUploadProgress" class="hidden mt-2.5 bg-white p-2 rounded-lg border border-gray-200"></div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-1">ประเภท</label>
+                        <label class="block text-sm font-medium mb-1">ประเภทกำลังพล</label>
                         <select id="f_cat" class="w-full border rounded-xl px-3 py-2">
                             <option value="officer" ${p.category === 'officer' ? 'selected' : ''}>นายตำรวจ (สัญญาบัตร)</option>
                             <option value="trooper" ${p.category === 'trooper' ? 'selected' : ''}>กำลังพล (ชั้นประทวน)</option>
@@ -3082,37 +3587,37 @@ ${st.leader2Name}
                     <div>
                         <label class="block text-sm font-medium mb-1">สังกัดทีม</label>
                         <select id="f_team" class="w-full border rounded-xl px-3 py-2">
+                            <option value="กองบัญชาการ" ${p.team === 'กองบัญชาการ' ? 'selected' : ''}>กองบัญชาการ</option>
                             <option value="A" ${p.team === 'A' ? 'selected' : ''}>ทีม A</option>
                             <option value="B" ${p.team === 'B' ? 'selected' : ''}>ทีม B</option>
                             <option value="C" ${p.team === 'C' ? 'selected' : ''}>ทีม C</option>
-                            <option value="กองบัญชาการ" ${p.team === 'กองบัญชาการ' ? 'selected' : ''}>กองบัญชาการ (ส่วนกลาง)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ยศ</label>
-                        <input type="text" id="f_rank" value="${p.rank || ''}" placeholder="เช่น ร.ต.อ. / ด.ต." class="w-full border rounded-xl px-3 py-2">
+                        <input type="text" id="f_rank" value="${p.rank || ''}" placeholder="เช่น พ.ต.ต., ร.ต.อ., จ.ส.ต." class="w-full border rounded-xl px-3 py-2" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ชื่อเล่น</label>
                         <input type="text" id="f_nick" value="${p.nickname || ''}" class="w-full border rounded-xl px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1">ชื่อ</label>
-                        <input type="text" id="f_fname" value="${p.firstName || ''}" class="w-full border rounded-xl px-3 py-2">
+                        <label class="block text-sm font-medium mb-1">ชื่อจริง</label>
+                        <input type="text" id="f_fname" value="${p.firstName || ''}" class="w-full border rounded-xl px-3 py-2" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">นามสกุล</label>
-                        <input type="text" id="f_lname" value="${p.lastName || ''}" class="w-full border rounded-xl px-3 py-2">
+                        <input type="text" id="f_lname" value="${p.lastName || ''}" class="w-full border rounded-xl px-3 py-2" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ตำแหน่ง</label>
-                        <input type="text" id="f_pos" value="${p.position || ''}" class="w-full border rounded-xl px-3 py-2">
+                        <input type="text" id="f_pos" value="${p.position || ''}" placeholder="เช่น สารวัตร, ผบ.หมู่" class="w-full border rounded-xl px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-emerald-700 mb-1"><i class="fa-solid fa-phone mr-1"></i>หมายเลขโทรศัพท์</label>
-                        <input type="tel" id="f_phone" value="${p.phone || ''}" placeholder="เช่น 0812345678" class="w-full border border-emerald-300 rounded-xl px-3 py-2 bg-emerald-50/20">
+                        <label class="block text-sm font-medium mb-1">เบอร์โทรศัพท์</label>
+                        <input type="tel" id="f_phone" value="${p.phone || ''}" placeholder="เช่น 0812345678" class="w-full border rounded-xl px-3 py-2">
                     </div>
-                    <div class="col-span-2">
+                    <div class="sm:col-span-2">
                         <label class="block text-sm font-medium mb-1">หมายเหตุ</label>
                         <input type="text" id="f_note" value="${p.note || ''}" class="w-full border rounded-xl px-3 py-2">
                     </div>
@@ -3121,29 +3626,24 @@ ${st.leader2Name}
         }
 
         function openVehicleModal(id = null) {
-            const v = id ? db.vehicles.find(x => x.id === id) : {};
+            const v = id ? db.vehicles.find(x => x.id === id) : { status: 'พร้อมใช้งาน' };
             openModal(id ? 'แก้ไขข้อมูลยานพาหนะ' : 'เพิ่มยานพาหนะใหม่', `
-                <div class="mb-4">
-                    <img id="v_preview" src="${v.photo || 'https://placehold.co/600x300/0a1128/c5a059?text=Upload+Vehicle+Photo'}" class="w-full h-40 object-cover rounded-xl border mb-2">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">อัปโหลดภาพถ่ายรถ</label>
-                    <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'v_preview')" class="text-xs">
-                    <input type="hidden" id="f_photo" value="${v.photo || ''}">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 bg-gray-50 p-3.5 rounded-xl border">
+                    <img id="v_preview" src="${v.photo || 'https://placehold.co/200x150/0a1128/c5a059?text=Car'}" class="w-28 h-20 rounded-xl object-cover border border-gold-500 shrink-0 mx-auto sm:mx-0">
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold text-navy-900 mb-1">อัปโหลดภาพถ่ายยานพาหนะ</label>
+                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'v_preview', 'vUploadProgress')" class="text-xs w-full">
+                        <input type="hidden" id="f_photo" value="${v.photo || ''}">
+                        <div id="vUploadProgress" class="hidden mt-2 bg-white p-2 rounded-lg border border-gray-200"></div>
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-sm font-medium mb-1">ประเภทรถ</label>
-                        <input type="text" id="f_type" value="${v.type || ''}" placeholder="เช่น รถหุ้มเกราะ, รถกระบะปฏิบัติการ, รถตู้ลำเลียงพล" class="w-full border rounded-xl px-3 py-2" required>
+                        <input type="text" id="f_type" value="${v.type || ''}" placeholder="เช่น รถหุ้มเกราะ, รถกระบะปฏิบัติการ" class="w-full border rounded-xl px-3 py-2" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1">ยี่ห้อ / รุ่นรถ</label>
-                        <input type="text" id="f_brand" value="${v.brand || ''}" class="w-full border rounded-xl px-3 py-2" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">หมายเลขทะเบียนรถ</label>
-                        <input type="text" id="f_plate" value="${v.plate || ''}" class="w-full border rounded-xl px-3 py-2" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">สถานะ</label>
+                        <label class="block text-sm font-medium mb-1">สถานะรถ</label>
                         <select id="f_status" class="w-full border rounded-xl px-3 py-2">
                             <option value="พร้อมใช้งาน" ${v.status === 'พร้อมใช้งาน' ? 'selected' : ''}>พร้อมใช้งาน</option>
                             <option value="ปฏิบัติภารกิจ" ${v.status === 'ปฏิบัติภารกิจ' ? 'selected' : ''}>ปฏิบัติภารกิจ</option>
@@ -3151,7 +3651,15 @@ ${st.leader2Name}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-1">รายละเอียดเพิ่มเติม</label>
+                        <label class="block text-sm font-medium mb-1">ยี่ห้อ / รุ่น</label>
+                        <input type="text" id="f_brand" value="${v.brand || ''}" placeholder="เช่น Toyota Commuter" class="w-full border rounded-xl px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">หมายเลขทะเบียน</label>
+                        <input type="text" id="f_plate" value="${v.plate || ''}" placeholder="เช่น 1นข-9988 กทม." class="w-full border rounded-xl px-3 py-2" required>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium mb-1">หมายเหตุ</label>
                         <input type="text" id="f_note" value="${v.note || ''}" class="w-full border rounded-xl px-3 py-2">
                     </div>
                 </div>
@@ -3159,35 +3667,38 @@ ${st.leader2Name}
         }
 
         function submitModalForm() {
-            const ctx = currentModalContext;
-            if (!ctx) return;
+            if (!currentModalContext) return;
+            const { type, id } = currentModalContext;
+            const isEdit = Boolean(id);
 
-            if (ctx.type === 'dutyHanuman') {
+            if (type === 'dutyHanuman') {
                 const obj = {
-                    id: ctx.id || 'dh_' + Date.now(),
+                    id: id || 'dh' + Date.now(),
                     team: document.getElementById('f_team').value,
                     status: document.getElementById('f_status').value,
                     startDate: document.getElementById('f_start').value,
                     endDate: document.getElementById('f_end').value,
                     note: document.getElementById('f_note').value
                 };
-                if (ctx.id) db.dutyHanuman = db.dutyHanuman.map(x => x.id === ctx.id ? obj : x);
+                if (!obj.startDate || !obj.endDate) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุวันที่ให้ครบถ้วนครับ', 'edit', 1800);
+                if (id) db.dutyHanuman = db.dutyHanuman.map(x => x.id === id ? obj : x);
                 else db.dutyHanuman.push(obj);
             }
-            else if (ctx.type === 'dutyW5') {
+            else if (type === 'dutyW5') {
                 const obj = {
-                    id: ctx.id || 'w5_' + Date.now(),
+                    id: id || 'w' + Date.now(),
                     date: document.getElementById('f_date').value,
                     officer: document.getElementById('f_officer').value,
                     teamMembers: document.getElementById('f_members').value,
                     note: document.getElementById('f_note').value
                 };
-                if (ctx.id) db.dutyW5 = db.dutyW5.map(x => x.id === ctx.id ? obj : x);
+                if (!obj.date || !obj.officer) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุวันที่และนายตำรวจเวรครับ', 'edit', 1800);
+                if (id) db.dutyW5 = db.dutyW5.map(x => x.id === id ? obj : x);
                 else db.dutyW5.push(obj);
             }
-            else if (ctx.type === 'missions') {
+            else if (type === 'missions') {
                 const obj = {
-                    id: ctx.id || 'm_' + Date.now(),
+                    id: id || 'm' + Date.now(),
                     name: document.getElementById('f_name').value,
                     date: document.getElementById('f_date').value,
                     supportUnit: document.getElementById('f_support').value,
@@ -3201,15 +3712,16 @@ ${st.leader2Name}
                     vehiclesUsed: document.getElementById('f_vehicles').value,
                     note: document.getElementById('f_note').value
                 };
-                if (ctx.id) db.missions = db.missions.map(x => x.id === ctx.id ? obj : x);
+                if (!obj.name) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุชื่อภารกิจครับ', 'edit', 1800);
+                if (id) db.missions = db.missions.map(x => x.id === id ? obj : x);
                 else db.missions.push(obj);
             }
-            else if (ctx.type === 'personnel') {
+            else if (type === 'personnel') {
                 const fname = document.getElementById('f_fname').value;
-                const photoVal = document.getElementById('f_photo').value;
+                if (!fname) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุชื่อจริงของกำลังพลครับ', 'edit', 1800);
+                const photoVal = document.getElementById('f_photo').value || `https://ui-avatars.com/api/?name=${encodeURIComponent(fname)}&background=0a1128&color=c5a059&size=150`;
                 const obj = {
-                    id: ctx.id || 'p_' + Date.now(),
-                    photo: photoVal || `https://ui-avatars.com/api/?name=${encodeURIComponent(fname || 'P')}&background=0a1128&color=c5a059`,
+                    id: id || 'p' + Date.now(),
                     category: document.getElementById('f_cat').value,
                     team: document.getElementById('f_team').value,
                     rank: document.getElementById('f_rank').value,
@@ -3217,84 +3729,88 @@ ${st.leader2Name}
                     lastName: document.getElementById('f_lname').value,
                     position: document.getElementById('f_pos').value,
                     nickname: document.getElementById('f_nick').value,
-                    phone: document.getElementById('f_phone').value.trim(),
+                    phone: document.getElementById('f_phone').value,
+                    photo: photoVal,
                     note: document.getElementById('f_note').value
                 };
-                if (ctx.id) db.personnel = db.personnel.map(x => x.id === ctx.id ? obj : x);
+                if (id) db.personnel = db.personnel.map(x => x.id === id ? obj : x);
                 else db.personnel.push(obj);
             }
-            else if (ctx.type === 'pullToTeam') {
+            else if (type === 'pullToTeam') {
                 const checked = Array.from(document.querySelectorAll('input[name="pull_pid"]:checked')).map(el => el.value);
-                if (checked.length === 0) return alert('กรุณาเลือกกำลังพลอย่างน้อย 1 นาย');
-                db.personnel.forEach(p => { if (checked.includes(p.id)) p.team = ctx.targetTeam; });
+                if (checked.length === 0) return showStatusPopup('ยังไม่ได้เลือกรายชื่อ', 'กรุณาเลือกกำลังพลอย่างน้อย 1 นายครับ', 'edit', 1800);
+                db.personnel.forEach(p => {
+                    if (checked.includes(p.id)) p.team = currentModalContext.targetTeam;
+                });
+                saveDB();
+                closeModal();
+                render();
+                showStatusPopup('ดึงข้อมูลเข้าทีมเรียบร้อย', `เพิ่มกำลังพล ${checked.length} นาย เข้าสู่ทีม ${currentModalContext.targetTeam} แล้ว`, 'success');
+                return;
             }
-            else if (ctx.type === 'hierarchyNode') {
-                const name = document.getElementById('f_name').value;
-                if (!name) return alert('กรุณาระบุชื่อหรือดึงข้อมูลกำลังพลก่อนบันทึก');
+            else if (type === 'hierarchyNode') {
+                const { rowKey, teamKey, nodeId } = currentModalContext;
+                const nameVal = document.getElementById('f_name').value;
+                if (!nameVal) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุ ยศ ชื่อ - สกุล ครับ', 'edit', 1800);
+
                 const obj = {
-                    id: ctx.nodeId || 'oh_' + Date.now(),
-                    personnelId: document.getElementById('f_personnelId').value || null,
-                    photo: document.getElementById('f_photo').value || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0a1128&color=c5a059`,
-                    name: name,
+                    id: nodeId || 'oh' + Date.now(),
+                    personnelId: document.getElementById('f_personnelId').value || '',
+                    name: nameVal,
                     position: document.getElementById('f_pos').value,
-                    team: document.getElementById('f_team').value
+                    team: document.getElementById('f_team').value,
+                    photo: document.getElementById('f_photo').value || `https://ui-avatars.com/api/?name=${encodeURIComponent(nameVal)}&background=0a1128&color=c5a059`
                 };
-                const oh = db.orgHierarchy;
-                const targetArr = ctx.teamKey ? oh[ctx.rowKey][ctx.teamKey] : oh[ctx.rowKey];
-                if (ctx.nodeId) {
-                    const idx = targetArr.findIndex(x => x.id === ctx.nodeId);
+
+                const targetArr = teamKey ? db.orgHierarchy[rowKey][teamKey] : db.orgHierarchy[rowKey];
+                if (nodeId) {
+                    const idx = targetArr.findIndex(x => x.id === nodeId);
                     if (idx !== -1) targetArr[idx] = obj;
                 } else {
                     targetArr.push(obj);
-                    if (ctx.addDirection === 'vertical') {
-                        if (ctx.rowKey === 'row2' && oh.row1.length > 0) {
-                            oh.links.push({ id: 'lnk_' + Date.now(), from: oh.row1[0].id, to: obj.id, style: 'solid', label: '' });
-                        } else if (ctx.rowKey === 'row3' && oh.row2.length > 0) {
-                            oh.links.push({ id: 'lnk_' + Date.now(), from: oh.row2[0].id, to: obj.id, style: 'solid', label: '' });
-                        } else if (ctx.rowKey === 'row4' && ctx.teamKey && oh.row3[ctx.teamKey].length > 0) {
-                            oh.links.push({ id: 'lnk_' + Date.now(), from: oh.row3[ctx.teamKey][0].id, to: obj.id, style: 'solid', label: '' });
-                        } else if (ctx.rowKey === 'row5' && ctx.teamKey) {
-                            const r5List = oh.row5[ctx.teamKey];
-                            if (r5List.length > 1) {
-                                oh.links.push({ id: 'lnk_' + Date.now(), from: r5List[r5List.length - 2].id, to: obj.id, style: 'solid', label: '' });
-                            } else if (oh.row4[ctx.teamKey].length > 0) {
-                                oh.links.push({ id: 'lnk_' + Date.now(), from: oh.row4[ctx.teamKey][0].id, to: obj.id, style: 'solid', label: '' });
-                            }
-                        }
-                    }
                 }
             }
-            else if (ctx.type === 'addOrgLink') {
+            else if (type === 'addOrgLink') {
                 const from = document.getElementById('f_link_from').value;
                 const to = document.getElementById('f_link_to').value;
-                if (from === to) return alert('จุดเริ่มต้นและปลายทางต้องไม่ใช่บุคคลเดียวกัน');
+                if (from === to) return showStatusPopup('เลือกตำแหน่งไม่ถูกต้อง', 'จุดเริ่มต้นและปลายทางต้องไม่เป็นตำแหน่งเดียวกันครับ', 'edit', 1800);
                 db.orgHierarchy.links.push({
-                    id: 'lnk_' + Date.now(),
+                    id: 'lnk' + Date.now(),
                     from,
                     to,
                     style: document.getElementById('f_link_style').value,
-                    label: document.getElementById('f_link_label').value.trim()
+                    label: document.getElementById('f_link_label').value
                 });
             }
-            else if (ctx.type === 'vehicles') {
+            else if (type === 'vehicles') {
                 const obj = {
-                    id: ctx.id || 'v_' + Date.now(),
-                    photo: document.getElementById('f_photo').value,
+                    id: id || 'v' + Date.now(),
                     type: document.getElementById('f_type').value,
+                    status: document.getElementById('f_status').value,
                     brand: document.getElementById('f_brand').value,
                     plate: document.getElementById('f_plate').value,
-                    status: document.getElementById('f_status').value,
+                    photo: document.getElementById('f_photo').value,
                     note: document.getElementById('f_note').value
                 };
-                if (ctx.id) db.vehicles = db.vehicles.map(x => x.id === ctx.id ? obj : x);
+                if (!obj.type || !obj.brand) return showStatusPopup('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุประเภทรถและยี่ห้อรถครับ', 'edit', 1800);
+                if (id) db.vehicles = db.vehicles.map(x => x.id === id ? obj : x);
                 else db.vehicles.push(obj);
             }
 
             saveDB();
             closeModal();
             render();
+
+            if (isEdit) {
+                showStatusPopup('แก้ไขเรียบร้อย', 'บันทึกการแก้ไขข้อมูลและซิงค์ลง Google Sheet แล้ว', 'edit');
+            } else {
+                showStatusPopup('บันทึกเรียบร้อย', 'เพิ่มข้อมูลใหม่และซิงค์ลง Google Sheet เรียบร้อยแล้ว', 'success');
+            }
         }
 
+        // ==========================================
+        // 5. GOOGLE SHEET SETTINGS & INIT
+        // ==========================================
         function openSettingsModal() {
             document.getElementById('gasUrlInput').value = GAS_WEB_APP_URL;
             document.getElementById('settingsModal').classList.remove('hidden');
@@ -3303,29 +3819,42 @@ ${st.leader2Name}
             document.getElementById('settingsModal').classList.add('hidden');
         }
         function saveGasUrl() {
-            GAS_WEB_APP_URL = document.getElementById('gasUrlInput').value.trim() || DEFAULT_GAS_URL;
+            GAS_WEB_APP_URL = document.getElementById('gasUrlInput').value.trim();
             localStorage.setItem('hanuman_gas_url', GAS_WEB_APP_URL);
             closeSettingsModal();
-            if (GAS_WEB_APP_URL) syncToGoogleSheets();
+            showStatusPopup('บันทึก URL เรียบร้อย', 'กำลังเชื่อมต่อและดึงข้อมูลล่าสุดจาก Google Sheets...', 'success');
+            if (GAS_WEB_APP_URL) loadFromGoogleSheets(false);
         }
         function resetDemoData() {
-            if (confirm('รีเซ็ตข้อมูลกลับเป็นค่าเริ่มต้น?')) {
+            showConfirmPopup('รีเซ็ตข้อมูลเริ่มต้น', 'ต้องการรีเซ็ตข้อมูลกลับเป็นค่าเริ่มต้นทั้งหมดใช่หรือไม่?', () => {
                 localStorage.removeItem('hanuman_db');
                 localStorage.removeItem('hanuman_cmd_report');
                 db = JSON.parse(JSON.stringify(defaultDB));
                 cmdReportState = JSON.parse(JSON.stringify(defaultCmdReportState));
+                saveDB();
+                saveCmdReportState();
                 closeSettingsModal();
-                render();
-                syncToGoogleSheets();
-            }
+                navigate('home');
+                showStatusPopup('รีเซ็ตเรียบร้อย', 'คืนค่าข้อมูลเริ่มต้นทั้งหมดเรียบร้อยแล้ว', 'success');
+            });
         }
 
-        window.onload = () => {
+        // ปิด Dropdown ค้นหาเมื่อคลิกนอกพื้นที่
+        document.addEventListener('click', (e) => {
+            const searchInput = document.getElementById('globalSearchInput');
+            const resultsBox = document.getElementById('globalSearchResults');
+            if (searchInput && resultsBox && !searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+                resultsBox.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('hanuman_theme') || 'light';
             setAppTheme(savedTheme);
+            syncPersonnelToOrgChart();
             render();
-            if (GAS_WEB_APP_URL) loadFromGoogleSheets();
-        };
+            if (GAS_WEB_APP_URL) loadFromGoogleSheets(false);
+        });
     </script>
 </body>
 </html>
