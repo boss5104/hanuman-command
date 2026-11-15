@@ -384,7 +384,7 @@
         .oc-sizer { position: relative; margin: 0 auto; }
 
         .oc-sheet {
-            position: absolute; top: 0; left: 0; width: 1080px; box-sizing: border-box;
+            position: absolute; top: 0; left: 0; width: 1440px; box-sizing: border-box;
             transform-origin: top left;
             padding: 44px 46px 30px;
             display: flex; flex-direction: column; align-items: center; gap: 62px;
@@ -421,6 +421,21 @@
         .oc-row { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
         .oc-row-body { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
         .oc-row { position: relative; }
+        .oc-frame {
+            position: relative; display: inline-flex; flex-direction: column; align-items: center;
+            min-width: 360px; max-width: 100%; box-sizing: border-box; padding: 34px 28px 24px;
+            border: 2px solid #c5a059; border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff, #fbf6e8);
+            box-shadow: 0 18px 34px -24px rgba(10, 17, 40, 0.55), inset 0 0 0 4px rgba(197, 160, 89, 0.10);
+        }
+        .oc-frame-row1 { background: linear-gradient(180deg, #fffdf7, #f6ecd0); }
+        .oc-frame-tag {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+            font: 600 12px 'Prompt', sans-serif; padding: 5px 20px; border-radius: 999px; letter-spacing: .04em;
+            background: linear-gradient(135deg, #0a1128, #1c335e); color: #f3d98b; border: 1.5px solid #c5a059;
+            box-shadow: 0 6px 12px -6px rgba(5, 9, 20, 0.6);
+        }
+        .oc-frame-add { position: absolute; top: -13px; right: 22px; }
         .oc-ctl { position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
         .oc-chip {
             font: 600 11px 'Prompt', sans-serif; padding: 4px 13px; border-radius: 999px; letter-spacing: .03em;
@@ -440,6 +455,7 @@
             box-shadow: 0 1px 2px rgba(10, 17, 40, 0.06), 0 12px 24px -14px rgba(10, 17, 40, 0.32);
             transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
         }
+        .oc-card { cursor: pointer; }
         .oc-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #a3803b, #f3d98b, #a3803b); }
         .oc-card:hover { transform: translateY(-2px); border-color: #c5a059; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.06), 0 20px 30px -14px rgba(10, 17, 40, 0.38); }
         .oc-photo { width: 76px; height: 76px; margin: 4px auto 0; border-radius: 50%; padding: 3px; background: conic-gradient(from 210deg, #a3803b, #f3d98b, #c5a059, #a3803b); }
@@ -464,7 +480,7 @@
         .oc-act.del { background: #fee2e2; color: #b91c1c; }
         .oc-act.del:hover { background: #fecaca; }
 
-        .oc-teams { position: relative; z-index: 2; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; align-items: stretch; }
+        .oc-teams { position: relative; z-index: 2; width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
         .oc-team {
             position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 22px;
             padding: 0 18px 24px; overflow: hidden; border-radius: 20px; border: 1.5px solid var(--tc);
@@ -474,6 +490,7 @@
         .oc-team-A { --tc: #b45a5a; --tb: #fbeeee; --ta: #8f2f35; }
         .oc-team-B { --tc: #c79a3b; --tb: #fbf3df; --ta: #9a6f12; }
         .oc-team-C { --tc: #4b6aa8; --tb: #e9eff9; --ta: #1c335e; }
+        .oc-team-D { --tc: #3f8f6b; --tb: #e8f5ee; --ta: #1f6b4a; }
         .oc-team-head {
             align-self: stretch; margin: 0 -18px; padding: 15px 10px 13px; text-align: center;
             background: linear-gradient(135deg, var(--ta), #0a1128); border-bottom: 2px solid #c5a059;
@@ -495,6 +512,24 @@
             font: 400 11px 'Sarabun', sans-serif; color: #64748b; border-top: 1px solid #e5dcc3; padding-top: 12px; margin-top: -20px;
         }
 
+        /* ป๊อปอัพข้อมูลกำลังพล */
+        .pp-hero { position: relative; padding: 28px 20px 62px; text-align: center;
+            background: radial-gradient(circle at 20% 0%, rgba(197,160,89,.28), transparent 55%), linear-gradient(160deg, #050914, #122240 70%); }
+        .pp-photo { position: absolute; left: 50%; bottom: -52px; transform: translateX(-50%); width: 112px; height: 112px; border-radius: 50%; padding: 4px;
+            background: conic-gradient(from 210deg, #a3803b, #f3d98b, #c5a059, #a3803b); box-shadow: 0 14px 28px -10px rgba(0,0,0,.55); }
+        .pp-photo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #fff; border: 3px solid #fff; display: block; }
+        .pp-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: #f8fafc; border: 1px solid #e5e7eb; }
+        .pp-ico { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #0a1128; color: #e6c25b; font-size: 13px; }
+        body.theme-dark .pp-row { background: #1e293b; border-color: #334155; }
+        body.theme-eyecare .pp-row { background: #fcf7ed; border-color: #dfd1b8; }
+
+        /* กล่องลากวางไฟล์รูป */
+        .vdrop { border: 2px dashed #c5a059; border-radius: 16px; background: #fffdf7; padding: 18px 14px; text-align: center; cursor: pointer; transition: all .18s ease; }
+        .vdrop:hover, .vdrop.vdrop-over { background: #fdf3d6; border-color: #a3803b; transform: scale(1.01); }
+        .vdrop.vdrop-busy { cursor: progress; opacity: .85; }
+        body.theme-dark .vdrop { background: #1e293b; }
+        body.theme-eyecare .vdrop { background: #fcf7ed; }
+
         /* พิมพ์แผนภาพ */
         @media print {
             @page { size: A3 landscape; margin: 8mm; }
@@ -503,7 +538,7 @@
             body.printing-org .oc-no-print, body.printing-org .no-export { display: none !important; }
             body.printing-org main { max-width: none !important; padding: 0 !important; }
             body.printing-org #orgChartViewport { max-height: none !important; overflow: visible !important; border: 0 !important; box-shadow: none !important; background: #fff !important; padding: 0 !important; }
-            body.printing-org .oc-sizer { width: 1080px !important; height: auto !important; zoom: .86; }
+            body.printing-org .oc-sizer { width: 1440px !important; height: auto !important; zoom: .98; }
             body.printing-org .oc-sheet { position: relative !important; transform: none !important; box-shadow: none !important; }
         }
     </style>
@@ -678,6 +713,11 @@
         </div>
     </div>
 
+    <!-- Personnel Summary Popup (คลิกการ์ดในแผนภาพสายการบังคับบัญชา) -->
+    <div id="personPopupModal" class="fixed inset-0 bg-navy-950/75 backdrop-blur-sm hidden z-[66] flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this) closePersonPopup()">
+        <div id="personPopupBody" class="bg-white rounded-3xl max-w-md w-full shadow-2xl border-2 border-gold-500/50 overflow-hidden animate-pop-in my-4"></div>
+    </div>
+
     <script>
         // ==========================================
         // 0. POPUP NOTIFICATION & CONFIRM SYSTEM
@@ -833,6 +873,28 @@
             'พระราม 5ข'
         ];
 
+        // รายชื่อทีมทั้งหมดในระบบ (เพิ่ม ทีม D)
+        const ORG_TEAMS = ['A', 'B', 'C', 'D'];
+        // แสดงชื่อสังกัด: ค่าว่าง/'-' = ไม่ระบุ (ช่องว่าง)
+        function teamLabelOf(team) {
+            const t = String(team == null ? '' : team).trim();
+            if (!t || t === '-') return '';
+            if (t === 'กองบัญชาการ') return t;
+            return t.startsWith('ทีม') ? t : 'ทีม ' + t;
+        }
+        const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const THAI_MONTHS_FULL = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        // รูปแบบ วว ดด ปป  เช่น 05 ม.ค. 69  (ปี พ.ศ. 2 หลัก)
+        function formatThaiDateShort(dateStr) {
+            if (!dateStr) return '-';
+            const p = String(dateStr).split('-');
+            if (p.length !== 3) return dateStr;
+            const d = String(parseInt(p[2], 10)).padStart(2, '0');
+            const m = parseInt(p[1], 10) - 1;
+            const y = String(parseInt(p[0], 10) + 543).slice(-2);
+            return `${d} ${THAI_MONTHS_SHORT[m]} ${y}`;
+        }
+
         const defaultDB = {
             dutyHanuman: [
                 { id: 'dh1', team: 'A', status: 'High', startDate: '2026-11-01', endDate: '2026-11-10', note: 'เตรียมพร้อมสูงสุด 100%' },
@@ -894,12 +956,14 @@
                 row3: {
                     A: [{ id: 'oh3a', personnelId: 'p_cmd1', photo: 'https://ui-avatars.com/api/?name=วัทน์สิริ&background=122240&color=c5a059&size=150', name: 'พ.ต.ต.วัทน์สิริ อินต๊ะทา', position: 'สารวัตร / หัวหน้าชุด A', team: 'A' }],
                     B: [{ id: 'oh3b', personnelId: 'p_tm5', photo: 'https://ui-avatars.com/api/?name=ชัยวัฒน์&background=122240&color=c5a059&size=150', name: 'จ.ส.ต.ชัยวัฒน์ ธรรมวงค์', position: 'หัวหน้าชุด B', team: 'B' }],
-                    C: [{ id: 'oh3c', personnelId: 'p_tm9', photo: 'https://ui-avatars.com/api/?name=อดิเทพ&background=122240&color=c5a059&size=150', name: 'จ.ส.ต.อดิเทพ ผิวนิล', position: 'หัวหน้าชุด C', team: 'C' }]
+                    C: [{ id: 'oh3c', personnelId: 'p_tm9', photo: 'https://ui-avatars.com/api/?name=อดิเทพ&background=122240&color=c5a059&size=150', name: 'จ.ส.ต.อดิเทพ ผิวนิล', position: 'หัวหน้าชุด C', team: 'C' }],
+                    D: []
                 },
                 row4: {
                     A: [{ id: 'oh4a', personnelId: 'p_cmd2', photo: 'https://ui-avatars.com/api/?name=ณัฏฐ์&background=1c335e&color=e6c25b&size=150', name: 'ร.ต.อ.ณัฏฐ์ ไทยแย้ม', position: 'รองสารวัตรชุด A', team: 'A' }],
                     B: [{ id: 'oh4b', personnelId: 'p_tm6', photo: 'https://ui-avatars.com/api/?name=อนุกูล&background=1c335e&color=e6c25b&size=150', name: 'จ.ส.ต.อนุกูล เอกศิริ', position: 'รองหัวหน้าชุด B', team: 'B' }],
-                    C: [{ id: 'oh4c', personnelId: 'p_tm10', photo: 'https://ui-avatars.com/api/?name=ศรชัย&background=1c335e&color=e6c25b&size=150', name: 'ส.ต.ต.ศรชัย บรรลือทรัพย์', position: 'รองหัวหน้าชุด C', team: 'C' }]
+                    C: [{ id: 'oh4c', personnelId: 'p_tm10', photo: 'https://ui-avatars.com/api/?name=ศรชัย&background=1c335e&color=e6c25b&size=150', name: 'ส.ต.ต.ศรชัย บรรลือทรัพย์', position: 'รองหัวหน้าชุด C', team: 'C' }],
+                    D: []
                 },
                 row5: {
                     A: [
@@ -911,13 +975,15 @@
                     ],
                     C: [
                         { id: 'oh5c1', personnelId: 'p_tm3', photo: 'https://ui-avatars.com/api/?name=ธวัชชัย&background=1c335e&color=fff&size=150', name: 'จ.ส.ต.ธวัชชัย จูประโคน', position: 'ชุดปฏิบัติการ C', team: 'C' }
-                    ]
+                    ],
+                    D: []
                 },
                 links: [
                     { id: 'lnk1', from: 'oh1', to: 'oh2', style: 'solid', label: '' },
                     { id: 'lnk2', from: 'oh2', to: 'oh3a', style: 'solid', label: '' },
                     { id: 'lnk3', from: 'oh2', to: 'oh3b', style: 'solid', label: '' },
                     { id: 'lnk4', from: 'oh2', to: 'oh3c', style: 'solid', label: '' },
+                    { id: 'lnk4d', from: 'oh2', to: 'team:D', style: 'solid', label: '' },
                     { id: 'lnk5', from: 'oh3a', to: 'oh4a', style: 'solid', label: '' },
                     { id: 'lnk6', from: 'oh3b', to: 'oh4b', style: 'solid', label: '' },
                     { id: 'lnk7', from: 'oh3c', to: 'oh4c', style: 'solid', label: '' },
@@ -1057,7 +1123,7 @@
             };
             db.orgHierarchy.row1 = db.orgHierarchy.row1.map(updateNode);
             db.orgHierarchy.row2 = db.orgHierarchy.row2.map(updateNode);
-            ['A', 'B', 'C'].forEach(t => {
+            ORG_TEAMS.forEach(t => {
                 db.orgHierarchy.row3[t] = db.orgHierarchy.row3[t].map(updateNode);
                 db.orgHierarchy.row4[t] = db.orgHierarchy.row4[t].map(updateNode);
                 db.orgHierarchy.row5[t] = db.orgHierarchy.row5[t].map(updateNode);
@@ -1270,7 +1336,7 @@
                 { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: '1. ตารางเวร (เวรหนุมาน / เวร ว.5 / รายงาน ทม. / รายงานผู้บังคับบัญชา)', subtitle: 'ระบบจัดการวงรอบเข้าเวรและรายงานประจำวัน', keywords: 'ตารางเวร เวรหนุมาน high low rest ว.5 รายงาน ทม รายงานผู้บังคับบัญชา', action: () => navigate('duty_menu') },
                 { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: 'รายงาน ทม. (จัดทำรายงานส่งทาง LINE)', subtitle: 'ปฏิทินเลือกวัน พื้นที่ปฏิบัติการ กำลังพล และอาวุธปืน', keywords: 'รายงาน ทม สวนจิตร ราชฤทธิ์ วิมานเมฆ ปืน กระสุน', action: () => navigate('report_tm') },
                 { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: 'รายงานผู้บังคับบัญชา (ผลการปฏิบัติ ชป.นก)', subtitle: 'สรุปยอดสะสมรายพื้นที่และหัวหน้าชุดปฏิบัติ', keywords: 'รายงานผู้บังคับบัญชา ชป.นก ยอดสะสม ผลการปฏิบัติ', action: () => navigate('report_commander') },
-                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: '4.6 แผนภาพสายการบังคับบัญชา (5 ระดับ)', subtitle: 'ผังโครงสร้างสายการบังคับบัญชา ทีม A, B, C', keywords: 'แผนผัง แผนภาพ สายการบังคับบัญชา โครงสร้าง ทีม A B C', action: () => navigate('personnel_chart') }
+                { category: 'เมนูระบบ', badgeColor: 'bg-navy-900 text-gold-400', title: '4.7 แผนภาพสายการบังคับบัญชา (5 ระดับ)', subtitle: 'ผังโครงสร้างสายการบังคับบัญชา ทีม A, B, C, D', keywords: 'แผนผัง แผนภาพ สายการบังคับบัญชา โครงสร้าง ทีม A B C D', action: () => navigate('personnel_chart') }
             );
 
             db.dutyHanuman.forEach(d => {
@@ -1294,7 +1360,7 @@
                     title: `เวร ว.5 วันที่ ${formatThaiDateFullYear(w.date)} — ${w.officer}`,
                     subtitle: `ลูกทีม: ${w.teamMembers || '-'} ${w.note ? '• ' + w.note : ''}`,
                     keywords: `ตารางเวร ว.5 ${w.date} ${formatThaiDateFullYear(w.date)} ${w.officer} ${w.teamMembers || ''} ${w.note || ''}`,
-                    action: () => navigate('duty_w5', { highlightId: `w5-row-${w.id}` })
+                    action: () => { const dp = String(w.date || '').split('-'); navigate('duty_w5', { fMonth: dp.length === 3 ? String(parseInt(dp[1], 10)) : 'all', fYear: dp.length === 3 ? String(parseInt(dp[0], 10)) : 'all', highlightId: `w5-row-${w.id}` }); }
                 });
             });
 
@@ -1312,7 +1378,7 @@
 
             sortPersonnelByRank(db.personnel).forEach(p => {
                 const fullName = `${p.rank || ''} ${p.firstName || ''} ${p.lastName || ''}`.trim();
-                const teamLabel = p.team === 'กองบัญชาการ' ? 'กองบัญชาการ' : `ทีม ${p.team}`;
+                const teamLabel = teamLabelOf(p.team) || 'ไม่ระบุสังกัด';
                 items.push({
                     category: 'ข้อมูลกำลังพล',
                     badgeColor: 'bg-emerald-100 text-emerald-800',
@@ -1489,7 +1555,7 @@
                                 <i class="fa-solid fa-users-viewfinder"></i>
                             </div>
                             <h3 class="text-lg sm:text-xl font-bold text-navy-900 mb-2">3. ตารางสถานะกำลังพล</h3>
-                            <p class="text-gray-500 text-sm font-body leading-relaxed">ทำเนียบนายตำรวจ กำลังพล ทีม A, B, C เบอร์โทรศัพท์ และแผนภาพสายการบังคับบัญชา</p>
+                            <p class="text-gray-500 text-sm font-body leading-relaxed">ทำเนียบนายตำรวจ กำลังพล ทีม A, B, C, D เบอร์โทรศัพท์ และแผนภาพสายการบังคับบัญชา</p>
                         </div>
                         <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-navy-800 font-semibold text-sm">
                             <span>ตรวจสอบกำลังพล (${db.personnel.length})</span>
@@ -1535,7 +1601,7 @@
                         <div>
                             <span class="text-xs font-semibold text-gold-600 uppercase">หัวข้อ 2.1</span>
                             <h3 class="text-lg sm:text-xl font-bold text-navy-900 mt-1">ตารางเวรหนุมาน (High / Low / Rest)</h3>
-                            <p class="text-gray-500 text-xs sm:text-sm mt-1">ปฏิทินแสดงวงรอบการเข้าเวรของทีม A, B และ C แยกตามระดับความพร้อม</p>
+                            <p class="text-gray-500 text-xs sm:text-sm mt-1">ปฏิทินแสดงวงรอบการเข้าเวรของทีม A, B, C และ D แยกตามระดับความพร้อม</p>
                         </div>
                     </div>
 
@@ -1617,7 +1683,7 @@
             container.innerHTML = `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวรหนุมาน (ทีม A / B / C)</h2>
+                        <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวรหนุมาน (ทีม A / B / C / D)</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">แสดงช่วงเวลาเข้าเวร High, Low และ Rest แบบปฏิทินและตารางสรุป</p>
                     </div>
                     <button onclick="openDutyHanumanModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center self-start">
@@ -1687,6 +1753,60 @@
         // ==========================================
         // 3.1 DUTY W.5 + รายงาน ทม. + รายงานผู้บังคับบัญชา
         // ==========================================
+        function getW5Filter() {
+            const now = new Date();
+            const p = currentRoute.params || {};
+            return {
+                fMonth: p.fMonth !== undefined ? String(p.fMonth) : String(now.getMonth() + 1),
+                fYear: p.fYear !== undefined ? String(p.fYear) : String(now.getFullYear()),
+                filterDate: p.filterDate || ''
+            };
+        }
+
+        function setW5Filter(patch) {
+            const cur = getW5Filter();
+            navigate('duty_w5', Object.assign({ fMonth: cur.fMonth, fYear: cur.fYear, filterDate: cur.filterDate }, patch), false);
+        }
+
+        function getW5FilteredList() {
+            const f = getW5Filter();
+            let list = [...db.dutyW5].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+            if (f.filterDate) {
+                list = list.filter(i => i.date === f.filterDate);
+            } else {
+                if (f.fYear !== 'all') list = list.filter(i => String(i.date).startsWith(f.fYear + '-'));
+                if (f.fMonth !== 'all') list = list.filter(i => parseInt(String(i.date).split('-')[1], 10) === parseInt(f.fMonth, 10));
+            }
+            return list;
+        }
+
+        function getW5YearOptions() {
+            const nowY = new Date().getFullYear();
+            const set = new Set([nowY - 1, nowY, nowY + 1, nowY + 2]);
+            db.dutyW5.forEach(w => { const y = parseInt(String(w.date).split('-')[0], 10); if (y) set.add(y); });
+            return Array.from(set).sort((a, b) => a - b);
+        }
+
+        function toggleW5Detail(id) {
+            const row = document.getElementById('w5-detail-' + id);
+            const chev = document.getElementById('w5-chev-' + id);
+            if (!row) return;
+            const hidden = row.classList.toggle('hidden');
+            if (chev) chev.style.transform = hidden ? '' : 'rotate(180deg)';
+        }
+
+        function buildW5ScheduleText() {
+            const f = getW5Filter();
+            const list = getW5FilteredList();
+            let title = 'ตารางเวร ว.5';
+            if (f.filterDate) title += ` วันที่ ${formatThaiDateShort(f.filterDate)}`;
+            else {
+                if (f.fMonth !== 'all') title += ` เดือน${THAI_MONTHS_FULL[parseInt(f.fMonth, 10) - 1]}`;
+                if (f.fYear !== 'all') title += ` พ.ศ. ${parseInt(f.fYear, 10) + 543}`;
+            }
+            return title + '\n' + (list.length ? list.map(i => `${formatThaiDateShort(i.date)}  ${i.officer}`).join('\n') : '(ไม่มีข้อมูล)');
+        }
+
         function renderDutyW5(container) {
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
@@ -1694,33 +1814,72 @@
                 { label: '2.2 ตารางเวร ว.5' }
             ]);
 
-            const filterDate = currentRoute.params.filterDate || '';
-            const filterMonth = currentRoute.params.filterMonth || '';
+            const f = getW5Filter();
+            const filtered = getW5FilteredList();
+            const now = new Date();
+            const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const weekdays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
-            let filtered = db.dutyW5;
-            if (filterDate) filtered = filtered.filter(item => item.date === filterDate);
-            if (filterMonth) filtered = filtered.filter(item => item.date.startsWith(filterMonth));
+            const rows = filtered.map(item => {
+                const dp = String(item.date).split('-');
+                const wd = dp.length === 3 ? weekdays[new Date(parseInt(dp[0], 10), parseInt(dp[1], 10) - 1, parseInt(dp[2], 10)).getDay()] : '';
+                const isToday = item.date === todayIso;
+                const members = String(item.teamMembers || '').split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
+                const memberHtml = members.length
+                    ? members.map(m => `<span class="inline-block px-2.5 py-1 rounded-lg bg-white border border-gold-500/40 text-navy-900 text-xs font-medium mr-1.5 mb-1.5">${escHtml(m)}</span>`).join('')
+                    : '<span class="text-gray-400 text-sm">ยังไม่ได้ระบุ</span>';
+                return `
+                    <tr id="w5-row-${item.id}" onclick="toggleW5Detail('${item.id}')" class="border-b hover:bg-amber-50/50 transition cursor-pointer ${isToday ? 'bg-amber-50/70' : ''}" title="คลิกเพื่อดูข้อมูลทั้งหมด">
+                        <td class="px-5 py-3.5 font-semibold text-navy-900 whitespace-nowrap">
+                            ${formatThaiDateShort(item.date)}
+                            <span class="text-[11px] text-gray-400 font-normal ml-1">${wd}</span>
+                            ${isToday ? '<span class="ml-1.5 px-2 py-0.5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-bold">วันนี้</span>' : ''}
+                        </td>
+                        <td class="px-5 py-3.5 whitespace-nowrap">
+                            <span class="px-3 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs sm:text-sm font-medium">${escHtml(item.officer)}</span>
+                        </td>
+                        <td class="px-3 py-3.5 text-center text-gray-400 w-10"><i id="w5-chev-${item.id}" class="fa-solid fa-chevron-down text-xs transition-transform"></i></td>
+                        <td class="px-5 py-3.5 text-right whitespace-nowrap space-x-2">
+                            <button onclick="event.stopPropagation(); openW5Modal('${item.id}')" class="text-amber-600 hover:text-amber-800" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="event.stopPropagation(); deleteItem('dutyW5', '${item.id}')" class="text-red-600 hover:text-red-800" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr id="w5-detail-${item.id}" class="hidden bg-amber-50/60 border-b">
+                        <td colspan="4" class="px-5 py-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <div class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-calendar-day text-gold-600 mr-1"></i>วัน / เดือน / ปี</div>
+                                    <div class="font-semibold text-navy-900">${formatThaiDateFullYear(item.date)}</div>
+                                    <div class="text-[11px] text-gray-500 mt-2 mb-1"><i class="fa-solid fa-user-shield text-gold-600 mr-1"></i>นายตำรวจเวร</div>
+                                    <div class="font-semibold text-navy-900">${escHtml(item.officer)}</div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <div class="text-[11px] text-gray-500 mb-1.5"><i class="fa-solid fa-users text-gold-600 mr-1"></i>ลูกทีมผู้ปฏิบัติหน้าที่ (${members.length} นาย)</div>
+                                    <div>${memberHtml}</div>
+                                    <div class="text-[11px] text-gray-500 mt-2 mb-1"><i class="fa-solid fa-note-sticky text-gold-600 mr-1"></i>หมายเหตุ</div>
+                                    <div class="text-gray-700">${escHtml(item.note) || '-'}</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
 
-            const rows = filtered.map(item => `
-                <tr id="w5-row-${item.id}" class="border-b hover:bg-gray-50 transition">
-                    <td class="px-5 py-4 font-semibold text-navy-900 whitespace-nowrap">${formatThaiDateFullYear(item.date)}</td>
-                    <td class="px-5 py-4 whitespace-nowrap">
-                        <span class="px-3 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs sm:text-sm font-medium">${item.officer}</span>
-                    </td>
-                    <td class="px-5 py-4 text-sm text-gray-700">${item.teamMembers}</td>
-                    <td class="px-5 py-4 text-sm text-gray-500">${item.note || '-'}</td>
-                    <td class="px-5 py-4 text-right whitespace-nowrap space-x-2">
-                        <button onclick="openW5Modal('${item.id}')" class="text-amber-600 hover:text-amber-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteItem('dutyW5', '${item.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            const monthOpts = ['<option value="all"' + (f.fMonth === 'all' ? ' selected' : '') + '>ทุกเดือน</option>']
+                .concat(THAI_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${String(i + 1) === f.fMonth ? 'selected' : ''}>${m}</option>`)).join('');
+            const yearOpts = ['<option value="all"' + (f.fYear === 'all' ? ' selected' : '') + '>ทุกปี</option>']
+                .concat(getW5YearOptions().map(y => `<option value="${y}" ${String(y) === f.fYear ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`)).join('');
+
+            const filterActive = f.filterDate || f.fMonth !== 'all' || f.fYear !== 'all';
+            const summaryText = f.filterDate
+                ? `แสดงเวรวันที่ ${formatThaiDateFullYear(f.filterDate)}`
+                : `แสดง ${f.fMonth === 'all' ? 'ทุกเดือน' : 'เดือน' + THAI_MONTHS_FULL[parseInt(f.fMonth, 10) - 1]} ${f.fYear === 'all' ? 'ทุกปี' : 'พ.ศ. ' + (parseInt(f.fYear, 10) + 543)}`;
 
             container.innerHTML = `
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวรอำนวยการ ว.5</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">แสดงรายชื่อนายตำรวจเวร ลูกทีมประจำวัน และระบบจัดทำรายงานส่งทาง LINE</p>
+                        <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวร ว.5</h2>
+                        <p class="text-gray-500 text-xs sm:text-sm">แสดงรายชื่อนายตำรวจเวรรายวัน • คลิกที่แถวเพื่อดูลูกทีมและข้อมูลทั้งหมด • มีระบบจัดทำรายงานส่งทาง LINE</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5">
                         <button onclick="navigate('report_tm')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold text-xs sm:text-sm shadow-md flex items-center transition">
@@ -1728,6 +1887,9 @@
                         </button>
                         <button onclick="navigate('report_commander')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm shadow-md flex items-center transition">
                             <i class="fa-solid fa-clipboard-check mr-2"></i> รายงานผู้บังคับบัญชา
+                        </button>
+                        <button onclick="openW5AutoModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold text-xs sm:text-sm shadow-md flex items-center transition">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> จัดรายชื่ออัตโนมัติ
                         </button>
                         <button onclick="openW5Modal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-xs sm:text-sm shadow flex items-center">
                             <i class="fa-solid fa-plus mr-2"></i> เพิ่มตารางเวร ว.5
@@ -1737,33 +1899,180 @@
 
                 <div class="glass-card rounded-2xl p-4 mb-6 flex flex-wrap items-end gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">ค้นหาตามวันที่เจาะจง</label>
-                        <input type="date" value="${filterDate}" onchange="navigate('duty_w5', { filterDate: this.value }, false)" class="px-3 py-2 border rounded-xl text-sm">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">เดือน</label>
+                        <select onchange="setW5Filter({ fMonth: this.value, filterDate: '' })" class="px-3 py-2 border rounded-xl text-sm bg-white min-w-[130px]">${monthOpts}</select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">ค้นหาตามเดือน / ปี</label>
-                        <input type="month" value="${filterMonth}" onchange="navigate('duty_w5', { filterMonth: this.value }, false)" class="px-3 py-2 border rounded-xl text-sm">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">ปี (พ.ศ.)</label>
+                        <select onchange="setW5Filter({ fYear: this.value, filterDate: '' })" class="px-3 py-2 border rounded-xl text-sm bg-white min-w-[120px]">${yearOpts}</select>
                     </div>
-                    ${(filterDate || filterMonth) ? `<button onclick="navigate('duty_w5', {}, false)" class="px-3 py-2 text-sm text-red-600 hover:underline">ล้างตัวกรอง</button>` : ''}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">ค้นหาตามวันที่เจาะจง</label>
+                        <input type="date" value="${f.filterDate}" onchange="setW5Filter({ filterDate: this.value })" class="px-3 py-2 border rounded-xl text-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigate('duty_w5', {}, false)" class="px-3 py-2 text-sm rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900"><i class="fa-solid fa-calendar-day mr-1 text-gold-600"></i>เดือนนี้</button>
+                        ${filterActive ? `<button onclick="navigate('duty_w5', { fMonth: 'all', fYear: 'all' }, false)" class="px-3 py-2 text-sm text-red-600 hover:underline">ดูทั้งหมด / ล้างตัวกรอง</button>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button onclick="copyTextToClipboard(buildW5ScheduleText())" class="px-3 py-2 text-xs sm:text-sm rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900" title="คัดลอกรายชื่อเวรที่แสดงอยู่"><i class="fa-solid fa-copy mr-1 text-gold-600"></i>คัดลอก</button>
+                        <button onclick="shareTextToLine(buildW5ScheduleText())" class="px-3 py-2 text-xs sm:text-sm rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-semibold" title="ส่งรายชื่อเวรที่แสดงอยู่ทาง LINE"><i class="fa-brands fa-line mr-1"></i>ส่ง LINE</button>
+                    </div>
                 </div>
 
                 <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="px-5 py-3 bg-navy-900/5 border-b text-xs sm:text-sm text-navy-900 flex items-center justify-between gap-2">
+                        <span class="font-semibold"><i class="fa-solid fa-filter text-gold-600 mr-1.5"></i>${summaryText}</span>
+                        <span class="text-gray-500">${filtered.length} รายการ</span>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-navy-900 text-white text-xs uppercase">
                                 <tr>
                                     <th class="px-5 py-3.5">วัน / เดือน / ปี</th>
                                     <th class="px-5 py-3.5">นายตำรวจเวร</th>
-                                    <th class="px-5 py-3.5">ลูกทีมผู้ปฏิบัติหน้าที่</th>
-                                    <th class="px-5 py-3.5">หมายเหตุ</th>
+                                    <th class="px-3 py-3.5 w-10"></th>
                                     <th class="px-5 py-3.5 text-right">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody class="font-body">${rows || '<tr><td colspan="5" class="text-center py-8 text-gray-400">ไม่พบข้อมูลเวร ว.5 ในช่วงเวลาที่เลือก</td></tr>'}</tbody>
+                            <tbody class="font-body">${rows || '<tr><td colspan="4" class="text-center py-8 text-gray-400">ไม่พบข้อมูลเวร ว.5 ในช่วงเวลาที่เลือก — กด “จัดรายชื่ออัตโนมัติ” เพื่อสร้างตารางทั้งเดือน</td></tr>'}</tbody>
                         </table>
                     </div>
                 </div>
             `;
+        }
+
+        // ---- จัดรายชื่อเวร ว.5 อัตโนมัติทั้งเดือน (เรียงตามลำดับยศ วนซ้ำรายวัน) ----
+        function updateW5AutoCount() {
+            const n = document.querySelectorAll('input[name="w5_auto_pid"]:checked').length;
+            const el = document.getElementById('w5a_count');
+            if (el) el.innerText = n;
+        }
+
+        function setW5AutoSelection(mode) {
+            document.querySelectorAll('input[name="w5_auto_pid"]').forEach(cb => {
+                if (mode === 'all') cb.checked = true;
+                else if (mode === 'none') cb.checked = false;
+                else if (mode === 'officer') cb.checked = cb.dataset.cat === 'officer';
+            });
+            updateW5AutoCount();
+        }
+
+        function openW5AutoModal() {
+            const f = getW5Filter();
+            const now = new Date();
+            const month = f.fMonth !== 'all' ? parseInt(f.fMonth, 10) : now.getMonth() + 1;
+            const year = f.fYear !== 'all' ? parseInt(f.fYear, 10) : now.getFullYear();
+            const people = sortPersonnelByRank(db.personnel);
+
+            const monthOpts = THAI_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${i + 1 === month ? 'selected' : ''}>${m}</option>`).join('');
+            const yearOpts = getW5YearOptions().map(y => `<option value="${y}" ${y === year ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('');
+            const startOpts = '<option value="auto">ต่อจากเวรก่อนหน้าโดยอัตโนมัติ</option>' + people.map(p => `<option value="${p.id}">${escHtml(`${p.rank}${p.firstName} ${p.lastName}`.trim())}</option>`).join('');
+            const listHtml = people.map(p => {
+                const name = `${p.rank}${p.firstName} ${p.lastName}`.trim();
+                return `
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:border-gold-500 hover:bg-amber-50/40 cursor-pointer transition">
+                        <input type="checkbox" name="w5_auto_pid" value="${p.id}" data-cat="${p.category}" ${p.category === 'officer' ? 'checked' : ''} onchange="updateW5AutoCount()" class="w-4 h-4 accent-navy-900 rounded shrink-0">
+                        <div class="min-w-0 flex-grow">
+                            <div class="text-sm font-semibold text-navy-900 truncate">${escHtml(name)}</div>
+                            <div class="text-[11px] text-gray-500 truncate">${escHtml(p.position || '')}</div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 shrink-0">${escHtml(teamLabelOf(p.team) || 'ไม่ระบุ')}</span>
+                    </label>`;
+            }).join('');
+
+            openModal('จัดรายชื่อเวร ว.5 อัตโนมัติ', `
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-navy-900">
+                    <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i>
+                    ระบบจะเรียงรายชื่อที่ติ๊กตามลำดับยศ (อาวุโสสูง → ต่ำ) แล้วจัดเข้าเวรทีละวันตลอดทั้งเดือน วนซ้ำจนครบวัน
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">เดือน</label>
+                        <select id="w5a_month" class="w-full border rounded-xl px-3 py-2">${monthOpts}</select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">ปี (พ.ศ.)</label>
+                        <select id="w5a_year" class="w-full border rounded-xl px-3 py-2">${yearOpts}</select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">เริ่มต้นเวรวันที่ 1 ด้วย</label>
+                    <select id="w5a_start" class="w-full border rounded-xl px-3 py-2">${startOpts}</select>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <label class="text-sm font-medium">ติ๊กเลือกรายชื่อที่ต้องการจัดเรียง (<span id="w5a_count" class="font-bold text-indigo-700">0</span> นาย)</label>
+                        <div class="flex gap-1.5 text-xs">
+                            <button type="button" onclick="setW5AutoSelection('officer')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">เฉพาะนายตำรวจ</button>
+                            <button type="button" onclick="setW5AutoSelection('all')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">ทั้งหมด</button>
+                            <button type="button" onclick="setW5AutoSelection('none')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100 text-red-600">ล้าง</button>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5 max-h-64 overflow-y-auto pr-1">${listHtml || '<div class="text-center text-gray-400 py-6 text-sm">ยังไม่มีข้อมูลกำลังพล</div>'}</div>
+                </div>
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer">
+                    <input type="checkbox" id="w5a_overwrite" class="w-4 h-4 mt-0.5 accent-navy-900">
+                    <span class="text-xs text-navy-900"><b>เขียนทับวันที่มีเวรอยู่แล้ว</b><br>หากไม่ติ๊ก ระบบจะคงวันที่มีข้อมูลเดิมไว้ และจัดเฉพาะวันที่ว่าง (ลำดับจะต่อจากรายชื่อเดิมให้อัตโนมัติ)</span>
+                </label>
+            `, { type: 'autoW5' });
+            const sb = document.getElementById('modalSaveBtn');
+            sb.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> จัดรายชื่อ';
+            updateW5AutoCount();
+        }
+
+        function runW5AutoArrange() {
+            const month = parseInt(document.getElementById('w5a_month').value, 10);
+            const year = parseInt(document.getElementById('w5a_year').value, 10);
+            const checked = Array.from(document.querySelectorAll('input[name="w5_auto_pid"]:checked'))
+                .map(cb => db.personnel.find(p => p.id === cb.value)).filter(Boolean);
+            if (checked.length === 0) {
+                showStatusPopup('ยังไม่ได้เลือกรายชื่อ', 'กรุณาติ๊กเลือกรายชื่ออย่างน้อย 1 นาย', 'edit', 2200);
+                return;
+            }
+            const people = sortPersonnelByRank(checked);
+            const names = people.map(p => `${p.rank}${p.firstName} ${p.lastName}`.trim());
+            const overwrite = document.getElementById('w5a_overwrite').checked;
+            const startSel = document.getElementById('w5a_start').value;
+            const mm = String(month).padStart(2, '0');
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            let ptr = 0;
+            if (startSel !== 'auto') {
+                const i = people.findIndex(p => p.id === startSel);
+                ptr = i >= 0 ? i : 0;
+            } else {
+                const prefix = `${year}-${mm}-01`;
+                const prev = db.dutyW5.filter(w => w.date < prefix && names.includes(w.officer))
+                    .sort((a, b) => a.date.localeCompare(b.date)).pop();
+                if (prev) ptr = (names.indexOf(prev.officer) + 1) % names.length;
+            }
+
+            let created = 0, updated = 0, kept = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = `${year}-${mm}-${String(d).padStart(2, '0')}`;
+                const existing = db.dutyW5.find(w => w.date === date);
+                if (existing && !overwrite) {
+                    const i = names.indexOf(existing.officer);
+                    if (i >= 0) ptr = (i + 1) % names.length;
+                    kept++;
+                    continue;
+                }
+                const name = names[ptr % names.length];
+                if (existing) { existing.officer = name; updated++; }
+                else {
+                    db.dutyW5.push({ id: `w_auto_${date}_${Date.now()}`, date, officer: name, teamMembers: '', note: '' });
+                    created++;
+                }
+                ptr = (ptr + 1) % names.length;
+            }
+
+            saveDB();
+            closeModal();
+            navigate('duty_w5', { fMonth: String(month), fYear: String(year) }, false);
+            showStatusPopup('จัดรายชื่อเวรเรียบร้อย',
+                `${THAI_MONTHS_FULL[month - 1]} ${year + 543}: เพิ่มใหม่ ${created} วัน${updated ? ' • เขียนทับ ' + updated + ' วัน' : ''}${kept ? ' • คงข้อมูลเดิม ' + kept + ' วัน' : ''}`,
+                'success', 3200);
         }
 
         // ==========================================
@@ -2880,6 +3189,7 @@ ${st.leader2Name}
             const teamACount = db.personnel.filter(p => p.team === 'A').length;
             const teamBCount = db.personnel.filter(p => p.team === 'B').length;
             const teamCCount = db.personnel.filter(p => p.team === 'C').length;
+            const teamDCount = db.personnel.filter(p => p.team === 'D').length;
 
             const menus = [
                 { id: '4.1', title: 'ข้อมูลนายตำรวจ', count: `${officerCount} นาย`, desc: 'ทำเนียบชั้นสัญญาบัตร เรียงลำดับยศ พ.ต.อ. ถึง ร.ต.ต.', icon: 'fa-user-tie', action: "navigate('personnel_list', { filter: 'officer', title: 'ข้อมูลนายตำรวจ' })" },
@@ -2887,7 +3197,8 @@ ${st.leader2Name}
                 { id: '4.3', title: 'ข้อมูลกำลังพล ทีม A', count: `${teamACount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ A', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'A', title: 'ข้อมูลกำลังพล ทีม A' })" },
                 { id: '4.4', title: 'ข้อมูลกำลังพล ทีม B', count: `${teamBCount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ B', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'B', title: 'ข้อมูลกำลังพล ทีม B' })" },
                 { id: '4.5', title: 'ข้อมูลกำลังพล ทีม C', count: `${teamCCount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ C', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'C', title: 'ข้อมูลกำลังพล ทีม C' })" },
-                { id: '4.6', title: 'แผนภาพสายการบังคับบัญชา', count: '5 ระดับ', desc: 'ผังโครงสร้าง 5 ระดับ ย่อ-ขยายอิสระ ส่งออก JPEG / PDF และแชร์ทาง LINE', icon: 'fa-sitemap', action: "navigate('personnel_chart')" }
+                { id: '4.6', title: 'ข้อมูลกำลังพล ทีม D', count: `${teamDCount} นาย`, desc: 'ทำเนียบกำลังพลประจำชุดปฏิบัติการ D', icon: 'fa-shield', action: "navigate('personnel_list', { filter: 'D', title: 'ข้อมูลกำลังพล ทีม D' })" },
+                { id: '4.7', title: 'แผนภาพสายการบังคับบัญชา', count: '5 ระดับ', desc: 'ผังโครงสร้าง 5 ระดับ ย่อ-ขยายอิสระ ส่งออก JPEG / PDF และแชร์ทาง LINE', icon: 'fa-sitemap', action: "navigate('personnel_chart')" }
             ];
 
             container.innerHTML = `
@@ -2919,7 +3230,7 @@ ${st.leader2Name}
         function getFilteredSortedPersonnel(filter, queryStr) {
             let baseList = db.personnel;
             if (filter === 'officer') baseList = baseList.filter(p => p.category === 'officer');
-            else if (['A', 'B', 'C'].includes(filter)) baseList = baseList.filter(p => p.team === filter);
+            else if (ORG_TEAMS.includes(filter)) baseList = baseList.filter(p => p.team === filter);
 
             // เรียงลำดับยศจากบนลงล่างเสมอ (พ.ต.อ. -> ร.ต.ต. และ ด.ต. -> ส.ต.ต.)
             const sortedList = sortPersonnelByRank(baseList);
@@ -2970,7 +3281,7 @@ ${st.leader2Name}
                             ${p.phone ? `<a href="tel:${p.phone}" class="hover:underline"><i class="fa-solid fa-phone mr-1 text-xs"></i>${p.phone}</a>` : '<span class="text-gray-400">-</span>'}
                         </td>
                         <td class="px-4 py-3 text-xs font-semibold text-navy-800 whitespace-nowrap">
-                            <span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-navy-900">${p.team === 'กองบัญชาการ' ? 'กองบัญชาการ' : 'ทีม ' + p.team}</span>
+                            ${teamLabelOf(p.team) ? `<span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-navy-900">${teamLabelOf(p.team)}</span>` : '<span class="text-gray-400">-</span>'}
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">${p.note || '-'}</td>
                         <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
@@ -2989,7 +3300,7 @@ ${st.leader2Name}
         function handlePersonnelLocalSearch(val) {
             personnelLocalSearchQuery = val;
             const filter = currentRoute.params.filter || 'all';
-            const isTeamView = ['A', 'B', 'C'].includes(filter);
+            const isTeamView = ORG_TEAMS.includes(filter);
             const { displayList, totalCount, isSingleMatchMode } = getFilteredSortedPersonnel(filter, personnelLocalSearchQuery);
 
             const tbody = document.getElementById('personnelTableBody');
@@ -3029,7 +3340,7 @@ ${st.leader2Name}
                 { label: title }
             ]);
 
-            const isTeamView = ['A', 'B', 'C'].includes(filter);
+            const isTeamView = ORG_TEAMS.includes(filter);
             const { displayList, totalCount, isSingleMatchMode } = getFilteredSortedPersonnel(filter, personnelLocalSearchQuery);
             const rows = buildPersonnelTableRowsHtml(displayList, isTeamView);
 
@@ -3123,7 +3434,7 @@ ${st.leader2Name}
                         </div>
                     </div>
                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 shrink-0 ml-2">
-                        ${p.team === 'กองบัญชาการ' ? 'กองบัญชาการ' : 'ทีม ' + p.team}
+                        ${teamLabelOf(p.team) || 'ไม่ระบุ'}
                     </span>
                 </label>
             `).join('');
@@ -3160,6 +3471,102 @@ ${st.leader2Name}
                 .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
+
+        // ==========================================
+        // 3.4.1 POPUP สรุปข้อมูลกำลังพล (คลิกการ์ดในแผนภาพ)
+        // ==========================================
+        function orgCardClick(ev, rowKey, teamKey, nodeId) {
+            if (orgDragState.suppressClick) return;
+            if (ev && ev.target && ev.target.closest && ev.target.closest('.oc-actions')) return;
+            openPersonPopup(rowKey, teamKey, nodeId);
+        }
+
+        function openPersonPopup(rowKey, teamKey, nodeId) {
+            ensureOrgHierarchy();
+            const oh = db.orgHierarchy;
+            const arr = teamKey ? oh[rowKey][teamKey] : oh[rowKey];
+            const node = (arr || []).find(x => x.id === nodeId);
+            if (!node) return;
+            const p = node.personnelId ? db.personnel.find(x => x.id === node.personnelId) : null;
+
+            const fullName = p ? `${p.rank || ''}${p.firstName || ''} ${p.lastName || ''}`.trim() : (node.name || '-');
+            const position = (p && p.position) || node.position || '-';
+            const team = p ? p.team : node.team;
+            const phone = p ? (p.phone || '') : '';
+            const nick = p ? (p.nickname || '') : '';
+            const note = p ? (p.note || '') : '';
+            const photo = node.photo || (p && p.photo) || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=0a1128&color=c5a059&size=200`;
+            const levelNames = { row1: 'ผู้กำกับการ (ผกก.)', row2: 'รองผู้กำกับการ (รอง ผกก.)', row3: 'สารวัตร', row4: 'รองสารวัตร', row5: 'กำลังพลประจำทีม' };
+            const levelText = levelNames[rowKey] + (teamKey ? ` • ทีม ${teamKey}` : '');
+            const catText = p ? (p.category === 'officer' ? 'นายตำรวจ (สัญญาบัตร)' : 'ชั้นประทวน') : '';
+
+            // สถานะเวรหนุมานของทีม ณ วันนี้
+            const now = new Date();
+            const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            let dutyHtml = '';
+            const tkey = teamKey || (ORG_TEAMS.includes(team) ? team : '');
+            if (tkey) {
+                const duty = db.dutyHanuman.find(d => d.team === tkey && todayIso >= d.startDate && todayIso <= d.endDate);
+                if (duty) {
+                    const cls = duty.status === 'High' ? 'bg-red-100 text-red-700 border-red-200' : (duty.status === 'Low' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200');
+                    dutyHtml = `<span class="px-3 py-1 rounded-full text-xs font-bold border ${cls}"><i class="fa-solid fa-calendar-check mr-1"></i>เวรหนุมานวันนี้: ${escHtml(duty.status)}</span>`;
+                }
+            }
+
+            const teamCount = teamKey ? (oh.row3[teamKey].length + oh.row4[teamKey].length + oh.row5[teamKey].length) : 0;
+            const rowItem = (icon, label, valueHtml) => `
+                <div class="pp-row">
+                    <div class="pp-ico"><i class="fa-solid ${icon}"></i></div>
+                    <div class="min-w-0 flex-grow">
+                        <div class="text-[11px] text-gray-500">${label}</div>
+                        <div class="text-sm font-semibold text-navy-900 break-words">${valueHtml}</div>
+                    </div>
+                </div>`;
+
+            const phoneHtml = phone
+                ? `<a href="tel:${escHtml(phone)}" class="text-emerald-700 hover:underline">${escHtml(phone)}</a>`
+                : '<span class="text-gray-400">ไม่ระบุ</span>';
+
+            const editArgs = node.personnelId && p
+                ? `closePersonPopup(); openPersonnelModal('${p.id}')`
+                : `closePersonPopup(); openHierarchyNodeModal('${rowKey}', ${teamKey ? `'${teamKey}'` : 'null'}, '${node.id}')`;
+
+            document.getElementById('personPopupBody').innerHTML = `
+                <div class="pp-hero">
+                    <button type="button" onclick="closePersonPopup()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+                    <span class="inline-block px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-gold-500/20 text-gold-300 border border-gold-500/50">${escHtml(levelText)}</span>
+                    <div class="pp-photo"><img src="${escHtml(photo)}" alt="" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059&size=200'"></div>
+                </div>
+                <div class="pt-16 pb-5 px-5 sm:px-6">
+                    <div class="text-center mb-4">
+                        <h3 class="text-lg sm:text-xl font-bold text-navy-900 leading-snug">${escHtml(fullName)}</h3>
+                        <p class="text-sm text-gray-600 mt-0.5">${escHtml(position)}</p>
+                        ${dutyHtml ? `<div class="mt-2.5">${dutyHtml}</div>` : ''}
+                    </div>
+                    <div class="space-y-2">
+                        ${rowItem('fa-people-group', 'สังกัด', escHtml(teamLabelOf(team)) || '<span class="text-gray-400">ไม่ระบุ</span>')}
+                        ${nick ? rowItem('fa-id-badge', 'ชื่อเล่น', escHtml(nick)) : ''}
+                        ${rowItem('fa-phone', 'เบอร์โทรศัพท์', phoneHtml)}
+                        ${catText ? rowItem('fa-medal', 'ประเภทชั้นยศ', escHtml(catText)) : ''}
+                        ${teamKey ? rowItem('fa-users', 'กำลังพลในทีม ' + teamKey + ' (ตามแผนภาพ)', teamCount + ' นาย') : ''}
+                        ${note ? rowItem('fa-note-sticky', 'หมายเหตุ', escHtml(note)) : ''}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5 mt-5">
+                        ${phone
+                            ? `<a href="tel:${escHtml(phone)}" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold text-center shadow flex items-center justify-center"><i class="fa-solid fa-phone mr-2"></i>โทรออก</a>`
+                            : `<span class="py-2.5 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold text-center flex items-center justify-center cursor-not-allowed"><i class="fa-solid fa-phone mr-2"></i>ไม่มีเบอร์</span>`}
+                        <button type="button" onclick="${editArgs}" class="py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold shadow flex items-center justify-center"><i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขข้อมูล</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('personPopupModal').classList.remove('hidden');
+        }
+
+        function closePersonPopup() {
+            const m = document.getElementById('personPopupModal');
+            if (m) m.classList.add('hidden');
+        }
+
         // ทำให้โครงสร้างข้อมูลแผนภาพครบถ้วนเสมอ (กันข้อมูลจาก Google Sheet ไม่ครบ)
         function ensureOrgHierarchy() {
             if (typeof db.orgHierarchy === 'string') {
@@ -3172,12 +3579,21 @@ ${st.leader2Name}
             ['row1', 'row2'].forEach(k => { if (!Array.isArray(oh[k])) oh[k] = []; });
             ['row3', 'row4', 'row5'].forEach(k => {
                 if (!oh[k] || typeof oh[k] !== 'object' || Array.isArray(oh[k])) oh[k] = {};
-                ['A', 'B', 'C'].forEach(t => { if (!Array.isArray(oh[k][t])) oh[k][t] = []; });
+                ORG_TEAMS.forEach(t => { if (!Array.isArray(oh[k][t])) oh[k][t] = []; });
             });
             if (typeof oh.links === 'string') {
                 try { oh.links = JSON.parse(oh.links); } catch (e) { oh.links = []; }
             }
             if (!Array.isArray(oh.links)) oh.links = [];
+            // ย้ายข้อมูลเดิม: เพิ่มเส้นโยงไปกรอบ ทีม D ครั้งเดียว โดยใช้ต้นทางเดียวกับเส้นที่ไปทีม C
+            if (!oh.dMigrated) {
+                oh.dMigrated = true;
+                const cIds = new Set(['team:C']);
+                ['row3', 'row4', 'row5'].forEach(k => (oh[k].C || []).forEach(n => cIds.add(n.id)));
+                const toC = oh.links.find(l => cIds.has(l.to) && !cIds.has(l.from));
+                const hasD = oh.links.some(l => l.to === 'team:D' || l.from === 'team:D');
+                if (toC && !hasD) oh.links.push({ id: 'lnk_d_' + Date.now(), from: toC.from, to: 'team:D', style: toC.style || 'solid', label: '' });
+            }
         }
 
         // ---- ซูม / เลื่อน ----
@@ -3304,6 +3720,7 @@ ${st.leader2Name}
                 if (e.button !== 0) return;
                 if (e.target.closest('button, a, input, select, textarea')) return;
                 orgDragState.active = true;
+                orgDragState.moved = false;
                 orgDragState.vp = vp;
                 orgDragState.startX = e.clientX;
                 orgDragState.startY = e.clientY;
@@ -3315,12 +3732,14 @@ ${st.leader2Name}
 
         document.addEventListener('mousemove', (e) => {
             if (!orgDragState.active || !orgDragState.vp) return;
+            if (Math.abs(e.clientX - orgDragState.startX) + Math.abs(e.clientY - orgDragState.startY) > 5) orgDragState.moved = true;
             orgDragState.vp.scrollLeft = orgDragState.scrollL - (e.clientX - orgDragState.startX);
             orgDragState.vp.scrollTop = orgDragState.scrollT - (e.clientY - orgDragState.startY);
         });
         document.addEventListener('mouseup', () => {
             if (!orgDragState.active) return;
             orgDragState.active = false;
+            if (orgDragState.moved) { orgDragState.suppressClick = true; setTimeout(() => { orgDragState.suppressClick = false; }, 60); }
             if (orgDragState.vp) orgDragState.vp.classList.remove('oc-grabbing');
         });
 
@@ -3329,12 +3748,12 @@ ${st.leader2Name}
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
                 { label: '3. ตารางสถานะกำลังพล', action: "navigate('personnel_menu')" },
-                { label: '4.6 แผนภาพสายการบังคับบัญชา' }
+                { label: '4.7 แผนภาพสายการบังคับบัญชา' }
             ]);
 
             ensureOrgHierarchy();
             const oh = db.orgHierarchy;
-            const teams = ['A', 'B', 'C'];
+            const teams = ORG_TEAMS;
 
             const prevVp = document.getElementById('orgChartViewport');
             const prevScroll = prevVp ? { l: prevVp.scrollLeft, t: prevVp.scrollTop } : null;
@@ -3357,7 +3776,7 @@ ${st.leader2Name}
                 const photo = node.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(node.name || 'O')}&background=0a1128&color=c5a059&size=150`;
                 const showBadge = !teamKey && node.team;
                 return `
-                    <div id="org-node-${node.id}" class="oc-card oc-card-${rowKey}">
+                    <div id="org-node-${node.id}" class="oc-card oc-card-${rowKey}" onclick="orgCardClick(event, '${rowKey}', ${tk}, '${node.id}')" title="คลิกเพื่อดูข้อมูลสรุป">
                         <div class="no-export oc-actions">
                             <button type="button" class="oc-act edit" onclick="openHierarchyNodeModal('${rowKey}', ${tk}, '${node.id}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
                             <button type="button" class="oc-act del" onclick="deleteHierarchyNode('${rowKey}', ${tk}, '${node.id}')" title="ลบ"><i class="fa-solid fa-xmark"></i></button>
@@ -3370,14 +3789,15 @@ ${st.leader2Name}
                 `;
             };
 
+            // ผกก. / รอง ผกก. : ป้ายตำแหน่งอยู่บนขอบกรอบ
             const topRow = (rowKey, chipText, emptyText) => `
                 <div class="oc-row">
-                    <div class="oc-ctl no-export">
-                        <span class="oc-chip">${chipText}</span>
-                        <button type="button" class="oc-add" onclick="openHierarchyNodeModal('${rowKey}', null, null, 'horizontal')"><i class="fa-solid fa-plus"></i> เพิ่ม</button>
-                    </div>
-                    <div class="oc-row-body">
-                        ${oh[rowKey].map(n => nodeCard(n, rowKey, null)).join('') || `<div class="oc-empty">${emptyText}</div>`}
+                    <div id="org-frame-${rowKey}" class="oc-frame oc-frame-${rowKey}">
+                        <span class="oc-frame-tag">${chipText}</span>
+                        <button type="button" class="oc-add oc-frame-add no-export" onclick="openHierarchyNodeModal('${rowKey}', null, null, 'horizontal')"><i class="fa-solid fa-plus"></i> เพิ่ม</button>
+                        <div class="oc-row-body">
+                            ${oh[rowKey].map(n => nodeCard(n, rowKey, null)).join('') || `<div class="oc-empty">${emptyText}</div>`}
+                        </div>
                     </div>
                 </div>
             `;
@@ -3414,7 +3834,7 @@ ${st.leader2Name}
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">แผนภาพสายการบังคับบัญชา (5 ระดับ)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">จีบนิ้วหรือ Ctrl + ล้อเมาส์เพื่อย่อ-ขยาย ลากเพื่อเลื่อนดู พร้อมส่งออก JPEG / PDF / พิมพ์</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">คลิกที่กำลังพลเพื่อดูข้อมูลสรุป • จีบนิ้วหรือ Ctrl + ล้อเมาส์เพื่อย่อ-ขยาย ลากเพื่อเลื่อนดู • ส่งออก JPEG / PDF / พิมพ์</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <button type="button" onclick="refreshOrgChart()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center">
@@ -3435,7 +3855,7 @@ ${st.leader2Name}
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+                <div class="grid grid-cols-2 sm:grid-cols-6 gap-2.5 mb-4">
                     <div class="glass-card gold-border-top rounded-xl px-3.5 py-2.5">
                         <div class="text-[11px] text-gray-500">กำลังพลในแผนภาพ</div>
                         <div class="text-lg font-bold text-navy-900">${totalAll} <span class="text-xs font-medium">นาย</span></div>
@@ -3540,10 +3960,10 @@ ${st.leader2Name}
             }
             for (const k of ['row1', 'row2']) {
                 const n = oh[k].find(x => x.id === id);
-                if (n) return { key: n.id, elId: 'org-node-' + n.id, label: n.name };
+                if (n) return { key: n.id, elId: 'org-frame-' + k, label: n.name };
             }
             for (const k of ['row3', 'row4', 'row5']) {
-                for (const t of ['A', 'B', 'C']) {
+                for (const t of ORG_TEAMS) {
                     if (oh[k][t].some(x => x.id === id)) {
                         return { key: 'team:' + t, elId: 'org-team-' + t, label: `กรอบ ทีม ${t}` };
                     }
@@ -3786,7 +4206,7 @@ ${st.leader2Name}
             const all = [];
             oh.row1.forEach(n => all.push({ ...n, rowLabel: 'แถว 1 (ผกก.)' }));
             oh.row2.forEach(n => all.push({ ...n, rowLabel: 'แถว 2 (รอง ผกก.)' }));
-            ['A', 'B', 'C'].forEach(t => {
+            ORG_TEAMS.forEach(t => {
                 oh.row3[t].forEach(n => all.push({ ...n, rowLabel: `แถว 3 (สว. ทีม ${t})` }));
                 oh.row4[t].forEach(n => all.push({ ...n, rowLabel: `แถว 4 (รอง สว. ทีม ${t})` }));
                 oh.row5[t].forEach(n => all.push({ ...n, rowLabel: `แถว 5 (กำลังพลทีม ${t})` }));
@@ -3889,14 +4309,14 @@ ${st.leader2Name}
             const outer = [
                 ...oh.row1.map(n => ({ id: n.id, label: `[ผกก.] ${n.name}` })),
                 ...oh.row2.map(n => ({ id: n.id, label: `[รอง ผกก.] ${n.name}` })),
-                ...['A', 'B', 'C'].map(t => ({ id: 'team:' + t, label: `[กรอบทีม] ทีม ${t}` }))
+                ...ORG_TEAMS.map(t => ({ id: 'team:' + t, label: `[กรอบทีม] ทีม ${t}` }))
             ];
             const opts = (selIdx) => outer.map((o, i) => `<option value="${escHtml(o.id)}" ${i === selIdx ? 'selected' : ''}>${escHtml(o.label)}</option>`).join('');
             openModal('เพิ่มเส้นเชื่อมโยงสายการบังคับบัญชา', `
                 <div class="space-y-4">
                     <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-navy-900">
                         <i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>
-                        เส้นโยงจะแตะระหว่าง <b>กรอบนอกกับกรอบนอก</b> เท่านั้น (การ์ดผู้บังคับบัญชา และกรอบทีม A / B / C) ไม่ลากเข้าไปภายในกรอบทีม
+                        เส้นโยงจะแตะระหว่าง <b>กรอบนอกกับกรอบนอก</b> เท่านั้น (กรอบผู้บังคับบัญชา และกรอบทีม A / B / C / D) ไม่ลากเข้าไปภายในกรอบทีม
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">จากผู้บังคับบัญชา (จุดเริ่มต้นเส้น)</label>
@@ -4100,7 +4520,11 @@ ${st.leader2Name}
             currentModalContext = context;
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalForm').innerHTML = formHtml;
-            document.getElementById('modalSaveBtn').classList.remove('hidden');
+            const sb = document.getElementById('modalSaveBtn');
+            sb.classList.remove('hidden');
+            sb.disabled = false;
+            sb.classList.remove('opacity-50', 'cursor-not-allowed');
+            sb.innerHTML = '<i class="fa-solid fa-save mr-1.5"></i> บันทึกข้อมูล';
             document.getElementById('formModal').classList.remove('hidden');
         }
 
@@ -4280,6 +4704,156 @@ ${st.leader2Name}
             if (phoneInput) phoneInput.value = phone || '';
         }
 
+
+        // ==========================================
+        // 4.1 อัปโหลดรูปยานพาหนะ: เลือกไฟล์ / ลากวาง + แสดง % + ป๊อปอัพเมื่อเสร็จ
+        // ==========================================
+        let vehicleUploadBusy = false;
+
+        function vdropOver(e) {
+            e.preventDefault(); e.stopPropagation();
+            const z = document.getElementById('vehicleDropZone');
+            if (z) z.classList.add('vdrop-over');
+        }
+        function vdropLeave(e) {
+            e.preventDefault(); e.stopPropagation();
+            const z = document.getElementById('vehicleDropZone');
+            if (z) z.classList.remove('vdrop-over');
+        }
+        function vdropDrop(e) {
+            e.preventDefault(); e.stopPropagation();
+            const z = document.getElementById('vehicleDropZone');
+            if (z) z.classList.remove('vdrop-over');
+            const files = e.dataTransfer ? e.dataTransfer.files : null;
+            if (files && files.length > 0) handleVehicleFile(files[0]);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function removeVehiclePhoto() {
+            if (vehicleUploadBusy) return;
+            const hid = document.getElementById('f_photo');
+            if (hid) hid.value = '';
+            const pv = document.getElementById('v_preview');
+            if (pv) pv.src = 'https://placehold.co/600x340/0a1128/c5a059?text=Vehicle';
+            const pg = document.getElementById('vehicleUploadProgress');
+            if (pg) { pg.classList.add('hidden'); pg.innerHTML = ''; }
+        }
+
+        function handleVehicleFile(file) {
+            if (!file || vehicleUploadBusy) return;
+            if (!file.type || !file.type.startsWith('image/')) {
+                showStatusPopup('ไฟล์ไม่ถูกต้อง', 'กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WEBP) เท่านั้น', 'edit', 2200);
+                return;
+            }
+            if (file.size > 15 * 1024 * 1024) {
+                showStatusPopup('ไฟล์ใหญ่เกินไป', `ไฟล์ ${formatFileSize(file.size)} ใหญ่เกิน 15 MB กรุณาเลือกไฟล์ที่เล็กลง`, 'edit', 2600);
+                return;
+            }
+
+            vehicleUploadBusy = true;
+            const zone = document.getElementById('vehicleDropZone');
+            const wrap = document.getElementById('vehicleUploadProgress');
+            const saveBtn = document.getElementById('modalSaveBtn');
+            if (zone) zone.classList.add('vdrop-busy');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            const safeName = escHtml(file.name);
+            wrap.classList.remove('hidden');
+            wrap.innerHTML = `
+                <div class="flex items-center justify-between gap-2 text-xs font-semibold text-navy-900 mb-1">
+                    <span id="vup_label" class="truncate"><i class="fa-solid fa-spinner fa-spin text-gold-600 mr-1.5"></i>กำลังอัปโหลด ${safeName} (${formatFileSize(file.size)})</span>
+                    <span id="vup_pct" class="font-bold shrink-0">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div id="vup_bar" class="h-3 rounded-full bg-gradient-to-r from-navy-900 via-gold-500 to-gold-400 transition-all duration-100" style="width:0%"></div>
+                </div>`;
+
+            let target = 0, shown = 0, dataUrl = '';
+            const finishFail = (title, desc) => {
+                clearInterval(timer);
+                vehicleUploadBusy = false;
+                if (zone) zone.classList.remove('vdrop-busy');
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                if (wrap) { wrap.classList.add('hidden'); wrap.innerHTML = ''; }
+                showStatusPopup(title, desc, 'delete', 2800);
+            };
+
+            // แสดง % แบบไหลต่อเนื่อง (ไล่ตามค่าจริงของแต่ละขั้นตอน)
+            const timer = setInterval(() => {
+                if (!currentModalContext || currentModalContext.type !== 'vehicles') {
+                    clearInterval(timer);
+                    vehicleUploadBusy = false;
+                    return;
+                }
+                if (shown < target) {
+                    shown = Math.min(target, shown + Math.max(1, Math.ceil((target - shown) / 5)));
+                    const bar = document.getElementById('vup_bar');
+                    const pct = document.getElementById('vup_pct');
+                    if (bar) bar.style.width = shown + '%';
+                    if (pct) pct.innerText = shown + '%';
+                }
+                if (shown >= 100) {
+                    clearInterval(timer);
+                    vehicleUploadBusy = false;
+                    const hid = document.getElementById('f_photo');
+                    if (hid) hid.value = dataUrl;
+                    const pv = document.getElementById('v_preview');
+                    if (pv) pv.src = dataUrl;
+                    if (zone) zone.classList.remove('vdrop-busy');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                    const label = document.getElementById('vup_label');
+                    if (label) label.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i><span class="text-emerald-700">อัปโหลดเสร็จสิ้น ${safeName}</span>`;
+                    const bar = document.getElementById('vup_bar');
+                    if (bar) bar.className = 'h-3 rounded-full bg-emerald-500';
+                    showStatusPopup('อัปโหลดเสร็จสิ้น', `อัปโหลดรูป ${file.name} เรียบร้อยแล้ว กดบันทึกข้อมูลเพื่อใช้รูปนี้กับยานพาหนะ`, 'upload', 3000);
+                }
+            }, 35);
+
+            const reader = new FileReader();
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) target = Math.max(target, Math.min(60, Math.round((e.loaded / e.total) * 60)));
+            };
+            reader.onerror = () => finishFail('อัปโหลดไม่สำเร็จ', 'ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่อีกครั้ง');
+            reader.onload = (e) => {
+                target = Math.max(target, 65);
+                const img = new Image();
+                img.onerror = () => finishFail('อัปโหลดไม่สำเร็จ', 'ไฟล์รูปภาพเสียหายหรือไม่รองรับ กรุณาเลือกไฟล์อื่น');
+                img.onload = () => {
+                    target = Math.max(target, 80);
+                    // ย่อรูปให้ขนาดไม่เกินเพดานของเซลล์ Google Sheet (~50,000 ตัวอักษร)
+                    let maxDim = 560, quality = 0.7, out = '';
+                    for (let attempt = 0; attempt < 8; attempt++) {
+                        let w = img.width, h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                            else { w = Math.round(w * maxDim / h); h = maxDim; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        out = canvas.toDataURL('image/jpeg', quality);
+                        if (out.length <= 48000) break;
+                        if (quality > 0.45) quality -= 0.1; else maxDim = Math.round(maxDim * 0.8);
+                    }
+                    dataUrl = out;
+                    target = 100;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ป้องกันเบราว์เซอร์เปิดรูปทิ้งหน้าเว็บเมื่อวางไฟล์นอกกรอบอัปโหลด
+        window.addEventListener('dragover', (e) => { e.preventDefault(); });
+        window.addEventListener('drop', (e) => { e.preventDefault(); });
+
         function openDutyHanumanModal(id = null) {
             const item = id ? db.dutyHanuman.find(x => x.id === id) : {};
             openModal(id ? 'แก้ไขตารางเวรหนุมาน' : 'เพิ่มช่วงเวลาเข้าเวรหนุมาน', `
@@ -4290,6 +4864,7 @@ ${st.leader2Name}
                             <option value="A" ${item.team==='A'?'selected':''}>ทีม A</option>
                             <option value="B" ${item.team==='B'?'selected':''}>ทีม B</option>
                             <option value="C" ${item.team==='C'?'selected':''}>ทีม C</option>
+                            <option value="D" ${item.team==='D'?'selected':''}>ทีม D</option>
                         </select>
                     </div>
                     <div>
@@ -4482,7 +5057,7 @@ ${st.leader2Name}
         function openPersonnelModal(id = null, defaultFilter = 'all') {
             const p = id ? db.personnel.find(x => x.id === id) : {
                 category: defaultFilter === 'officer' ? 'officer' : 'trooper',
-                team: ['A','B','C'].includes(defaultFilter) ? defaultFilter : 'A'
+                team: ORG_TEAMS.includes(defaultFilter) ? defaultFilter : 'A'
             };
 
             const rankSuggestions = [...OFFICER_RANKS, ...TROOPER_RANKS]
@@ -4542,7 +5117,8 @@ ${st.leader2Name}
                             <option value="A" ${p.team==='A'?'selected':''}>ทีม A</option>
                             <option value="B" ${p.team==='B'?'selected':''}>ทีม B</option>
                             <option value="C" ${p.team==='C'?'selected':''}>ทีม C</option>
-                            <option value="-" ${p.team === '-' ? 'selected' : ''}>-</option>
+                            <option value="D" ${p.team==='D'?'selected':''}>ทีม D</option>
+                            <option value="" ${(!p.team || p.team === '-') ? 'selected' : ''}>&nbsp;</option>
                         </select>
                     </div>
                 </div>
@@ -4556,13 +5132,20 @@ ${st.leader2Name}
         function openVehicleModal(id = null) {
             const v = id ? db.vehicles.find(x => x.id === id) : {};
             openModal(id ? 'แก้ไขข้อมูลยานพาหนะ' : 'เพิ่มยานพาหนะใหม่', `
-                <div class="flex items-center space-x-4 mb-4 bg-gray-50 p-3 rounded-xl border">
-                    <img id="v_preview" src="${v.photo || 'https://placehold.co/300x200/0a1128/c5a059?text=Vehicle'}" class="w-28 h-20 rounded-xl object-cover border border-gold-500 shrink-0">
-                    <div class="flex-grow">
-                        <label class="block text-xs font-medium text-gray-600 mb-1">อัปโหลดภาพถ่ายรถ</label>
-                        <input type="file" accept="image/*" onchange="handleImageUpload(this, 'f_photo', 'v_preview', 'vehicleUploadProgress')" class="text-xs w-full">
-                        <input type="hidden" id="f_photo" value="${v.photo || ''}">
-                        <div id="vehicleUploadProgress" class="hidden mt-2"></div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1.5">ภาพถ่ายรถ</label>
+                    <div id="vehicleDropZone" class="vdrop" onclick="document.getElementById('v_fileInput').click()"
+                        ondragover="vdropOver(event)" ondragenter="vdropOver(event)" ondragleave="vdropLeave(event)" ondrop="vdropDrop(event)">
+                        <img id="v_preview" src="${v.photo || 'https://placehold.co/600x340/0a1128/c5a059?text=Vehicle'}" alt="" class="w-full max-w-xs h-36 mx-auto rounded-xl object-cover border border-gold-500 shadow mb-3">
+                        <div class="text-gold-600 text-3xl leading-none"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <div class="text-sm font-semibold text-navy-900 mt-1.5">ลากไฟล์รูปมาวางที่นี่ หรือ <span class="underline text-gold-700">คลิกเพื่อเลือกไฟล์</span></div>
+                        <div class="text-[11px] text-gray-500 mt-0.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 15 MB (ระบบย่อรูปอัตโนมัติ)</div>
+                    </div>
+                    <input type="file" id="v_fileInput" accept="image/*" class="hidden" onchange="handleVehicleFile(this.files && this.files[0]); this.value='';">
+                    <input type="hidden" id="f_photo" value="${v.photo ? escHtml(v.photo) : ''}">
+                    <div id="vehicleUploadProgress" class="hidden mt-3"></div>
+                    <div class="mt-2 text-right">
+                        <button type="button" onclick="removeVehiclePhoto()" class="text-xs text-red-600 hover:underline"><i class="fa-solid fa-trash-can mr-1"></i>ลบรูปที่เลือก</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4598,6 +5181,7 @@ ${st.leader2Name}
             if (!currentModalContext) return;
             const { type, id } = currentModalContext;
             const isEdit = Boolean(id);
+            if (type === 'autoW5') { runW5AutoArrange(); return; }
 
             if (type === 'dutyHanuman') {
                 const obj = {
@@ -4672,7 +5256,7 @@ ${st.leader2Name}
                     nickname: document.getElementById('f_nick').value,
                     phone: document.getElementById('f_phone').value,
                     category: document.getElementById('f_cat').value,
-                    team: document.getElementById('f_team').value,
+                    team: (document.getElementById('f_team').value || '').replace(/^-$/, ''),
                     note: document.getElementById('f_note').value
                 };
                 if (id) {
@@ -4802,6 +5386,7 @@ ${st.leader2Name}
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (isModalOpen('statusPopupModal')) return closeStatusPopup();
+                if (isModalOpen('personPopupModal')) return closePersonPopup();
                 if (isModalOpen('confirmPopupModal')) return closeConfirmPopup();
                 if (isModalOpen('quickImageModal')) return closeQuickImageModal();
                 if (isModalOpen('formModal')) return closeModal();
