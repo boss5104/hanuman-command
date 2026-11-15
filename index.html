@@ -706,6 +706,10 @@
                     <label class="block font-medium text-gray-700 mb-1">Google Apps Script Web App URL</label>
                     <input type="url" id="gasUrlInput" class="w-full px-3 py-2.5 border rounded-xl text-xs bg-gray-50 focus:ring-2 focus:ring-gold-500 focus:outline-none">
                 </div>
+                <button type="button" onclick="testGasConnection()" class="w-full py-2.5 px-3 rounded-xl border border-gold-500 text-navy-900 hover:bg-amber-50 text-xs font-semibold">
+                    <i class="fa-solid fa-plug-circle-check mr-1"></i> ทดสอบการเชื่อมต่อ
+                </button>
+                <div id="gasTestResult" class="text-xs hidden"></div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="loadFromGoogleSheets(true); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-sm">
                         <i class="fa-solid fa-cloud-arrow-down mr-1"></i> ดึงข้อมูลจาก Sheet
@@ -1196,6 +1200,10 @@
             } catch (e) {}
         }
 
+        // บันทึกในเครื่องทันที แล้วส่งขึ้น Google Sheet (รวบหลายการแก้ไขเป็นครั้งเดียว)
+        let syncTimer = null, syncBusy = false, syncAgain = false;
+        function isDirty() { return localStorage.getItem('hanuman_dirty') === '1'; }
+        function setDirty(v) { if (v) localStorage.setItem('hanuman_dirty', '1'); else localStorage.removeItem('hanuman_dirty'); }
         function saveDB() {
             syncPersonnelToOrgChart();
             try {
@@ -1203,7 +1211,12 @@
             } catch (err) {
                 console.warn('LocalStorage quota warning:', err);
             }
-            if (GAS_WEB_APP_URL) syncToGoogleSheets(false);
+            setDirty(true);
+            setSyncStatus('pending');
+            if (GAS_WEB_APP_URL) {
+                clearTimeout(syncTimer);
+                syncTimer = setTimeout(() => syncToGoogleSheets(false), 900);
+            }
         }
 
         function syncPersonnelToOrgChart() {
@@ -1228,104 +1241,166 @@
             });
         }
 
-        // บันทึกข้อมูล รูปภาพกำลังพล และภาพประกอบภารกิจลง Google Sheets
-        async function syncToGoogleSheets(showPopupAfter = false) {
-            const statusEl = document.getElementById('syncStatus');
-            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังบันทึกขึ้น Sheet...';
-            try {
-                const payload = {
-                    action: 'syncAll',
-                    data: {
-                        ...db,
-                        personnel: db.personnel.map(p => ({
-                            ...p,
-                            photo: p.photo || ''
-                        })),
-                        missions: db.missions.map(m => ({
-                            ...m,
-                            imageData: m.imageData || '',
-                            imageName: m.imageName || '',
-                            coordinators: m.coordinators || []
-                        }))
+        // ---------- สถานะการซิงค์ ----------
+        function setSyncStatus(state, extra = '') {
+            const el = document.getElementById('syncStatus');
+            if (!el) return;
+            const t = localStorage.getItem('hanuman_last_sync');
+            const time = t ? new Date(+t).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '';
+            const map = {
+                loading: '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังโหลดข้อมูล...',
+                saving: '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังบันทึกขึ้น Sheet...',
+                pending: '<i class="fa-solid fa-clock mr-1.5 text-amber-400"></i> รอบันทึกขึ้น Sheet',
+                saved: `<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> ซิงค์แล้ว ${time}`,
+                loaded: `<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> อัปเดตจาก Sheet แล้ว ${time}`,
+                error: '<i class="fa-solid fa-triangle-exclamation mr-1.5 text-red-400"></i> ซิงค์ไม่สำเร็จ (ข้อมูลยังอยู่ในเครื่อง)',
+                offline: '<i class="fa-solid fa-database mr-1.5 text-amber-400"></i> ข้อมูลในเครื่อง (Offline)',
+                legacy: '<i class="fa-solid fa-circle-info mr-1.5 text-amber-400"></i> ส่งแล้ว (Apps Script เวอร์ชันเก่า ยืนยันผลไม่ได้)'
+            };
+            el.innerHTML = (map[state] || state) + (extra ? ' ' + extra : '');
+            el.title = state === 'error' ? 'กดปุ่มรีเฟรชเพื่อลองใหม่ — ระบบจะส่งข้อมูลที่ค้างให้อัตโนมัติ' : '';
+        }
+
+        // เติมรูป/ข้อมูลที่ Sheet ไม่ได้เก็บ จากข้อมูลในเครื่อง แล้วนำมาใช้งาน
+        function applyRemoteDB(remoteData) {
+            if (remoteData.personnel && Array.isArray(remoteData.personnel)) {
+                remoteData.personnel.forEach(rp => {
+                    const localP = db.personnel ? db.personnel.find(lp => lp.id === rp.id) : null;
+                    if (rp.photo && (String(rp.photo).startsWith('data:image') || String(rp.photo).startsWith('http'))) {
+                        // ใช้รูปจาก Google Sheet
+                    } else if (localP && localP.photo) {
+                        rp.photo = localP.photo;
+                    } else {
+                        rp.photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(rp.firstName || 'P')}&background=0a1128&color=c5a059&size=150`;
                     }
-                };
-                await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    if (!rp.category) rp.category = getRankOrder(rp.rank) <= 8.5 ? 'officer' : 'trooper';
                 });
-                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> บันทึกลง Google Sheets แล้ว';
-                if (showPopupAfter) {
-                    showStatusPopup('อัปโหลดขึ้น Google Sheets เรียบร้อย', 'ข้อมูล รูปภาพกำลังพล และภาพภารกิจทั้งหมดถูกบันทึกลงฐานข้อมูลแล้ว', 'upload');
+            }
+            if (remoteData.missions && Array.isArray(remoteData.missions)) {
+                remoteData.missions.forEach(rm => {
+                    const localM = db.missions ? db.missions.find(lm => lm.id === rm.id) : null;
+                    if (!rm.imageData && localM && localM.imageData) { rm.imageData = localM.imageData; rm.imageName = localM.imageName || ''; }
+                    if (typeof rm.coordinators === 'string') { try { rm.coordinators = JSON.parse(rm.coordinators); } catch (e) { rm.coordinators = []; } }
+                    if (!Array.isArray(rm.coordinators)) rm.coordinators = [];
+                    if (typeof rm.ops === 'string') { try { rm.ops = JSON.parse(rm.ops); } catch (e) { rm.ops = null; } }
+                    if (!rm.ops && localM && localM.ops) rm.ops = localM.ops;
+                    if (typeof rm.expenses === 'string') { try { rm.expenses = JSON.parse(rm.expenses); } catch (e) { rm.expenses = null; } }
+                    if ((!Array.isArray(rm.expenses) || !rm.expenses.length) && localM && Array.isArray(localM.expenses) && localM.expenses.length) rm.expenses = localM.expenses;
+                });
+            }
+            ['dutyBusy', 'presets', 'missionBills', 'orgHierarchy'].forEach(k => {
+                const rv = remoteData[k];
+                if (rv === undefined || rv === null || rv === '') remoteData[k] = db[k];
+            });
+            db = remoteData;
+            ensureOrgHierarchy();
+            ensureExtraCollections();
+            syncPersonnelToOrgChart();
+            try { localStorage.setItem('hanuman_db', JSON.stringify(db)); } catch (err) {}
+            render();
+        }
+
+        async function callGas(payload) {
+            const isGet = payload.action === 'getAll';
+            const res = await fetch(isGet ? GAS_WEB_APP_URL + (GAS_WEB_APP_URL.includes('?') ? '&' : '?') + 'action=getAll&t=' + Date.now() : GAS_WEB_APP_URL,
+                isGet ? { cache: 'no-store' } : { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+            const text = await res.text();
+            let json; try { json = JSON.parse(text); } catch (e) { const err = new Error('ไม่ได้รับข้อมูล JSON จาก Apps Script (ตรวจสอบสิทธิ์ "ทุกคน" และการ Deploy)'); err.badResponse = true; throw err; }
+            return json;
+        }
+
+        // บันทึกข้อมูล รูปภาพกำลังพล และภาพประกอบภารกิจลง Google Sheets (ยืนยันผลได้จริง)
+        async function syncToGoogleSheets(showPopupAfter = false) {
+            if (!GAS_WEB_APP_URL) return false;
+            if (syncBusy) { syncAgain = true; return false; }
+            syncBusy = true; clearTimeout(syncTimer);
+            setSyncStatus('saving');
+            const sentJson = JSON.stringify(db);
+            try {
+                const payload = { action: 'syncAll', baseRev: +(localStorage.getItem('hanuman_rev') || 0), data: JSON.parse(sentJson) };
+                let r;
+                try { r = await callGas(payload); }
+                catch (e) {
+                    if (e.badResponse || e instanceof TypeError) { // Apps Script เวอร์ชันเก่า: ส่งแบบเดิม (อ่านผลไม่ได้)
+                        await fetch(GAS_WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                        setSyncStatus('legacy');
+                        return true;
+                    }
+                    throw e;
                 }
+                if (!r || r.ok === false) throw new Error((r && r.error) || 'Apps Script แจ้งข้อผิดพลาด');
+                if (r.rev != null) localStorage.setItem('hanuman_rev', r.rev);
+                localStorage.setItem('hanuman_last_sync', Date.now());
+                const editedMeanwhile = JSON.stringify(db) !== sentJson;
+                if (!editedMeanwhile) setDirty(false);
+                if (r.changed && r.data && !editedMeanwhile) applyRemoteDB(r.data); // รวมข้อมูลที่แก้ใน Google Sheet / จากเครื่องอื่น
+                setSyncStatus(isDirty() ? 'pending' : 'saved');
+                if (showPopupAfter) showStatusPopup('อัปโหลดขึ้น Google Sheets เรียบร้อย', 'ข้อมูล รูปภาพกำลังพล และภาพภารกิจทั้งหมดถูกบันทึกลงฐานข้อมูลแล้ว', 'upload');
+                return true;
             } catch (e) {
-                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5 text-red-400"></i> บันทึกไม่สำเร็จ';
+                console.warn(e);
+                setSyncStatus('error');
+                if (showPopupAfter) showStatusPopup('บันทึกขึ้น Google Sheets ไม่สำเร็จ', e.message + ' — ข้อมูลยังเก็บอยู่ในเครื่อง ระบบจะลองส่งใหม่ภายหลัง', 'delete', 6000);
+                return false;
+            } finally {
+                syncBusy = false;
+                if (syncAgain || isDirty()) { const again = syncAgain; syncAgain = false; if (again) syncTimer = setTimeout(() => syncToGoogleSheets(false), 600); }
             }
         }
 
-        // ดึงข้อมูลจาก Google Sheets รวมถึงรูปภาพกำลังพลและภาพประกอบภารกิจ
+        // ดึงข้อมูลจาก Google Sheets — ส่งข้อมูลที่ค้างในเครื่องก่อนเสมอ จึงไม่ทับข้อมูลที่เพิ่งเพิ่ม
         async function loadFromGoogleSheets(showPopupAfter = false) {
             if (!GAS_WEB_APP_URL) return;
-            const statusEl = document.getElementById('syncStatus');
-            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังโหลดข้อมูล...';
+            setSyncStatus('loading');
             try {
-                const res = await fetch(GAS_WEB_APP_URL + '?action=getAll&t=' + Date.now());
-                const remoteData = await res.json();
-                if (remoteData && Object.keys(remoteData).length > 0 && remoteData.missions) {
-                    if (remoteData.personnel && Array.isArray(remoteData.personnel)) {
-                        remoteData.personnel.forEach(rp => {
-                            const localP = db.personnel ? db.personnel.find(lp => lp.id === rp.id) : null;
-                            if (rp.photo && (rp.photo.startsWith('data:image') || rp.photo.startsWith('http'))) {
-                                // ใช้รูปจาก Google Sheet
-                            } else if (localP && localP.photo && localP.photo.startsWith('data:image')) {
-                                rp.photo = localP.photo;
-                            } else {
-                                rp.photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(rp.firstName || 'P')}&background=0a1128&color=c5a059&size=150`;
-                            }
-                        });
-                    }
-                    if (remoteData.missions && Array.isArray(remoteData.missions)) {
-                        remoteData.missions.forEach(rm => {
-                            const localM = db.missions ? db.missions.find(lm => lm.id === rm.id) : null;
-                            if (!rm.imageData && localM && localM.imageData) {
-                                rm.imageData = localM.imageData;
-                                rm.imageName = localM.imageName || '';
-                            }
-                            if (typeof rm.coordinators === 'string') {
-                                try { rm.coordinators = JSON.parse(rm.coordinators); } catch (e) { rm.coordinators = []; }
-                            }
-                            if (!Array.isArray(rm.coordinators)) rm.coordinators = [];
-                            if (typeof rm.ops === 'string') { try { rm.ops = JSON.parse(rm.ops); } catch (e) { rm.ops = null; } }
-                            if (!rm.ops && localM && localM.ops) rm.ops = localM.ops;
-                            if (typeof rm.expenses === 'string') { try { rm.expenses = JSON.parse(rm.expenses); } catch (e) { rm.expenses = null; } }
-                            if ((!Array.isArray(rm.expenses) || !rm.expenses.length) && localM && Array.isArray(localM.expenses) && localM.expenses.length) rm.expenses = localM.expenses;
-                        });
-                    }
-                    // คงข้อมูลส่วนขยายในเครื่องไว้ หาก Google Sheet ยังไม่มีชีต/คอลัมน์ของข้อมูลเหล่านี้
-                    ['dutyBusy', 'presets', 'missionBills'].forEach(k => {
-                        const rv = remoteData[k];
-                        if (rv === undefined || rv === null || rv === '' || (Array.isArray(rv) && !rv.length && Array.isArray(db[k]) && db[k].length)) remoteData[k] = db[k];
-                    });
-                    db = remoteData;
-                    ensureOrgHierarchy();
-                    ensureExtraCollections();
-                    syncPersonnelToOrgChart();
-                    try {
-                        localStorage.setItem('hanuman_db', JSON.stringify(db));
-                    } catch (err) {}
-                    render();
-                    if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> อัปเดตจาก Google Sheets แล้ว';
-                    if (showPopupAfter) {
-                        showStatusPopup('ดึงข้อมูลล่าสุดเรียบร้อย', 'อัปเดตข้อมูลและรูปภาพจาก Google Sheets สำเร็จ', 'success');
-                    }
+                if (isDirty()) await syncToGoogleSheets(false);
+                if (isDirty()) { setSyncStatus('error'); if (showPopupAfter) showStatusPopup('ยังส่งข้อมูลที่ค้างไม่สำเร็จ', 'ระบบจะไม่ดึงข้อมูลทับ เพื่อป้องกันข้อมูลที่เพิ่งเพิ่มสูญหาย กรุณาตรวจสอบการเชื่อมต่อ', 'delete', 5000); return; }
+                const r = await callGas({ action: 'getAll' });
+                if (r && r.ok === false) throw new Error(r.error || 'Apps Script แจ้งข้อผิดพลาด');
+                const remoteData = r && r.ok !== undefined ? r.data : r; // รองรับทั้งรูปแบบใหม่และเก่า
+                if (remoteData && typeof remoteData === 'object' && (remoteData.personnel || remoteData.missions)) {
+                    if (r.rev != null) localStorage.setItem('hanuman_rev', r.rev);
+                    localStorage.setItem('hanuman_last_sync', Date.now());
+                    applyRemoteDB(remoteData);
+                    setSyncStatus('loaded');
+                    if (showPopupAfter) showStatusPopup('ดึงข้อมูลล่าสุดเรียบร้อย', 'อัปเดตข้อมูล รวมถึงรายการที่เพิ่ม/แก้ไขใน Google Sheet แล้ว', 'success');
                 } else {
-                    await syncToGoogleSheets(false);
+                    // Sheet ยังไม่มีฐานข้อมูลหลัก -> ส่งข้อมูลในเครื่องขึ้นไป (พร้อมรวมรายชื่อที่พิมพ์ไว้ในชีต)
+                    setDirty(true);
+                    await syncToGoogleSheets(showPopupAfter);
                 }
             } catch (e) {
-                if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-database mr-1.5 text-amber-400"></i> ข้อมูลในเครื่อง (Offline)';
+                console.warn(e);
+                setSyncStatus(navigator.onLine ? 'error' : 'offline');
+                if (showPopupAfter) showStatusPopup('ดึงข้อมูลไม่สำเร็จ', e.message, 'delete', 5000);
             }
         }
+
+        // ทดสอบการเชื่อมต่อ Apps Script (ใช้ URL ที่กรอกในช่อง)
+        async function testGasConnection() {
+            const out = document.getElementById('gasTestResult');
+            const u = (document.getElementById('gasUrlInput').value || GAS_WEB_APP_URL).trim();
+            out.classList.remove('hidden');
+            out.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังทดสอบ...';
+            try {
+                const res = await fetch(u + (u.includes('?') ? '&' : '?') + 'action=ping&t=' + Date.now(), { cache: 'no-store' });
+                const txt = await res.text(); let j = null; try { j = JSON.parse(txt); } catch (e) {}
+                if (j && j.ok && j.now) out.innerHTML = `<span class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> เชื่อมต่อสำเร็จ: ${String(j.name || 'Google Sheet').replace(/[<>&"]/g, '')} (Apps Script เวอร์ชันใหม่)</span>`;
+                else if (j) out.innerHTML = '<span class="text-amber-700 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> เชื่อมต่อได้ แต่ยังเป็น Apps Script เวอร์ชันเก่า — กรุณาวาง Code.gs ใหม่แล้ว Deploy เป็น New version</span>';
+                else out.innerHTML = '<span class="text-red-700 font-semibold"><i class="fa-solid fa-circle-xmark mr-1"></i> ไม่ได้รับข้อมูล — ตรวจสอบว่า Deploy เป็น Web app และตั้ง Who has access = Anyone</span>';
+            } catch (e) {
+                out.innerHTML = '<span class="text-red-700 font-semibold"><i class="fa-solid fa-circle-xmark mr-1"></i> เชื่อมต่อไม่ได้ — ตรวจสอบ URL (ต้องลงท้ายด้วย /exec) และสิทธิ์ Anyone</span>';
+            }
+        }
+
+        // กลับมาที่หน้าแอป -> ดึงข้อมูลใหม่ (ถ้าห่างจากครั้งก่อนเกิน 2 นาที) / ออนไลน์อีกครั้ง -> ส่งข้อมูลที่ค้าง
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible' || !GAS_WEB_APP_URL) return;
+            const t = +(localStorage.getItem('hanuman_last_sync') || 0);
+            if (Date.now() - t > 120000 && !isModalOpen('formModal')) loadFromGoogleSheets(false);
+        });
+        window.addEventListener('online', () => { if (isDirty() && GAS_WEB_APP_URL) syncToGoogleSheets(false); });
+        window.addEventListener('beforeunload', e => { if (isDirty() && syncBusy) { e.preventDefault(); e.returnValue = ''; } });
 
         // ==========================================
         // 2. NAVIGATION, HIGHLIGHT & ROUTING
@@ -7249,7 +7324,7 @@ ${st.leader2Name}
             render();
             if (GAS_WEB_APP_URL) {
                 await loadFromGoogleSheets(false);
-            }
+            } else setSyncStatus('offline');
         };
     </script>
 </body>
