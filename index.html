@@ -1180,6 +1180,13 @@
             sec6EndDate: '2026-11-14',
             sec6BaseDead: 458,
             sec6BaseInjured: 238,
+            // ปรับยอด "รวมทุกพื้นที่" ข้อ 3 / ข้อ 4 ด้วยมือ (เก็บเป็นส่วนต่างจากผลรวมรายพื้นที่ เพื่อให้สะสมต่อได้)
+            sec3TotalAdjDead: 0,
+            sec3TotalAdjInjured: 0,
+            sec4TotalAdjDead: 0,
+            sec4TotalAdjInjured: 0,
+            leader1StartDate: '2026-11-14',
+            leader2StartDate: '2026-11-15',
             leader1Date: '14-15 พ.ย.69',
             leader1Id: 'p_cmd1',
             leader1Name: 'พ.ต.ต.วัทน์สิริ อินต๊ะทา',
@@ -1191,6 +1198,8 @@
         };
 
         let cmdReportState = Object.assign(JSON.parse(JSON.stringify(defaultCmdReportState)), safeLoadJSON('hanuman_cmd_report') || {});
+        // หัวรายงานใช้ "ในวันที่" ของข้อ 3 เสมอ
+        if (cmdReportState.sec3StartDate) cmdReportState.headerDate = cmdReportState.sec3StartDate;
         let activeThaiCalPicker = null;
         let thaiCalPickerView = { month: 10, year: 2026 };
 
@@ -1546,7 +1555,7 @@
                     badgeColor: 'bg-amber-100 text-amber-900',
                     title: `เวร ว.5 วันที่ ${formatThaiDateFullYear(w.date)} — ${w.officer}`,
                     subtitle: `ลูกทีม: ${w.teamMembers || '-'} ${w.note ? '• ' + w.note : ''}`,
-                    keywords: `ตารางเวร ว.5 ${w.date} ${formatThaiDateFullYear(w.date)} ${w.officer} ${w.teamMembers || ''} ${w.note || ''}`,
+                    keywords: `ตารางเวร ว.5 ${w.date} ${formatThaiDateFullYear(w.date)} ${w.officer} ${w.substitute || ''} ${w.teamMembers || ''} ${w.note || ''}`,
                     action: () => { const dp = String(w.date || '').split('-'); navigate('duty_w5', { fMonth: dp.length === 3 ? String(parseInt(dp[1], 10)) : 'all', fYear: dp.length === 3 ? String(parseInt(dp[0], 10)) : 'all', highlightId: `w5-row-${w.id}` }); }
                 });
             });
@@ -1993,7 +2002,7 @@
                 if (f.fMonth !== 'all') title += ` เดือน${THAI_MONTHS_FULL[parseInt(f.fMonth, 10) - 1]}`;
                 if (f.fYear !== 'all') title += ` พ.ศ. ${parseInt(f.fYear, 10) + 543}`;
             }
-            return title + '\n' + (list.length ? list.map(i => `${formatThaiDateShort(i.date)}  ${i.officer}`).join('\n') : '(ไม่มีข้อมูล)');
+            return title + '\n' + (list.length ? list.map(i => `${formatThaiDateShort(i.date)}  ${i.officer}${i.substitute ? ` (ผู้แทน ${i.substitute})` : ''}`).join('\n') : '(ไม่มีข้อมูล)');
         }
 
 
@@ -2039,7 +2048,7 @@
             openModal('จัดรายชื่อเวร ว.5 อัตโนมัติ', `
                 <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-navy-900">
                     <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i>
-                    ระบบจะเรียงรายชื่อที่ติ๊กตามลำดับยศ (อาวุโสสูง → ต่ำ) แล้วจัดเข้าเวรทีละวันตลอดทั้งเดือน วนซ้ำจนครบวัน • ข้ามผู้ที่ “ติดภารกิจ” ในวันนั้นให้อัตโนมัติ
+                    ระบบจะเรียงรายชื่อที่ติ๊กตามลำดับยศ (อาวุโสสูง → ต่ำ) แล้วจัดเข้าเวรทีละวันตลอดทั้งเดือน วนซ้ำจนครบวัน • เลือกได้ว่าผู้ที่ “ติดภารกิจ” ในวันนั้นจะให้ข้ามรายชื่อ หรือใส่ชื่อไว้แล้วมีผู้แทน
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -2066,6 +2075,19 @@
                     </div>
                     <div class="space-y-1.5 max-h-64 overflow-y-auto pr-1">${listHtml || '<div class="text-center text-gray-400 py-6 text-sm">ยังไม่มีข้อมูลกำลังพล</div>'}</div>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">กรณีผู้ที่ถึงเวรติดภารกิจในวันนั้น</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-gold-500 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="w5a_busy_mode" value="sub" ${w5AutoBusyMode() === 'sub' ? 'checked' : ''} class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>ใส่ชื่อ แล้วมีผู้แทน</b><br>คงชื่อผู้ถึงเวรไว้ตามลำดับ และระบุผู้แทน (คนถัดไปที่ว่าง) ลำดับเวรไม่เปลี่ยน</span>
+                        </label>
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-gold-500 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="w5a_busy_mode" value="skip" ${w5AutoBusyMode() === 'skip' ? 'checked' : ''} class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>ข้ามรายชื่อไปเลย</b><br>ให้คนถัดไปที่ว่างเข้าเวรแทน และลำดับเลื่อนต่อจากคนนั้น</span>
+                        </label>
+                    </div>
+                </div>
                 <label class="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer">
                     <input type="checkbox" id="w5a_overwrite" class="w-4 h-4 mt-0.5 accent-navy-900">
                     <span class="text-xs text-navy-900"><b>เขียนทับวันที่มีเวรอยู่แล้ว</b><br>หากไม่ติ๊ก ระบบจะคงวันที่มีข้อมูลเดิมไว้ และจัดเฉพาะวันที่ว่าง (ลำดับจะต่อจากรายชื่อเดิมให้อัตโนมัติ)</span>
@@ -2074,6 +2096,10 @@
             const sb = document.getElementById('modalSaveBtn');
             sb.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> จัดรายชื่อ';
             updateW5AutoCount();
+        }
+
+        function w5AutoBusyMode() {
+            try { return localStorage.getItem('hanuman_w5_busy_mode') === 'sub' ? 'sub' : 'skip'; } catch (e) { return 'skip'; }
         }
 
         function runW5AutoArrange() {
@@ -2089,6 +2115,8 @@
             const names = people.map(p => `${p.rank}${p.firstName} ${p.lastName}`.trim());
             const overwrite = document.getElementById('w5a_overwrite').checked;
             const startSel = document.getElementById('w5a_start').value;
+            const busyMode = (document.querySelector('input[name="w5a_busy_mode"]:checked') || {}).value === 'sub' ? 'sub' : 'skip';
+            try { localStorage.setItem('hanuman_w5_busy_mode', busyMode); } catch (e) {}
             const mm = String(month).padStart(2, '0');
             const daysInMonth = new Date(year, month, 0).getDate();
 
@@ -2103,7 +2131,7 @@
                 if (prev) ptr = (names.indexOf(prev.officer) + 1) % names.length;
             }
 
-            let created = 0, updated = 0, kept = 0, skipped = 0;
+            let created = 0, updated = 0, kept = 0, skipped = 0, subbed = 0, noSub = 0;
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = `${year}-${mm}-${String(d).padStart(2, '0')}`;
                 const existing = db.dutyW5.find(w => w.date === date);
@@ -2113,28 +2141,42 @@
                     kept++;
                     continue;
                 }
-                // ข้ามผู้ที่ติดภารกิจในวันนั้น (ถ้าทุกคนติด ใช้คนตามลำดับเดิม)
-                let pick = ptr % names.length;
-                for (let k = 0; k < names.length; k++) {
-                    const idx = (ptr + k) % names.length;
-                    if (!isPersonBusy(people[idx].id, date)) { pick = idx; break; }
+                const cur = ptr % names.length;
+                let pick = cur;
+                let substitute = '';
+                if (busyMode === 'sub') {
+                    // ใส่ชื่อผู้ถึงเวรตามลำดับ ถ้าติดภารกิจ หาผู้แทนคนถัดไปที่ว่าง (ลำดับเวรไม่เปลี่ยน)
+                    if (isPersonBusy(people[cur].id, date)) {
+                        for (let k = 1; k < names.length; k++) {
+                            const idx = (cur + k) % names.length;
+                            if (!isPersonBusy(people[idx].id, date)) { substitute = names[idx]; break; }
+                        }
+                        if (substitute) subbed++; else noSub++;
+                    }
+                    ptr = (cur + 1) % names.length;
+                } else {
+                    // ข้ามผู้ที่ติดภารกิจในวันนั้น (ถ้าทุกคนติด ใช้คนตามลำดับเดิม)
+                    for (let k = 0; k < names.length; k++) {
+                        const idx = (cur + k) % names.length;
+                        if (!isPersonBusy(people[idx].id, date)) { pick = idx; break; }
+                    }
+                    if (pick !== cur) skipped++;
+                    ptr = (pick + 1) % names.length;
                 }
-                if (pick !== ptr % names.length) skipped++;
                 const name = names[pick];
-                if (existing) { existing.officer = name; updated++; }
+                if (existing) { existing.officer = name; existing.substitute = substitute; updated++; }
                 else {
-                    db.dutyW5.push({ id: `w_auto_${date}_${Date.now()}`, date, officer: name, teamMembers: '', note: '' });
+                    db.dutyW5.push({ id: `w_auto_${date}_${Date.now()}`, date, officer: name, substitute, teamMembers: '', note: '' });
                     created++;
                 }
-                ptr = (pick + 1) % names.length;
             }
 
             saveDB();
             closeModal();
             navigate('duty_w5', { fMonth: String(month), fYear: String(year) }, false);
             showStatusPopup('จัดรายชื่อเวรเรียบร้อย',
-                `${THAI_MONTHS_FULL[month - 1]} ${year + 543}: เพิ่มใหม่ ${created} วัน${updated ? ' • เขียนทับ ' + updated + ' วัน' : ''}${kept ? ' • คงข้อมูลเดิม ' + kept + ' วัน' : ''}${skipped ? ' • ข้ามผู้ติดภารกิจ ' + skipped + ' ครั้ง' : ''}`,
-                'success', 3200);
+                `${THAI_MONTHS_FULL[month - 1]} ${year + 543}: เพิ่มใหม่ ${created} วัน${updated ? ' • เขียนทับ ' + updated + ' วัน' : ''}${kept ? ' • คงข้อมูลเดิม ' + kept + ' วัน' : ''}${skipped ? ' • ข้ามผู้ติดภารกิจ ' + skipped + ' ครั้ง' : ''}${subbed ? ' • มีผู้แทน ' + subbed + ' วัน' : ''}${noSub ? ' • ไม่มีผู้ว่างเป็นผู้แทน ' + noSub + ' วัน' : ''}`,
+                'success', 3600);
         }
 
         // ==========================================
@@ -2467,12 +2509,80 @@
             render();
         }
 
+        // ---- ตัวช่วยวันที่ / ยอดรวม สำหรับรายงานผู้บังคับบัญชา ----
+        function cmdIsoAddDays(iso, n) {
+            const dt = new Date((iso || todayIso()) + 'T00:00:00');
+            dt.setDate(dt.getDate() + n);
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+        }
+
+        // 14-15 พ.ย.69 • 30 พ.ย.-1 ธ.ค.69 • 31 ธ.ค.69-1 ม.ค.70
+        function formatLeaderRangeText(iso) {
+            if (!iso) return '';
+            const [y1, m1, d1] = iso.split('-').map(Number);
+            const [y2, m2, d2] = cmdIsoAddDays(iso, 1).split('-').map(Number);
+            const yy = (y) => String((y + 543) % 100).padStart(2, '0');
+            const mon = (m) => THAI_MONTHS_SHORT[m - 1];
+            if (y1 !== y2) return `${d1} ${mon(m1)}${yy(y1)}-${d2} ${mon(m2)}${yy(y2)}`;
+            if (m1 !== m2) return `${d1} ${mon(m1)}-${d2} ${mon(m2)}${yy(y2)}`;
+            return `${d1}-${d2} ${mon(m1)}${yy(y1)}`;
+        }
+
+        // ชื่อผู้ปฏิบัติจริงของเวร ว.5 (ถ้ามีผู้แทน ใช้ผู้แทน)
+        function w5OnDutyName(w) { return w ? (String(w.substitute || '').trim() || w.officer || '') : ''; }
+
+        // ดึงหัวหน้าชุดจากตารางเวร ว.5 ของวันแรกในช่วง (เช่น 14-15 → เวร ว.5 วันที่ 14)
+        function pullCmdLeaderFromW5(num, silent) {
+            const key = `leader${num}`;
+            const iso = cmdReportState[`${key}StartDate`];
+            cmdReportState[`${key}Date`] = formatLeaderRangeText(iso);
+            const w = db.dutyW5.find(x => x.date === iso);
+            if (!w) {
+                if (!silent) showStatusPopup('ไม่พบตารางเวร ว.5', `ยังไม่มีเวร ว.5 วันที่ ${formatThaiDate(iso)} — กรุณาเลือกชื่อเองหรือจัดตารางเวรก่อน`, 'edit', 2600);
+                return false;
+            }
+            const name = w5OnDutyName(w);
+            const p = findPersonByName(name);
+            cmdReportState[`${key}Id`] = p ? p.id : '';
+            cmdReportState[`${key}Name`] = p ? `${p.rank}${p.firstName} ${p.lastName}`.trim() : name;
+            cmdReportState[`${key}Phone`] = p ? (p.phone || '') : '';
+            return true;
+        }
+
+        function setCmdLeaderDates(leader1Iso) {
+            cmdReportState.leader1StartDate = leader1Iso;
+            cmdReportState.leader2StartDate = cmdIsoAddDays(leader1Iso, 1);
+            pullCmdLeaderFromW5(1, true);
+            pullCmdLeaderFromW5(2, true);
+        }
+
+        function getCmdTotals(st = cmdReportState) {
+            const n = (v) => Number(v) || 0;
+            const s3RowDead = st.sec3Data.reduce((a, r) => a + n(r.dead), 0);
+            const s3RowInj = st.sec3Data.reduce((a, r) => a + n(r.injured), 0);
+            const s3Dead = Math.max(0, s3RowDead + n(st.sec3TotalAdjDead));
+            const s3Inj = Math.max(0, s3RowInj + n(st.sec3TotalAdjInjured));
+            const s4RowDead = st.sec4BaseData.reduce((a, r, i) => a + n(r.dead) + n(st.sec3Data[i]?.dead), 0);
+            const s4RowInj = st.sec4BaseData.reduce((a, r, i) => a + n(r.injured) + n(st.sec3Data[i]?.injured), 0);
+            const s4Dead = Math.max(0, s4RowDead + n(st.sec4TotalAdjDead) + n(st.sec3TotalAdjDead));
+            const s4Inj = Math.max(0, s4RowInj + n(st.sec4TotalAdjInjured) + n(st.sec3TotalAdjInjured));
+            const raj = st.sec3Data[0] || {};
+            return {
+                s3RowDead, s3RowInj, s3Dead, s3Inj,
+                s4RowDead, s4RowInj, s4Dead, s4Inj,
+                s5Dead: n(st.sec5BaseDead) + s3Dead,
+                s5Inj: n(st.sec5BaseInjured) + s3Inj,
+                s6Dead: n(st.sec6BaseDead) + n(raj.dead),
+                s6Inj: n(st.sec6BaseInjured) + n(raj.injured)
+            };
+        }
+
         function selectCmdThaiDate(fieldKey, newDateStr) {
             const oldDateStr = cmdReportState[fieldKey];
             const changed = !!oldDateStr && oldDateStr !== newDateStr;
 
             if (fieldKey === 'sec3StartDate' || fieldKey === 'headerDate') {
-                // เปลี่ยน "ในวันที่" (หรือวันที่หัวรายงาน) => ทบยอด + รีเซ็ตข้อ 3
+                // เปลี่ยน "ในวันที่" => ทบยอด + รีเซ็ตข้อ 3 (หัวรายงานใช้วันที่นี้)
                 if (changed) rolloverSec3AndReset();
                 cmdReportState.headerDate = newDateStr;
                 cmdReportState.sec3StartDate = newDateStr;
@@ -2482,12 +2592,22 @@
                 cmdReportState.sec4EndDate = cmdReportState.sec3EndDate;
                 cmdReportState.sec5EndDate = cmdReportState.sec3EndDate;
                 cmdReportState.sec6EndDate = cmdReportState.sec3EndDate;
+                if (changed) setCmdLeaderDates(newDateStr);
             } else if (fieldKey === 'sec3EndDate') {
                 // เปลี่ยน "ถึงวันที่" => ไม่รีเซ็ตข้อมูล แค่ปรับวันที่สิ้นสุดของข้อ 3-6
                 cmdReportState.sec3EndDate = newDateStr;
                 cmdReportState.sec4EndDate = newDateStr;
                 cmdReportState.sec5EndDate = newDateStr;
                 cmdReportState.sec6EndDate = newDateStr;
+            } else if (fieldKey === 'leader1StartDate') {
+                // ชุดที่ 1 เปลี่ยน => ชุดที่ 2 เป็นวันถัดไปให้อัตโนมัติ (แก้ไขแยกได้)
+                cmdReportState.leader1StartDate = newDateStr;
+                pullCmdLeaderFromW5(1, false);
+                cmdReportState.leader2StartDate = cmdIsoAddDays(newDateStr, 1);
+                pullCmdLeaderFromW5(2, true);
+            } else if (fieldKey === 'leader2StartDate') {
+                cmdReportState.leader2StartDate = newDateStr;
+                pullCmdLeaderFromW5(2, false);
             } else {
                 cmdReportState[fieldKey] = newDateStr;
             }
@@ -2498,23 +2618,25 @@
         }
 
         function rolloverSec3AndReset() {
-            let s3DeadSum = 0;
-            let s3InjSum = 0;
+            const t = getCmdTotals();
 
             cmdReportState.sec3Data.forEach((row, idx) => {
                 const d = Number(row.dead) || 0;
                 const inj = Number(row.injured) || 0;
-                s3DeadSum += d;
-                s3InjSum += inj;
-
                 if (cmdReportState.sec4BaseData[idx]) {
                     cmdReportState.sec4BaseData[idx].dead = (Number(cmdReportState.sec4BaseData[idx].dead) || 0) + d;
                     cmdReportState.sec4BaseData[idx].injured = (Number(cmdReportState.sec4BaseData[idx].injured) || 0) + inj;
                 }
             });
 
-            cmdReportState.sec5BaseDead = (Number(cmdReportState.sec5BaseDead) || 0) + s3DeadSum;
-            cmdReportState.sec5BaseInjured = (Number(cmdReportState.sec5BaseInjured) || 0) + s3InjSum;
+            // ยอดที่ปรับเองในรวมข้อ 3 ย้ายไปสะสมในรวมข้อ 4
+            cmdReportState.sec4TotalAdjDead = (Number(cmdReportState.sec4TotalAdjDead) || 0) + (Number(cmdReportState.sec3TotalAdjDead) || 0);
+            cmdReportState.sec4TotalAdjInjured = (Number(cmdReportState.sec4TotalAdjInjured) || 0) + (Number(cmdReportState.sec3TotalAdjInjured) || 0);
+            cmdReportState.sec3TotalAdjDead = 0;
+            cmdReportState.sec3TotalAdjInjured = 0;
+
+            cmdReportState.sec5BaseDead = (Number(cmdReportState.sec5BaseDead) || 0) + t.s3Dead;
+            cmdReportState.sec5BaseInjured = (Number(cmdReportState.sec5BaseInjured) || 0) + t.s3Inj;
 
             const raj3 = cmdReportState.sec3Data[0] || { dead: 0, injured: 0 };
             cmdReportState.sec6BaseDead = (Number(cmdReportState.sec6BaseDead) || 0) + (Number(raj3.dead) || 0);
@@ -2528,10 +2650,7 @@
         }
 
         function advanceToNextDayCmdReport() {
-            const cur = cmdReportState.sec3StartDate || '2026-11-14';
-            const dt = new Date(cur + 'T00:00:00');
-            dt.setDate(dt.getDate() + 1);
-            const nextStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+            const nextStr = cmdIsoAddDays(cmdReportState.sec3StartDate || todayIso(), 1);
             rolloverSec3AndReset();
             cmdReportState.headerDate = nextStr;
             cmdReportState.sec3StartDate = nextStr;
@@ -2539,8 +2658,9 @@
             cmdReportState.sec4EndDate = nextStr;
             cmdReportState.sec5EndDate = nextStr;
             cmdReportState.sec6EndDate = nextStr;
+            setCmdLeaderDates(nextStr);
             saveCmdReportState();
-            showStatusPopup('ขึ้นวันถัดไปเรียบร้อย', 'ทบยอดสะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0 แล้ว', 'success');
+            showStatusPopup('ขึ้นวันถัดไปเรียบร้อย', 'ทบยอดสะสมเข้าข้อ 4-6 รีเซ็ตข้อ 3 เป็น 0 และดึงหัวหน้าชุดจากเวร ว.5 แล้ว', 'success');
             render();
         }
 
@@ -2646,23 +2766,92 @@
                 `;
             }).join('');
 
-            const s3DeadSum = st.sec3Data.reduce((a, b) => a + (Number(b.dead) || 0), 0);
-            const s3InjSum = st.sec3Data.reduce((a, b) => a + (Number(b.injured) || 0), 0);
-            const currentS5Dead = (Number(st.sec5BaseDead) || 0) + s3DeadSum;
-            const currentS5Inj = (Number(st.sec5BaseInjured) || 0) + s3InjSum;
+            const T = getCmdTotals(st);
+            const currentS5Dead = T.s5Dead, currentS5Inj = T.s5Inj;
+            const currentS6Dead = T.s6Dead, currentS6Inj = T.s6Inj;
 
-            const raj3Dead = Number(st.sec3Data[0]?.dead) || 0;
-            const raj3Inj = Number(st.sec3Data[0]?.injured) || 0;
-            const currentS6Dead = (Number(st.sec6BaseDead) || 0) + raj3Dead;
-            const currentS6Inj = (Number(st.sec6BaseInjured) || 0) + raj3Inj;
+            // แถว "รวมทุกพื้นที่" (แก้ไขได้) ของข้อ 3 และข้อ 4
+            const renderGrandTotalRow = (sec, deadVal, injVal, adjD, adjI) => {
+                const adjusted = (Number(adjD) || 0) !== 0 || (Number(adjI) || 0) !== 0;
+                const fmtAdj = (v) => (v > 0 ? '+' : '') + Number(v || 0).toLocaleString();
+                return `
+                    <div class="grid grid-cols-12 gap-2 items-center pt-2.5 mt-1 border-t-2 border-navy-900/20 text-xs sm:text-sm">
+                        <div class="col-span-5 sm:col-span-6 font-bold text-navy-900">
+                            - รวมทุกพื้นที่ <span class="text-[10px] font-normal text-gray-500">(แก้ไขได้)</span>
+                        </div>
+                        <div class="col-span-3 sm:col-span-2">
+                            <input type="number" min="0" id="${sec}_total_dead" value="${deadVal}" onchange="updateCmdGrandTotalOverride('${sec}', 'dead', this.value)" class="w-full px-2 py-1.5 border-2 border-gold-500/60 rounded-lg text-center bg-amber-50 font-bold text-navy-900" title="แก้ไขยอดรวมตายทุกพื้นที่">
+                        </div>
+                        <div class="col-span-3 sm:col-span-2">
+                            <input type="number" min="0" id="${sec}_total_inj" value="${injVal}" onchange="updateCmdGrandTotalOverride('${sec}', 'injured', this.value)" class="w-full px-2 py-1.5 border-2 border-gold-500/60 rounded-lg text-center bg-amber-50 font-bold text-navy-900" title="แก้ไขยอดรวมบาดเจ็บทุกพื้นที่">
+                        </div>
+                        <div class="col-span-1 sm:col-span-2 text-right font-extrabold text-navy-900" id="${sec}_total_sum">${(deadVal + injVal).toLocaleString()}</div>
+                    </div>
+                    ${adjusted ? `
+                        <div class="flex flex-wrap items-center justify-end gap-2 text-[11px] text-amber-800">
+                            <span><i class="fa-solid fa-pen mr-1"></i>ปรับยอดเองจากผลรวมรายพื้นที่ (ตาย ${fmtAdj(adjD)}, บาดเจ็บ ${fmtAdj(adjI)})</span>
+                            <button type="button" onclick="resetCmdGrandTotalOverride('${sec}')" class="px-2 py-0.5 rounded-md border border-amber-300 bg-white hover:bg-amber-100 font-semibold">
+                                <i class="fa-solid fa-rotate-left mr-1"></i>คำนวณอัตโนมัติ
+                            </button>
+                        </div>` : ''}
+                `;
+            };
 
-            const isHeaderCalOpen = activeThaiCalPicker === 'headerDate';
+            // ส่วนเลือกวันที่ + ดึงชื่อ หัวหน้าชุดปฏิบัติ (ข้อ 7)
+            const renderLeaderBlock = (num) => {
+                const key = `leader${num}`;
+                const iso = st[`${key}StartDate`];
+                const isOpen = activeThaiCalPicker === `${key}StartDate`;
+                const w = db.dutyW5.find(x => x.date === iso);
+                const w5Info = w
+                    ? `<span class="text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>เวร ว.5 วันที่ ${formatThaiDate(iso)}: <b>${escHtml(w.officer)}</b>${w.substitute ? ` <span class="text-amber-700">(ผู้แทน: <b>${escHtml(w.substitute)}</b>)</span>` : ''}</span>`
+                    : `<span class="text-amber-700"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ไม่พบเวร ว.5 วันที่ ${formatThaiDate(iso)} — เลือกชื่อเองได้</span>`;
+                return `
+                    <div class="bg-gray-50 p-3.5 rounded-xl border space-y-2.5 text-xs sm:text-sm">
+                        <div class="font-bold text-navy-800">หัวหน้าชุดปฏิบัติ ชุดที่ ${num}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">ประจำวันที่ (เลือกวันแรก)</label>
+                                <button type="button" onclick="toggleThaiCalPicker('${key}StartDate')"
+                                    class="w-full px-3 py-1.5 rounded-lg border bg-white hover:border-gold-500 text-left font-semibold text-navy-900 flex items-center justify-between">
+                                    <span><i class="fa-regular fa-calendar-days text-gold-600 mr-2"></i>${escHtml(st[`${key}Date`] || formatLeaderRangeText(iso))}</span>
+                                    <i class="fa-solid ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-gray-400"></i>
+                                </button>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">ดึงชื่อจากข้อมูลนายตำรวจ</label>
+                                <select onchange="selectCmdLeader(${num}, this.value)" class="w-full px-3 py-1.5 border rounded-lg bg-white">
+                                    <option value="">-- เลือกนายตำรวจ --</option>
+                                    ${officerOptions}
+                                </select>
+                            </div>
+                        </div>
+                        ${isOpen ? `<div class="pt-1">${renderThaiMiniCalendar(iso, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', `${key}StartDate`)}</div>` : ''}
+                        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                            ${w5Info}
+                            <button type="button" onclick="repullCmdLeader(${num})" class="px-2 py-1 rounded-md border bg-white hover:bg-gray-100 font-semibold text-navy-900">
+                                <i class="fa-solid fa-rotate mr-1"></i>ดึงจากตารางเวร ว.5 อีกครั้ง
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">ยศ ชื่อ สกุล (แก้ไขได้)</label>
+                                <input type="text" id="cmd_l${num}_name" value="${escHtml(st[`${key}Name`] || '')}" oninput="cmdReportState.${key}Name=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">เบอร์โทรศัพท์ (แก้ไขได้)</label>
+                                <input type="text" id="cmd_l${num}_phone" value="${escHtml(st[`${key}Phone`] || '')}" oninput="cmdReportState.${key}Phone=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
 
             container.innerHTML = `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">รายงานผลการปฏิบัติ ชป.นก (รายงานผู้บังคับบัญชา)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">เลือกวันที่จากปฏิทินภาษาไทย ยอดข้อ 4, 5 และ 6 สะสมอัตโนมัติ และรีเซ็ตข้อ 3 เป็น 0 เมื่อเปลี่ยน "ในวันที่" (การเปลี่ยน "ถึงวันที่" ไม่รีเซ็ต)</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • ยอดข้อ 4, 5 และ 6 สะสมอัตโนมัติ และรีเซ็ตข้อ 3 เป็น 0 เมื่อเปลี่ยน "ในวันที่" (การเปลี่ยน "ถึงวันที่" ไม่รีเซ็ต) • ยอดรวมข้อ 3-4 แก้ไขได้</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="รวมยอดข้อ 3 สะสมเข้าข้อ 4-6 แล้วรีเซ็ตข้อ 3 เป็น 0">
@@ -2682,18 +2871,11 @@
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-bold text-navy-900 text-sm">ประจำวันที่ (หัวรายงาน)</span>
-                                <button type="button" onclick="toggleThaiCalPicker('headerDate')"
-                                    class="px-3.5 py-2 rounded-xl border bg-white hover:border-gold-500 text-xs sm:text-sm font-semibold text-navy-900 flex items-center gap-2 shadow-2xs">
-                                    <i class="fa-regular fa-calendar-days text-gold-600"></i>
-                                    <span>${formatThaiDateFullYear(st.headerDate)}</span>
-                                    <i class="fa-solid ${isHeaderCalOpen ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-gray-400"></i>
-                                </button>
+                                <span class="px-3 py-1.5 rounded-xl bg-navy-900/5 text-xs sm:text-sm font-semibold text-navy-900" title="ใช้วันที่จาก ข้อ 3 ในวันที่">
+                                    <i class="fa-regular fa-calendar-days text-gold-600 mr-1.5"></i>${formatThaiDateFullYear(st.sec3StartDate)}
+                                    <span class="text-[10px] text-gray-500 font-normal ml-1">(ตามข้อ 3)</span>
+                                </span>
                             </div>
-                            ${isHeaderCalOpen ? `
-                                <div class="pt-2">
-                                    ${renderThaiMiniCalendar(st.headerDate, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', 'headerDate')}
-                                </div>
-                            ` : ''}
                             <div class="bg-gray-50 p-3.5 rounded-xl text-xs sm:text-sm text-gray-700 space-y-1 border">
                                 <p><b>1.จำนวนผู้ปฏิบัติ 10 นาย</b> แบ่งเป็น ผู้ควบคุม 1 นาย / ชุดยิงหนุมาน 9 นาย</p>
                                 <p><b>2.อาวุธ อุปกรณ์ที่ใช้</b> ปืนซุ่มยิง ขนาด .22 พร้อมกล้องเล็งและอุปกรณ์เก็บเสียง จำนวน 10 กระบอก</p>
@@ -2717,6 +2899,7 @@
                                 <div class="col-span-1 sm:col-span-2 text-right">รวม</div>
                             </div>
                             ${renderSec3Inputs()}
+                            ${renderGrandTotalRow('sec3', T.s3Dead, T.s3Inj, st.sec3TotalAdjDead, st.sec3TotalAdjInjured)}
                         </div>
 
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
@@ -2730,6 +2913,7 @@
                                 <div class="col-span-1 sm:col-span-2 text-right">รวม</div>
                             </div>
                             ${renderSec4AccumulatedRows()}
+                            ${renderGrandTotalRow('sec4', T.s4Dead, T.s4Inj, st.sec4TotalAdjDead, st.sec4TotalAdjInjured)}
                         </div>
 
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-4">
@@ -2779,55 +2963,9 @@
                         <div class="glass-card gold-border-top rounded-2xl p-5 space-y-4">
                             <h3 class="font-bold text-navy-900 text-sm sm:text-base">7. หัวหน้าชุดปฏิบัติประจำวัน (ดึงข้อมูลจากนายตำรวจ)</h3>
                             
-                            <div class="bg-gray-50 p-3.5 rounded-xl border space-y-2.5 text-xs sm:text-sm">
-                                <div class="font-bold text-navy-800">หัวหน้าชุดปฏิบัติ ชุดที่ 1</div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ประจำวันที่ (เช่น 14-15 พ.ย.69)</label>
-                                        <input type="text" value="${st.leader1Date}" oninput="cmdReportState.leader1Date=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ดึงชื่อจากข้อมูลนายตำรวจ</label>
-                                        <select onchange="selectCmdLeader(1, this.value)" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                            <option value="">-- เลือกนายตำรวจ --</option>
-                                            ${officerOptions}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ยศ ชื่อ สกุล</label>
-                                        <input type="text" id="cmd_l1_name" value="${st.leader1Name}" oninput="cmdReportState.leader1Name=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white font-semibold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">เบอร์โทรศัพท์</label>
-                                        <input type="text" id="cmd_l1_phone" value="${st.leader1Phone}" oninput="cmdReportState.leader1Phone=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-gray-50 p-3.5 rounded-xl border space-y-2.5 text-xs sm:text-sm">
-                                <div class="font-bold text-navy-800">หัวหน้าชุดปฏิบัติ ชุดที่ 2</div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ประจำวันที่ (เช่น 15-16 พ.ย.69)</label>
-                                        <input type="text" value="${st.leader2Date}" oninput="cmdReportState.leader2Date=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ดึงชื่อจากข้อมูลนายตำรวจ</label>
-                                        <select onchange="selectCmdLeader(2, this.value)" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                            <option value="">-- เลือกนายตำรวจ --</option>
-                                            ${officerOptions}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">ยศ ชื่อ สกุล</label>
-                                        <input type="text" id="cmd_l2_name" value="${st.leader2Name}" oninput="cmdReportState.leader2Name=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white font-semibold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-600 mb-1">เบอร์โทรศัพท์</label>
-                                        <input type="text" id="cmd_l2_phone" value="${st.leader2Phone}" oninput="cmdReportState.leader2Phone=this.value; saveCmdReportState(); updateCmdPreviewBox();" class="w-full px-3 py-1.5 border rounded-lg bg-white">
-                                    </div>
-                                </div>
-                            </div>
+                            <p class="text-[11px] text-gray-500"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>เลือกวันแรกของช่วง ระบบจะแสดงเป็น เช่น 14-15 พ.ย.69 และดึงชื่อ-เบอร์โทรจากตารางเวร ว.5 ของวันแรกให้อัตโนมัติ (ชุดที่ 2 จะเลื่อนเป็นวันถัดไปให้เมื่อเลือกชุดที่ 1)</p>
+                            ${renderLeaderBlock(1)}
+                            ${renderLeaderBlock(2)}
                         </div>
                     </div>
 
@@ -2846,40 +2984,31 @@
             `;
         }
 
+        // อัปเดตตัวเลขยอดรวมบนหน้าจอโดยไม่ render ใหม่ (ไม่ให้ช่องที่กำลังพิมพ์หลุดโฟกัส)
+        function refreshCmdTotalsDom() {
+            const st = cmdReportState;
+            const T = getCmdTotals(st);
+            const setVal = (id, v) => { const el = document.getElementById(id); if (el && el !== document.activeElement) el.value = v; };
+            const setText = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = Number(v || 0).toLocaleString(); };
+
+            st.sec3Data.forEach((row, idx) => setText(`sec3_row_sum_${idx}`, (Number(row.dead) || 0) + (Number(row.injured) || 0)));
+            st.sec4BaseData.forEach((baseRow, idx) => {
+                const d = (Number(baseRow.dead) || 0) + (Number(st.sec3Data[idx]?.dead) || 0);
+                const inj = (Number(baseRow.injured) || 0) + (Number(st.sec3Data[idx]?.injured) || 0);
+                setVal(`sec4_total_dead_${idx}`, d);
+                setVal(`sec4_total_inj_${idx}`, inj);
+                setText(`sec4_row_sum_${idx}`, d + inj);
+            });
+            setVal('sec3_total_dead', T.s3Dead); setVal('sec3_total_inj', T.s3Inj); setText('sec3_total_sum', T.s3Dead + T.s3Inj);
+            setVal('sec4_total_dead', T.s4Dead); setVal('sec4_total_inj', T.s4Inj); setText('sec4_total_sum', T.s4Dead + T.s4Inj);
+            setVal('cmd_s5_dead_total', T.s5Dead); setVal('cmd_s5_inj_total', T.s5Inj);
+            setVal('cmd_s6_dead_total', T.s6Dead); setVal('cmd_s6_inj_total', T.s6Inj);
+        }
+
         function updateCmdSec3Val(idx, field, val) {
             cmdReportState.sec3Data[idx][field] = val;
-            const row = cmdReportState.sec3Data[idx];
-            const d = Number(row.dead) || 0;
-            const inj = Number(row.injured) || 0;
-
-            const s3SumEl = document.getElementById(`sec3_row_sum_${idx}`);
-            if (s3SumEl) s3SumEl.innerText = (d + inj).toLocaleString();
-
-            const base4 = cmdReportState.sec4BaseData[idx];
-            const s4Dead = (Number(base4.dead) || 0) + d;
-            const s4Inj = (Number(base4.injured) || 0) + inj;
-            const s4DeadInput = document.getElementById(`sec4_total_dead_${idx}`);
-            const s4InjInput = document.getElementById(`sec4_total_inj_${idx}`);
-            const s4SumEl = document.getElementById(`sec4_row_sum_${idx}`);
-            if (s4DeadInput) s4DeadInput.value = s4Dead;
-            if (s4InjInput) s4InjInput.value = s4Inj;
-            if (s4SumEl) s4SumEl.innerText = (s4Dead + s4Inj).toLocaleString();
-
-            const totalS3Dead = cmdReportState.sec3Data.reduce((a, b) => a + (Number(b.dead) || 0), 0);
-            const totalS3Inj = cmdReportState.sec3Data.reduce((a, b) => a + (Number(b.injured) || 0), 0);
-            const s5DeadInput = document.getElementById('cmd_s5_dead_total');
-            const s5InjInput = document.getElementById('cmd_s5_inj_total');
-            if (s5DeadInput) s5DeadInput.value = (Number(cmdReportState.sec5BaseDead) || 0) + totalS3Dead;
-            if (s5InjInput) s5InjInput.value = (Number(cmdReportState.sec5BaseInjured) || 0) + totalS3Inj;
-
-            if (idx === 0) {
-                const s6DeadInput = document.getElementById('cmd_s6_dead_total');
-                const s6InjInput = document.getElementById('cmd_s6_inj_total');
-                if (s6DeadInput) s6DeadInput.value = (Number(cmdReportState.sec6BaseDead) || 0) + d;
-                if (s6InjInput) s6InjInput.value = (Number(cmdReportState.sec6BaseInjured) || 0) + inj;
-            }
-
             saveCmdReportState();
+            refreshCmdTotalsDom();
             updateCmdPreviewBox();
         }
 
@@ -2890,10 +3019,35 @@
             render();
         }
 
+        // แก้ไขช่อง "รวมทุกพื้นที่" ของข้อ 3 / ข้อ 4 (เก็บเป็นส่วนต่างจากผลรวมรายพื้นที่)
+        function updateCmdGrandTotalOverride(sec, field, newTotalVal) {
+            const st = cmdReportState;
+            const T = getCmdTotals(st);
+            const val = Math.max(0, Number(newTotalVal) || 0);
+            const suffix = field === 'dead' ? 'Dead' : 'Injured';
+            if (sec === 'sec3') {
+                const rowSum = field === 'dead' ? T.s3RowDead : T.s3RowInj;
+                st[`sec3TotalAdj${suffix}`] = val - rowSum;
+            } else {
+                const rowSum = field === 'dead' ? T.s4RowDead : T.s4RowInj;
+                st[`sec4TotalAdj${suffix}`] = val - rowSum - (Number(st[`sec3TotalAdj${suffix}`]) || 0);
+            }
+            saveCmdReportState();
+            render();
+        }
+
+        function resetCmdGrandTotalOverride(sec) {
+            cmdReportState[`${sec}TotalAdjDead`] = 0;
+            cmdReportState[`${sec}TotalAdjInjured`] = 0;
+            saveCmdReportState();
+            render();
+        }
+
         function updateCmdSec5TotalOverride(field, newTotalVal) {
-            const totalS3 = cmdReportState.sec3Data.reduce((a, b) => a + (Number(b[field]) || 0), 0);
-            if (field === 'dead') cmdReportState.sec5BaseDead = Math.max(0, (Number(newTotalVal) || 0) - totalS3);
-            else cmdReportState.sec5BaseInjured = Math.max(0, (Number(newTotalVal) || 0) - totalS3);
+            const T = getCmdTotals();
+            const today = field === 'dead' ? T.s3Dead : T.s3Inj;
+            if (field === 'dead') cmdReportState.sec5BaseDead = Math.max(0, (Number(newTotalVal) || 0) - today);
+            else cmdReportState.sec5BaseInjured = Math.max(0, (Number(newTotalVal) || 0) - today);
             saveCmdReportState();
             updateCmdPreviewBox();
         }
@@ -2906,6 +3060,14 @@
             updateCmdPreviewBox();
         }
 
+        function repullCmdLeader(num) {
+            if (pullCmdLeaderFromW5(num, false)) {
+                showStatusPopup('ดึงข้อมูลเรียบร้อย', `หัวหน้าชุดที่ ${num}: ${cmdReportState[`leader${num}Name`]}`, 'success', 1600);
+            }
+            saveCmdReportState();
+            render();
+        }
+
         function selectCmdLeader(num, pid) {
             const p = db.personnel.find(x => x.id === pid);
             if (!p) return;
@@ -2914,14 +3076,16 @@
                 cmdReportState.leader1Id = pid;
                 cmdReportState.leader1Name = nameOnly;
                 cmdReportState.leader1Phone = p.phone || '';
-                document.getElementById('cmd_l1_name').value = nameOnly;
-                document.getElementById('cmd_l1_phone').value = p.phone || '';
+                const n1 = document.getElementById('cmd_l1_name'), ph1 = document.getElementById('cmd_l1_phone');
+                if (n1) n1.value = nameOnly;
+                if (ph1) ph1.value = p.phone || '';
             } else {
                 cmdReportState.leader2Id = pid;
                 cmdReportState.leader2Name = nameOnly;
                 cmdReportState.leader2Phone = p.phone || '';
-                document.getElementById('cmd_l2_name').value = nameOnly;
-                document.getElementById('cmd_l2_phone').value = p.phone || '';
+                const n2 = document.getElementById('cmd_l2_name'), ph2 = document.getElementById('cmd_l2_phone');
+                if (n2) n2.value = nameOnly;
+                if (ph2) ph2.value = p.phone || '';
             }
             saveCmdReportState();
             updateCmdPreviewBox();
@@ -2936,37 +3100,30 @@
             const st = cmdReportState;
             const fmtNum = (n) => Number(n || 0).toLocaleString();
 
-            let s3DeadTotal = 0, s3InjTotal = 0;
+            const T = getCmdTotals(st);
             const s3Lines = st.sec3Data.map(r => {
                 const d = Number(r.dead) || 0;
                 const inj = Number(r.injured) || 0;
-                s3DeadTotal += d;
-                s3InjTotal += inj;
                 const dStr = d === 0 && inj === 0 ? '-' : fmtNum(d);
                 const iStr = d === 0 && inj === 0 ? '-' : fmtNum(inj);
                 const tStr = d === 0 && inj === 0 ? '-' : fmtNum(d + inj);
                 return `- พื้นที่ ${r.area}\nตาย ${dStr} ตัว, บาดเจ็บ ${iStr} ตัว (รวมยิงได้ ${tStr} ตัว)`;
             }).join('\n');
 
-            let s4DeadTotal = 0, s4InjTotal = 0;
             const s4Lines = st.sec4BaseData.map((baseRow, idx) => {
                 const d = (Number(baseRow.dead) || 0) + (Number(st.sec3Data[idx]?.dead) || 0);
                 const inj = (Number(baseRow.injured) || 0) + (Number(st.sec3Data[idx]?.injured) || 0);
-                s4DeadTotal += d;
-                s4InjTotal += inj;
                 return `- พื้นที่ ${baseRow.area}\nตาย ${fmtNum(d)} ตัว, บาดเจ็บ ${fmtNum(inj)} ตัว (รวมยิงได้ ${fmtNum(d + inj)} ตัว)`;
             }).join('\n');
 
-            const s5Dead = (Number(st.sec5BaseDead) || 0) + s3DeadTotal;
-            const s5Inj = (Number(st.sec5BaseInjured) || 0) + s3InjTotal;
-
-            const raj3 = st.sec3Data[0] || { dead: 0, injured: 0 };
-            const s6Dead = (Number(st.sec6BaseDead) || 0) + (Number(raj3.dead) || 0);
-            const s6Inj = (Number(st.sec6BaseInjured) || 0) + (Number(raj3.injured) || 0);
+            const s3DeadTotal = T.s3Dead, s3InjTotal = T.s3Inj;
+            const s4DeadTotal = T.s4Dead, s4InjTotal = T.s4Inj;
+            const s5Dead = T.s5Dead, s5Inj = T.s5Inj;
+            const s6Dead = T.s6Dead, s6Inj = T.s6Inj;
 
             return `เรียนผู้บังคับบัญชา
 
-บก.ป. ขออนุญาตรายงานผลการปฏิบัติ ชป.นก ประจำวันที่ ${formatThaiDate(st.headerDate)} มีรายละเอียด ดังนี้
+บก.ป. ขออนุญาตรายงานผลการปฏิบัติ ชป.นก ประจำวันที่ ${formatThaiDate(st.sec3StartDate || st.headerDate)} มีรายละเอียด ดังนี้
 
 1.จำนวนผู้ปฏิบัติ 10 นาย แบ่งเป็น
 - ผู้ควบคุม 1 นาย
@@ -4804,6 +4961,16 @@ ${st.leader2Name}
                     <div id="w5BusyHint"></div>
                 </div>
                 <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium">ผู้แทน <span class="text-xs text-gray-500 font-normal">(กรณีนายตำรวจเวรติดภารกิจ — เว้นว่างได้)</span></label>
+                        <select onchange="if(this.value){document.getElementById('f_substitute').value=this.value;}" class="text-xs border rounded-lg px-2 py-1 bg-gray-50">
+                            <option value="">-- ดึงจากนายตำรวจ --</option>
+                            ${officerOpts}
+                        </select>
+                    </div>
+                    <input type="text" id="f_substitute" value="${escHtml(item.substitute || '')}" placeholder="เว้นว่างหากไม่มีผู้แทน" class="w-full border rounded-xl px-3 py-2">
+                </div>
+                <div>
                     <label class="block text-sm font-medium mb-1">ลูกทีม (รายชื่อกำลังพลที่เข้าเวร)</label>
                     <textarea id="f_teamMembers" rows="2" placeholder="ระบุรายชื่อกำลังพล คั่นด้วยเครื่องหมาย ," class="w-full border rounded-xl px-3 py-2">${escHtml(item.teamMembers || '')}</textarea>
                 </div>
@@ -5106,6 +5273,7 @@ ${st.leader2Name}
                     id: id || 'w_' + Date.now(),
                     date: document.getElementById('f_date').value,
                     officer: document.getElementById('f_officer').value,
+                    substitute: (document.getElementById('f_substitute')?.value || '').trim(),
                     teamMembers: document.getElementById('f_teamMembers').value,
                     note: document.getElementById('f_note').value
                 };
@@ -5688,7 +5856,7 @@ ${st.leader2Name}
                             <span class="font-bold ${dow === 0 ? 'text-red-500' : (dow === 6 ? 'text-blue-600' : 'text-gray-600')}">${d}</span>
                             ${busy.length ? `<span class="px-1 py-0.5 rounded bg-rose-100 text-rose-700 font-semibold" title="${escHtml(busy.map(b => busyLabel(b) + ': ' + b.task).join('\n'))}">ติด ${busy.length}</span>` : ''}
                         </div>
-                        ${items.map(w => `<div class="px-1 py-0.5 rounded bg-navy-900 text-gold-300 text-[11px] font-semibold truncate" title="${escHtml(w.officer)}">${escHtml(nickOfName(w.officer))}</div>`).join('') || '<div class="text-[10px] text-gray-300 text-center pt-1">+ เพิ่ม</div>'}
+                        ${items.map(w => `<div class="px-1 py-0.5 rounded bg-navy-900 text-gold-300 text-[11px] font-semibold truncate" title="${escHtml(w.officer)}${w.substitute ? ' (ผู้แทน: ' + escHtml(w.substitute) + ')' : ''}">${escHtml(nickOfName(w.officer))}</div>${w.substitute ? `<div class="mt-0.5 px-1 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-semibold truncate" title="ผู้แทน: ${escHtml(w.substitute)}">แทน: ${escHtml(nickOfName(w.substitute))}</div>` : ''}`).join('') || '<div class="text-[10px] text-gray-300 text-center pt-1">+ เพิ่ม</div>'}
                     </div>`;
             }
             return `
@@ -5737,6 +5905,7 @@ ${st.leader2Name}
                             <div class="flex items-center flex-wrap gap-1.5">
                                 <span class="font-semibold text-navy-900">${escHtml(item.officer)}</span>
                                 ${nick && nick !== item.officer ? `<span class="px-2 py-0.5 rounded-full bg-navy-900 text-gold-400 text-[11px] font-medium">${escHtml(nick)}</span>` : ''}
+                                ${item.substitute ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-semibold" title="ผู้แทน"><i class="fa-solid fa-right-left mr-1 text-[9px]"></i>ผู้แทน: ${escHtml(item.substitute)}</span>` : ''}
                                 ${members.length ? `<span class="text-[11px] text-gray-500" title="ลูกทีม"><i class="fa-solid fa-users mr-0.5"></i>${members.length}</span>` : ''}
                             </div>
                             ${busy.length ? `<div class="md:hidden mt-1">${busyChips}</div>` : ''}
@@ -5754,6 +5923,7 @@ ${st.leader2Name}
                                 <div>
                                     <div class="text-gray-500 mb-0.5"><i class="fa-solid fa-calendar-day text-gold-600 mr-1"></i>${formatThaiDateFullYear(item.date)}</div>
                                     <div class="font-semibold text-navy-900 text-sm">${escHtml(item.officer)}</div>
+                                    ${item.substitute ? `<div class="text-amber-800 mt-0.5"><i class="fa-solid fa-right-left mr-1"></i>ผู้แทน: <b>${escHtml(item.substitute)}</b></div>` : ''}
                                     <div class="text-gray-600 mt-1">${escHtml(item.note) || ''}</div>
                                 </div>
                                 <div>
@@ -5895,14 +6065,14 @@ ${st.leader2Name}
         // ---- ส่งออกตารางเวร ว.5 (ดูตัวอย่างก่อน: ภาพ / ข้อความ) ----
         function buildW5NickText() {
             const list = getW5FilteredList();
-            return w5TitleText() + '\n' + list.map(w => `${fmtThaiDMY(w.date)}  ${nickOfName(w.officer)}`).join('\n');
+            return w5TitleText() + '\n' + list.map(w => `${fmtThaiDMY(w.date)}  ${nickOfName(w.officer)}${w.substitute ? ` (แทนโดย ${nickOfName(w.substitute)})` : ''}`).join('\n');
         }
         function buildW5SheetHtml() {
             const list = getW5FilteredList();
             const half = list.length > 12 ? Math.ceil(list.length / 2) : list.length;
             const cols = [list.slice(0, half), list.slice(half)].filter(a => a.length);
             const tIso = todayIso();
-            const rowHtml = w => `<tr class="${w.date === tIso ? 'xp-today' : ''}"><td style="white-space:nowrap;font-weight:600">${fmtThaiDMY(w.date)}</td><td style="color:#64748b">${weekdayShort(w.date)}</td><td>${escHtml(w.officer)}</td><td style="font-weight:700">${escHtml(nickOfName(w.officer))}</td></tr>`;
+            const rowHtml = w => `<tr class="${w.date === tIso ? 'xp-today' : ''}"><td style="white-space:nowrap;font-weight:600">${fmtThaiDMY(w.date)}</td><td style="color:#64748b">${weekdayShort(w.date)}</td><td>${escHtml(w.officer)}${w.substitute ? `<div style="font-size:11px;color:#b45309">ผู้แทน: ${escHtml(w.substitute)}</div>` : ''}</td><td style="font-weight:700">${escHtml(nickOfName(w.officer))}${w.substitute ? `<div style="font-size:11px;color:#b45309">แทน: ${escHtml(nickOfName(w.substitute))}</div>` : ''}</td></tr>`;
             const tables = cols.map(c => `<table class="xp-table"><thead><tr><th>วันที่</th><th>วัน</th><th>นายตำรวจเวร</th><th>ชื่อเล่น</th></tr></thead><tbody>${c.map(rowHtml).join('')}</tbody></table>`).join('');
             const busy = getW5BusyList();
             const busyHtml = busy.length ? `<div class="xp-sec">ผู้ติดภารกิจ / ราชการ</div>
