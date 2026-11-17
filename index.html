@@ -724,6 +724,16 @@
                     </button>
                 </div>
                 <div class="pt-3 border-t">
+                    <div class="text-xs font-semibold text-gray-600 mb-2"><i class="fa-solid fa-code-compare text-gold-600 mr-1"></i>เวอร์ชันโค้ด</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-600 flex-grow">รหัสโค้ดที่เปิดอยู่: <b id="appCodeFpLabel" class="text-navy-900 font-mono">-</b></span>
+                        <button type="button" onclick="manualCheckAppUpdate()" class="py-2 px-3 rounded-xl border border-gold-500 text-navy-900 hover:bg-amber-50 text-xs font-semibold shrink-0">
+                            <i class="fa-solid fa-rotate mr-1"></i> ตรวจสอบอัปเดต
+                        </button>
+                    </div>
+                    <div id="appUpdateCheckResult" class="text-xs mt-2 hidden"></div>
+                </div>
+                <div class="pt-3 border-t">
                     <div class="text-xs font-semibold text-gray-600 mb-2"><i class="fa-solid fa-box-archive text-gold-600 mr-1"></i>สำรอง / กู้คืนข้อมูลในเครื่อง (ไฟล์ JSON)</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="exportBackupJSON()" class="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900 text-xs font-semibold"><i class="fa-solid fa-download mr-1"></i> สำรองข้อมูล</button>
@@ -1208,6 +1218,7 @@
         // หัวรายงานใช้ "ในวันที่" ของข้อ 3 เสมอ
         if (cmdReportState.sec3StartDate) cmdReportState.headerDate = cmdReportState.sec3StartDate;
         let activeThaiCalPicker = null;
+        let cmdPeriodEditOpen = false; // ส่วน "แก้ไขเวลา / ถึงวันที่ เอง" ของข้อ 3 เปิดอยู่หรือไม่
         let thaiCalPickerView = { month: 10, year: 2026 };
 
         // markDirty=false ใช้ตอนโหลด/บันทึกยอดรายวัน (ไม่นับเป็นการแก้ไขที่ยังไม่บันทึก)
@@ -3004,22 +3015,83 @@
             refreshCmdWorkingDayFromLedger();
             const st = cmdReportState;
 
-            // ช่วงเวลาข้อ 3 (กดเลือกแบบด่วน / แก้ไขเองได้ทุกช่อง)
+            // ช่วงเวลาข้อ 3: ปุ่มเลือกช่วงเวลาเด่น / ส่วนแก้ไขเอง (เวลา, ถึงวันที่) แสดงแบบเรียบ พับเก็บได้
             const periodKind = cmdCurrentPeriodKind();
+            const startOpen = activeThaiCalPicker === 'sec3StartDate';
+            const endOpen = activeThaiCalPicker === 'sec3EndDate';
+            const editOpen = cmdPeriodEditOpen || periodKind === 'custom' || endOpen;
             const renderPeriodPresets = () => {
-                const chip = (kind, text) => `
-                    <button type="button" onclick="setCmdPeriodPreset('${kind}')"
-                        class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${periodKind === kind ? 'bg-navy-900 text-gold-400 border-navy-900 shadow' : 'bg-white text-navy-900 hover:border-gold-500'}">
-                        ${text}
-                    </button>`;
+                const d0 = st.sec3StartDate, d1 = cmdIsoAddDays(st.sec3StartDate, 1);
+                const card = (kind, icon, title, sub) => {
+                    const on = periodKind === kind;
+                    return `
+                        <button type="button" onclick="setCmdPeriodPreset('${kind}')"
+                            class="relative w-full p-3 sm:p-3.5 rounded-xl border-2 text-left transition ${on ? 'bg-navy-900 border-gold-500 text-white shadow-lg ring-2 ring-gold-500/40' : 'bg-white border-navy-900/15 text-navy-900 hover:border-gold-500 hover:shadow'}">
+                            ${on ? '<i class="fa-solid fa-circle-check absolute top-2 right-2 text-gold-400"></i>' : ''}
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid ${icon} text-lg ${on ? 'text-gold-400' : 'text-gold-600'}"></i>
+                                <span class="font-extrabold text-sm sm:text-base">${title}</span>
+                            </div>
+                            <div class="text-[11px] sm:text-xs mt-1 ${on ? 'text-gray-300' : 'text-gray-500'}">${sub}</div>
+                        </button>`;
+                };
                 return `
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <span class="text-gray-600 font-semibold">ช่วงเวลา:</span>
-                        ${chip('overnight', `07.00 น. ถึงวันถัดไป 07.00 น.`)}
-                        ${chip('day', `07.00 น. ถึง 19.00 น.`)}
-                        ${periodKind === 'custom' ? `<span class="px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">กำหนดเอง</span>` : ''}
+                    <div class="grid grid-cols-2 gap-2.5">
+                        ${card('day', 'fa-sun', '07.00 – 19.00 น.', `วันเดียวกัน (${formatThaiDate(d0)})`)}
+                        ${card('overnight', 'fa-moon', '07.00 – 07.00 น.', `ถึงวันถัดไป (${formatThaiDate(d1)})`)}
                     </div>`;
             };
+            // ช่องเวลาแบบเล็ก (ส่วนแก้ไขเอง)
+            const renderSmallTime = (timeKey, customKey) => st[customKey] ? `
+                <div class="flex items-center gap-1">
+                    <input type="text" value="${escHtml(st[timeKey] || '')}" placeholder="เช่น 08.30 น." oninput="setCmdTimeField('${timeKey}', this.value, false)"
+                        class="w-24 px-2 py-1 border rounded-md text-xs bg-white text-gray-700">
+                    <button type="button" onclick="cmdReportState['${customKey}']=false; setCmdTimeField('${timeKey}', '07.00 น.', true);" class="text-gray-400 hover:text-gray-600 text-xs px-1" title="กลับไปเลือกเวลาหลัก"><i class="fa-solid fa-xmark"></i></button>
+                </div>` : `
+                <select onchange="if(this.value==='__custom'){cmdReportState['${customKey}']=true; saveCmdReportState(); render();} else setCmdTimeField('${timeKey}', this.value, true)"
+                    class="px-2 py-1 border rounded-md text-xs bg-white text-gray-700">
+                    ${CMD_MAIN_TIMES.map(t => `<option value="${t}" ${st[timeKey] === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    <option value="__custom">เวลาอื่นๆ...</option>
+                </select>`;
+            const renderSec3Period = () => `
+                <div class="rounded-2xl border-2 border-gold-500/60 bg-amber-50/50 p-3.5 sm:p-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-navy-900 mb-1">ในวันที่</label>
+                        <button type="button" onclick="toggleThaiCalPicker('sec3StartDate')"
+                            class="w-full px-3.5 py-2.5 rounded-xl border-2 border-navy-900/20 bg-white hover:border-gold-500 text-left text-sm sm:text-base font-bold text-navy-900 flex items-center justify-between shadow-sm transition">
+                            <span><i class="fa-regular fa-calendar-days text-gold-600 mr-2"></i>${formatThaiDateFullYear(st.sec3StartDate)}</span>
+                            <i class="fa-solid ${startOpen ? 'fa-chevron-up' : 'fa-chevron-down'} text-xs text-gray-400"></i>
+                        </button>
+                        ${startOpen ? `<div class="pt-2">${renderThaiMiniCalendar(st.sec3StartDate, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', 'sec3StartDate', cmdSavedDateSet())}</div>` : ''}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-navy-900 mb-1">ช่วงเวลา</label>
+                        ${renderPeriodPresets()}
+                    </div>
+                    <div class="text-xs sm:text-sm text-navy-900 bg-white/80 border border-gold-500/30 rounded-lg px-3 py-2">
+                        <i class="fa-regular fa-clock text-gold-600 mr-1"></i>
+                        ตั้งแต่ <b>${formatThaiDate(st.sec3StartDate)}</b> เวลา <b>${escHtml(st.sec3StartTime)}</b>
+                        ถึง <b>${formatThaiDate(st.sec3EndDate)}</b> เวลา <b>${escHtml(st.sec3EndTime)}</b>
+                        ${periodKind === 'custom' ? '<span class="ml-1 text-[10px] text-amber-700">(กำหนดเอง)</span>' : ''}
+                    </div>
+                </div>
+                <details ${editOpen ? 'open' : ''} ontoggle="cmdPeriodEditOpen=this.open" class="text-xs text-gray-500">
+                    <summary class="cursor-pointer select-none hover:text-gray-700 w-fit"><i class="fa-solid fa-pen text-[10px] mr-1"></i>แก้ไขเวลา / ถึงวันที่ เอง</summary>
+                    <div class="mt-2 p-2.5 rounded-lg border border-dashed border-gray-300 bg-gray-50/60 space-y-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="w-20 shrink-0">เวลาเริ่ม</span>
+                            ${renderSmallTime('sec3StartTime', 'sec3StartCustomTime')}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="w-20 shrink-0">ถึงวันที่</span>
+                            <button type="button" onclick="toggleThaiCalPicker('sec3EndDate')" class="px-2 py-1 border rounded-md bg-white text-gray-700 hover:border-gold-500">
+                                <i class="fa-regular fa-calendar mr-1"></i>${formatThaiDate(st.sec3EndDate)}
+                            </button>
+                            ${renderSmallTime('sec3EndTime', 'sec3EndCustomTime')}
+                        </div>
+                        ${endOpen ? `<div class="pt-1">${renderThaiMiniCalendar(st.sec3EndDate, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', 'sec3EndDate')}</div>` : ''}
+                    </div>
+                </details>`;
 
             // รายการยอดที่บันทึกไว้รายวัน
             const renderCmdHistory = () => {
@@ -3183,7 +3255,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">รายงานผลการปฏิบัติ ชป.นก (รายงานผู้บังคับบัญชา)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • เลือก "ในวันที่" แล้ว "ถึงวันที่" เป็นวันถัดไป 07.00 น. อัตโนมัติ (แก้ไขได้) • กด "บันทึกยอดวันนี้" เพื่อเก็บยอดรายวัน เลือกวันย้อนหลังเพื่อดูยอดที่บันทึก • แก้ยอดวันใด ยอดสะสมข้อ 4-6 ของวันถัดไปคำนวณใหม่ให้อัตโนมัติ</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • เลือก "ในวันที่" แล้ว "ถึงวันที่" เป็นวันถัดไป 07.00 น. อัตโนมัติ (แก้ไขได้) • ระบบบันทึกยอดให้อัตโนมัติทุกครั้งที่คัดลอก/ส่ง LINE (กด "บันทึกยอดวันนี้" ได้ตลอด) เลือกวันย้อนหลังเพื่อดูยอดที่บันทึก • แก้ยอดวันใด ยอดสะสมข้อ 4-6 ของวันถัดไปคำนวณใหม่ให้อัตโนมัติ</p>
                         <p id="cmdSaveBadge" class="text-xs font-semibold mt-1">${cmdSaveBadgeHtml()}</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -3193,11 +3265,11 @@
                         <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดของวันที่นี้ไว้ใช้ครั้งถัดไป">
                             <i class="fa-solid fa-floppy-disk mr-1.5"></i> บันทึกยอดวันนี้
                         </button>
-                        <button type="button" onclick="copyTextToClipboard(buildCommanderReportText())" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow">
-                            <i class="fa-regular fa-copy mr-1.5"></i> คัดลอก
+                        <button type="button" onclick="shareCmdReport('copy')" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow" title="บันทึกยอดวันนี้ แล้วคัดลอกข้อความ">
+                            <i class="fa-regular fa-copy mr-1.5"></i> บันทึก & คัดลอก
                         </button>
-                        <button type="button" onclick="shareTextToLine(buildCommanderReportText())" class="px-4 py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold shadow flex items-center">
-                            <i class="fa-brands fa-line text-lg mr-1.5"></i> ส่ง LINE
+                        <button type="button" onclick="shareCmdReport('line')" class="px-4 py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดวันนี้ แล้วส่ง LINE">
+                            <i class="fa-brands fa-line text-lg mr-1.5"></i> บันทึก & ส่ง LINE
                         </button>
                     </div>
                 </div>
@@ -3225,9 +3297,7 @@
                                     + บวกสะสมเข้าข้อ 4, 5, 6 อัตโนมัติ
                                 </span>
                             </div>
-                            ${renderThaiDateTimeRow('ในวันที่', 'sec3StartDate', 'sec3StartTime', 'sec3StartCustomTime')}
-                            ${renderThaiDateTimeRow('ถึงวันที่ (อัตโนมัติ = วันถัดไป แก้ไขได้)', 'sec3EndDate', 'sec3EndTime', 'sec3EndCustomTime')}
-                            ${renderPeriodPresets()}
+                            ${renderSec3Period()}
 
                             <div class="grid grid-cols-12 gap-2 text-[11px] font-bold text-gray-500 pt-2 pb-1 border-b">
                                 <div class="col-span-5 sm:col-span-6">พื้นที่</div>
@@ -3320,7 +3390,7 @@
                                 <span class="text-xs sm:text-sm font-semibold"><i class="fa-brands fa-line text-[#06C755] mr-1.5"></i>ตัวอย่างข้อความรายงานผู้บังคับบัญชา</span>
                                 <div class="flex gap-1.5">
                                     <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก</button>
-                                    <button type="button" onclick="shareTextToLine(buildCommanderReportText())" class="px-3 py-1 rounded-lg bg-[#06C755] text-white text-xs font-bold">ส่ง LINE</button>
+                                    <button type="button" onclick="shareCmdReport('line')" class="px-3 py-1 rounded-lg bg-[#06C755] text-white text-xs font-bold" title="บันทึกยอดวันนี้ แล้วส่ง LINE">บันทึก & ส่ง LINE</button>
                                 </div>
                             </div>
                             <div class="p-4 bg-gray-50">
@@ -3509,6 +3579,29 @@ ${st.leader2Name}
 เบอร์โทรศัพท์ ${st.leader2Phone}
 
 จึงเรียนมาเพื่อโปรดทราบ`;
+        }
+
+        // ก่อนแชร์รายงาน ชป.นก บังคับบันทึกยอดของวันนี้ก่อนเสมอ
+        function shareCmdReport(kind) {
+            const iso = cmdReportState.sec3StartDate;
+            saveCmdDayRecord(true);
+            const text = buildCommanderReportText();
+            if (kind === 'line') {
+                shareTextToLine(text);
+                showStatusPopup('บันทึกยอดแล้ว', `บันทึกยอดวันที่ ${formatThaiDate(iso)} ก่อนส่ง LINE เรียบร้อย`, 'success', 1800);
+                render();
+            } else {
+                const done = () => { showStatusPopup('บันทึกยอด & คัดลอกเรียบร้อย', `บันทึกยอดวันที่ ${formatThaiDate(iso)} แล้ว — นำข้อความไปวางใน LINE ได้ทันที`, 'success', 2000); render(); };
+                try { navigator.clipboard.writeText(text).then(done, () => { fallbackCopyText(text); done(); }); }
+                catch (e) { fallbackCopyText(text); done(); }
+            }
+        }
+        function fallbackCopyText(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            ta.remove();
         }
 
         function shareTextToLine(text) {
@@ -7945,6 +8038,8 @@ ${st.leader2Name}
         // ==========================================
         function openSettingsModal() {
             document.getElementById('gasUrlInput').value = GAS_WEB_APP_URL;
+            const fpEl = document.getElementById('appCodeFpLabel'); if (fpEl) fpEl.innerText = APP_CODE_FP;
+            document.getElementById('appUpdateCheckResult')?.classList.add('hidden');
             document.getElementById('settingsModal').classList.remove('hidden');
         }
         function closeSettingsModal() {
@@ -8103,15 +8198,17 @@ ${st.leader2Name}
             }
         }
 
-        async function checkForAppUpdate() {
-            if (!/^https?:$/.test(location.protocol) || !navigator.onLine) return;
+        // คืนค่า: 'file' (เปิดจากไฟล์ในเครื่อง) | 'offline' | 'latest' | 'update' | 'error'
+        async function checkForAppUpdate(manual = false) {
+            if (!/^https?:$/.test(location.protocol)) return 'file';
+            if (!navigator.onLine) return 'offline';
             try {
                 const url = new URL(location.href);
                 url.search = '';
                 url.hash = '';
                 url.searchParams.set('_uc', Date.now());
                 const res = await fetch(url.toString(), { cache: 'no-store' });
-                if (!res.ok) return;
+                if (!res.ok) return 'error';
                 const text = await res.text();
                 const doc = new DOMParser().parseFromString(text, 'text/html');
                 const remoteFp = codeFingerprint(doc);
@@ -8119,27 +8216,47 @@ ${st.leader2Name}
                 if (!appFileBaseline) appFileBaseline = fileHash;
                 const codeChanged = remoteFp !== APP_CODE_FP;
                 const fileChanged = fileHash !== appFileBaseline;
-                if (!codeChanged && !fileChanged) return;
+                if (!codeChanged && !fileChanged) return 'latest';
                 const tag = remoteFp + '-' + fileHash;
-                if (appUpdateShownFor === tag) return;
+                if (appUpdateShownFor === tag && !manual) return 'update';
                 appUpdateShownFor = tag;
                 const required = metaContent(doc, 'app-update-required') !== '0';
                 // กันรีเฟรชวนซ้ำ: เพิ่งบังคับรีเฟรชไปที่โค้ดชุดนี้แล้วแต่ยังได้ไฟล์เก่า (แคช) => แจ้งเตือนแบบปกติแทน
                 const loopGuard = localStorage.getItem('hanuman_reload_target') === tag;
                 showAppUpdateNotice(tag, required && !loopGuard, metaContent(doc, 'app-update-note'));
-            } catch (e) { /* ออฟไลน์/เชื่อมต่อไม่ได้ ข้ามไป */ }
+                return 'update';
+            } catch (e) { return 'error'; }
         }
 
-        // หลังรีเฟรชเพื่ออัปเดต: แจ้งว่าอัปเดตแล้ว และล้าง ?v= ออกจากลิงก์
+        // ปุ่ม "ตรวจสอบอัปเดต" ในหน้าตั้งค่า
+        async function manualCheckAppUpdate() {
+            const out = document.getElementById('appUpdateCheckResult');
+            if (out) { out.classList.remove('hidden'); out.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังตรวจสอบ...'; }
+            const r = await checkForAppUpdate(true);
+            const msg = {
+                latest: '<span class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> เป็นเวอร์ชันล่าสุดแล้ว (โค้ดตรงกับไฟล์บนเว็บ)</span>',
+                update: '<span class="text-amber-700 font-semibold"><i class="fa-solid fa-circle-arrow-up mr-1"></i> พบโค้ดใหม่ — กำลังแจ้งเตือนให้รีเฟรช</span>',
+                file: '<span class="text-amber-700 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> เปิดจากไฟล์ในเครื่อง — ระบบแจ้งเตือนอัปเดตทำงานเฉพาะเมื่อเปิดผ่านลิงก์เว็บ (https://...)</span>',
+                offline: '<span class="text-red-700 font-semibold"><i class="fa-solid fa-wifi mr-1"></i> ไม่ได้เชื่อมต่ออินเทอร์เน็ต</span>',
+                error: '<span class="text-red-700 font-semibold"><i class="fa-solid fa-circle-xmark mr-1"></i> ดึงไฟล์จากเว็บไม่ได้ ลองใหม่อีกครั้ง</span>'
+            }[r];
+            if (out) out.innerHTML = msg;
+            if (r === 'update') closeSettingsModal();
+        }
+
+        // เปิดโค้ดชุดใหม่ครั้งแรก (ทั้งจากการบังคับรีเฟรช หรือกดรีเฟรชเอง) => แจ้งเตือนว่าอัปเดตแล้ว
         function announceAppUpdatedIfNeeded() {
             try {
                 const url = new URL(location.href);
                 if (url.searchParams.has('v')) { url.searchParams.delete('v'); history.replaceState(history.state, '', url.toString()); }
-                if (localStorage.getItem('hanuman_updated_pending') === '1') {
-                    localStorage.removeItem('hanuman_updated_pending');
+                const lastFp = localStorage.getItem('hanuman_code_fp');
+                const pending = localStorage.getItem('hanuman_updated_pending') === '1';
+                localStorage.removeItem('hanuman_updated_pending');
+                if (pending || lastFp !== APP_CODE_FP) {
                     const note = metaContent(document, 'app-update-note');
-                    setTimeout(() => showStatusPopup('อัปเดตเป็นเวอร์ชันล่าสุดแล้ว', note || 'ระบบโหลดโค้ดชุดใหม่เรียบร้อย', 'upload', 3500), 600);
+                    setTimeout(() => showStatusPopup('ระบบอัปเดตเป็นเวอร์ชันล่าสุดแล้ว', note || 'มีการแก้ไขโค้ด ระบบโหลดโค้ดชุดใหม่เรียบร้อย', 'upload', 4000), 700);
                 }
+                localStorage.setItem('hanuman_code_fp', APP_CODE_FP);
                 const target = localStorage.getItem('hanuman_reload_target') || '';
                 if (target && target.split('-')[0] === APP_CODE_FP) localStorage.removeItem('hanuman_reload_target');
             } catch (e) {}
