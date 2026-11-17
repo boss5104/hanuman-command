@@ -1293,6 +1293,7 @@
                     if (!Array.isArray(rm.coordinators)) rm.coordinators = [];
                     if (typeof rm.ops === 'string') { try { rm.ops = JSON.parse(rm.ops); } catch (e) { rm.ops = null; } }
                     if (!rm.ops && localM && localM.ops) rm.ops = localM.ops;
+                    if ((rm.status === undefined || rm.status === null) && localM && localM.status) rm.status = localM.status;
                     if (typeof rm.expenses === 'string') { try { rm.expenses = JSON.parse(rm.expenses); } catch (e) { rm.expenses = null; } }
                     if ((!Array.isArray(rm.expenses) || !rm.expenses.length) && localM && Array.isArray(localM.expenses) && localM.expenses.length) rm.expenses = localM.expenses;
                 });
@@ -5003,6 +5004,14 @@ ${st.leader2Name}
                         <input type="date" id="f_date" value="${m.date || ''}" class="w-full border rounded-xl px-3 py-2" required>
                     </div>
                 </div>
+                <div class="flex flex-wrap items-center gap-3 rounded-xl border px-3 py-2 ${m.status === 'cancelled' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}">
+                    <label class="text-sm font-medium text-navy-900"><i class="fa-solid fa-flag-checkered text-gold-600 mr-1.5"></i>สถานะภารกิจ</label>
+                    <select id="f_mstatus" class="border rounded-lg px-2.5 py-1.5 text-sm bg-white">
+                        <option value="" ${m.status !== 'cancelled' ? 'selected' : ''}>ปกติ (ดำเนินการตามแผน)</option>
+                        <option value="cancelled" ${m.status === 'cancelled' ? 'selected' : ''}>ยกเลิกภารกิจ</option>
+                    </select>
+                    <span class="text-[11px] text-gray-500">ภารกิจที่ยกเลิก หรือผ่านวันไปแล้ว จะถูกขีดฆ่าในตาราง</span>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">หน่วยงานที่สนับสนุน</label>
@@ -5310,7 +5319,8 @@ ${st.leader2Name}
                     coordinators,
                     personnelList: document.getElementById('f_plist').value,
                     vehiclesUsed: document.getElementById('f_vlist').value,
-                    note: document.getElementById('f_note').value
+                    note: document.getElementById('f_note').value,
+                    status: (document.getElementById('f_mstatus') || {}).value === 'cancelled' ? 'cancelled' : ''
                 };
                 if (!String(obj.name || '').trim()) {
                     showStatusPopup('ยังไม่ได้ระบุชื่อภารกิจ', 'กรุณากรอกชื่อภารกิจ', 'edit', 2000);
@@ -6328,37 +6338,136 @@ ${st.leader2Name}
             return (o.crew || []).map(c => ({ c, p: db.personnel.find(p => p.id === c.pid) })).filter(x => x.p);
         }
 
+        // ---- สถานะภารกิจ (ยกเลิก / ผ่านวันไปแล้ว) + ตัวกรองเดือน/ปี + มุมมองการ์ด/รายการ ----
+        var _missionPrefs = null;
+        function missionPrefs() {
+            if (!_missionPrefs) {
+                let o = {};
+                try { o = JSON.parse(localStorage.getItem('hanuman_mission_prefs') || '{}') || {}; } catch (_) { o = {}; }
+                _missionPrefs = {
+                    fMonth: o.fMonth ? String(o.fMonth) : 'all',
+                    fYear: o.fYear ? String(o.fYear) : 'all',
+                    view: o.view === 'list' ? 'list' : 'card',
+                    open: new Set(),
+                    lastHighlight: ''
+                };
+            }
+            return _missionPrefs;
+        }
+        function setMissionFilter(patch) {
+            const p = missionPrefs();
+            Object.assign(p, patch);
+            try { localStorage.setItem('hanuman_mission_prefs', JSON.stringify({ fMonth: p.fMonth, fYear: p.fYear, view: p.view })); } catch (_) {}
+            if (bulkSel && bulkSel.ids) bulkSel.ids.clear();
+            render();
+        }
+        function missionIsCancelled(m) { return !!m && m.status === 'cancelled'; }
+        function missionIsPast(m) { return !!(m && m.date && String(m.date) < todayIso()); }
+        function missionIsStruck(m) { return missionIsCancelled(m) || missionIsPast(m); }
+        function missionStateBadge(m) {
+            if (missionIsCancelled(m)) return '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-semibold whitespace-nowrap"><i class="fa-solid fa-ban mr-1"></i>ยกเลิก</span>';
+            if (missionIsPast(m)) return '<span class="px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-[11px] font-semibold whitespace-nowrap"><i class="fa-solid fa-check-double mr-1"></i>ผ่านไปแล้ว</span>';
+            if (m.date && m.date === todayIso()) return '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-semibold whitespace-nowrap"><i class="fa-solid fa-bolt mr-1"></i>วันนี้</span>';
+            return '<span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[11px] font-semibold whitespace-nowrap"><i class="fa-regular fa-hourglass-half mr-1"></i>กำลังจะถึง</span>';
+        }
+        function missionYearOptions() {
+            const set = new Set([new Date().getFullYear()]);
+            db.missions.forEach(m => { const y = parseInt(String(m.date || '').split('-')[0], 10); if (y) set.add(y); });
+            return Array.from(set).sort((a, b) => b - a);
+        }
+        function missionApptText(m) {
+            const o = m.ops;
+            if (o && (o.apptDate || o.apptTime)) {
+                const d = o.apptDate ? `${weekdayShort(o.apptDate)} ${fmtThaiDMY(o.apptDate)}` : '';
+                return `${d}${o.apptTime ? (d ? ' เวลา ' : 'เวลา ') + fmtTime(o.apptTime) : ''}`.trim();
+            }
+            return m.appointmentSchedule || '';
+        }
+        function toggleMissionRow(id) {
+            const p = missionPrefs();
+            const row = document.getElementById('mission-detail-' + id);
+            const chev = document.getElementById('mission-chev-' + id);
+            if (!row) return;
+            const hidden = row.classList.toggle('hidden');
+            if (hidden) p.open.delete(id); else p.open.add(id);
+            if (chev) chev.style.transform = hidden ? '' : 'rotate(180deg)';
+        }
+        function toggleMissionCancel(id) {
+            const m = db.missions.find(x => x.id === id);
+            if (!m) return;
+            const willCancel = !missionIsCancelled(m);
+            showConfirmPopup(
+                willCancel ? 'ยกเลิกภารกิจ' : 'คืนสถานะภารกิจ',
+                willCancel ? `ทำเครื่องหมาย “${m.name}” ว่ายกเลิกแล้ว (รายการจะถูกขีดฆ่า ข้อมูลยังเก็บไว้ครบ)` : `คืนสถานะ “${m.name}” กลับเป็นภารกิจปกติ`,
+                () => {
+                    m.status = willCancel ? 'cancelled' : '';
+                    saveDB();
+                    render();
+                    showStatusPopup(willCancel ? 'ยกเลิกภารกิจแล้ว' : 'คืนสถานะเรียบร้อย', willCancel ? 'ภารกิจถูกขีดฆ่าในตาราง' : 'ภารกิจกลับเป็นสถานะปกติ', 'edit', 1600);
+                }
+            );
+        }
+
         function renderMissionsList(container) {
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
                 { label: '2. ตารางภารกิจ' }
             ]);
-            const bulkOn = isBulk('missions');
-            const list = [...db.missions].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+            const pf = missionPrefs();
+            // มาจากการค้นหา: แสดงทุกเดือน/ทุกปี และเปิดรายละเอียดภารกิจนั้นไว้
+            const hl = String((currentRoute.params || {}).highlightId || '');
+            if (hl && hl !== pf.lastHighlight) {
+                pf.lastHighlight = hl;
+                pf.fMonth = 'all'; pf.fYear = 'all';
+                pf.open.add(hl.replace(/^mission-card-/, ''));
+            } else if (!hl) pf.lastHighlight = '';
 
-            const cards = list.map(m => {
-                const coordinators = Array.isArray(m.coordinators) ? m.coordinators : [];
-                const coordBadges = coordinators.length
-                    ? coordinators.map(c => `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-medium"><i class="fa-solid fa-headset text-emerald-600"></i> ${escHtml(c.name)}${c.phone ? ' (' + escHtml(c.phone) + ')' : ''}</span>`).join(' ')
-                    : '<span class="text-gray-400">-</span>';
+            const view = pf.view;
+            const bulkOn = isBulk('missions');
+            let list = [...db.missions];
+            if (pf.fYear !== 'all') list = list.filter(m => String(m.date || '').startsWith(pf.fYear + '-'));
+            if (pf.fMonth !== 'all') list = list.filter(m => parseInt(String(m.date || '').split('-')[1], 10) === parseInt(pf.fMonth, 10));
+            list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+            const activeN = list.filter(m => !missionIsStruck(m)).length;
+
+            const monthOpts = [`<option value="all" ${pf.fMonth === 'all' ? 'selected' : ''}>ทุกเดือน</option>`]
+                .concat(THAI_MONTHS_FULL.map((mn, i) => `<option value="${i + 1}" ${String(i + 1) === pf.fMonth ? 'selected' : ''}>${mn}</option>`)).join('');
+            const yearOpts = [`<option value="all" ${pf.fYear === 'all' ? 'selected' : ''}>ทุกปี</option>`]
+                .concat(missionYearOptions().map(y => `<option value="${y}" ${String(y) === pf.fYear ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`)).join('');
+            const filterActive = pf.fMonth !== 'all' || pf.fYear !== 'all';
+            const summaryText = `${pf.fMonth === 'all' ? 'ทุกเดือน' : 'เดือน' + THAI_MONTHS_FULL[parseInt(pf.fMonth, 10) - 1]} ${pf.fYear === 'all' ? 'ทุกปี' : 'พ.ศ. ' + (parseInt(pf.fYear, 10) + 543)}`;
+            const now = new Date();
+
+            const coordHtml = (m, small) => {
+                const cs = Array.isArray(m.coordinators) ? m.coordinators : [];
+                if (!cs.length) return '<span class="text-gray-400">-</span>';
+                return cs.map(c => `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 ${small ? 'text-[11px]' : 'text-xs'} font-medium"><i class="fa-solid fa-headset text-emerald-600"></i> ${escHtml(c.name || '-')}${c.phone ? ` <a href="tel:${escHtml(String(c.phone).replace(/[^0-9+]/g, ''))}" onclick="event.stopPropagation()" class="underline decoration-dotted hover:text-emerald-700">${escHtml(c.phone)}</a>` : ''}</span>`).join(' ');
+            };
+
+            // ---------- มุมมองการ์ด ----------
+            const cards = view === 'card' ? list.map(m => {
                 const o = m.ops;
                 const money = missionMoney(m);
                 const crewN = o ? opsCrewResolved(o).length : 0;
+                const struck = missionIsStruck(m);
+                const cancelled = missionIsCancelled(m);
                 return `
-                <div id="mission-card-${m.id}" class="glass-card gold-border-top rounded-2xl p-5 hover:shadow-lg transition flex flex-col justify-between ${bulkOn && bulkSel.ids.has(m.id) ? 'ring-2 ring-red-400' : ''}">
+                <div id="mission-card-${m.id}" class="glass-card gold-border-top rounded-2xl p-5 hover:shadow-lg transition flex flex-col justify-between ${struck ? 'opacity-75' : ''} ${bulkOn && bulkSel.ids.has(m.id) ? 'ring-2 ring-red-400' : ''}">
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-2.5">
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 ${bulkCbHtml('missions', m.id)}
-                                <span class="px-3 py-1 rounded-full bg-navy-900 text-gold-400 text-xs font-semibold"><i class="fa-regular fa-calendar mr-1"></i> ${fmtThaiDMY(m.date)}</span>
+                                <span class="px-3 py-1 rounded-full ${struck ? 'bg-gray-300 text-gray-600 line-through' : 'bg-navy-900 text-gold-400'} text-xs font-semibold"><i class="fa-regular fa-calendar mr-1"></i> ${fmtThaiDMY(m.date)}</span>
+                                ${missionStateBadge(m)}
                                 ${o ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>มีแผนปฏิบัติ</span>' : '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold">ยังไม่กรอกแผน</span>'}
                             </div>
                             <div class="space-x-1 shrink-0">
+                                <button type="button" onclick="toggleMissionCancel('${m.id}')" class="${cancelled ? 'text-emerald-600 hover:text-emerald-800' : 'text-gray-500 hover:text-red-600'} p-1" title="${cancelled ? 'คืนสถานะภารกิจ' : 'ยกเลิกภารกิจ'}"><i class="fa-solid ${cancelled ? 'fa-rotate-left' : 'fa-ban'}"></i></button>
                                 <button type="button" onclick="openMissionModal('${m.id}')" class="text-amber-600 hover:text-amber-800 p-1" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button type="button" onclick="deleteItem('missions', '${m.id}')" class="text-red-600 hover:text-red-800 p-1" title="ลบ"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
-                        <h3 onclick="navigate('mission_detail', { id: '${m.id}' })" class="text-lg font-bold text-navy-900 hover:text-gold-600 cursor-pointer transition mb-1.5">${escHtml(m.name)}</h3>
+                        <h3 onclick="navigate('mission_detail', { id: '${m.id}' })" class="text-lg font-bold ${struck ? 'text-gray-500 line-through decoration-red-500 decoration-2' : 'text-navy-900'} hover:text-gold-600 cursor-pointer transition mb-1.5">${escHtml(m.name)}</h3>
                         <div class="text-sm text-navy-700 font-medium mb-3 flex items-center"><i class="fa-solid fa-building-shield text-gold-500 mr-2"></i> สนับสนุน: ${escHtml(m.supportUnit || '-')}</div>
                         ${m.imageData ? `
                             <div class="mb-3 relative group rounded-xl overflow-hidden border border-gold-500/40 bg-gray-100 h-32 cursor-pointer" onclick="openQuickMissionImage('${m.id}')">
@@ -6370,7 +6479,7 @@ ${st.leader2Name}
                             <div><b><i class="fa-regular fa-clock text-navy-800 mr-1"></i> นัดหมาย:</b> ${fmtThaiDMY(o.apptDate)}${o.apptTime ? ' เวลา ' + fmtTime(o.apptTime) : ''} ${o.apptPlace ? '• ' + escHtml(o.apptPlace) : ''}</div>
                             <div><b><i class="fa-solid fa-map-location-dot text-navy-800 mr-1"></i> พื้นที่:</b> ${escHtml(o.area || '-')}</div>
                             ` : `<div><b><i class="fa-regular fa-clock text-navy-800 mr-1"></i> นัดหมาย:</b> ${escHtml(m.appointmentSchedule || '-')}</div>`}
-                            <div><b><i class="fa-solid fa-phone-volume text-navy-800 mr-1"></i> ผู้ประสานงาน:</b> <span class="inline-flex flex-wrap gap-1 mt-0.5">${coordBadges}</span></div>
+                            <div><b><i class="fa-solid fa-phone-volume text-navy-800 mr-1"></i> ผู้ประสานงาน:</b> <span class="inline-flex flex-wrap gap-1 mt-0.5">${coordHtml(m, true)}</span></div>
                             <div class="flex flex-wrap gap-1.5 pt-1">
                                 <span class="px-2 py-0.5 rounded-md bg-white border text-navy-900"><i class="fa-solid fa-user-shield mr-1 text-gold-600"></i>${crewN || m.personnelCount || 0} นาย</span>
                                 ${money.exp || money.inc ? `<span class="px-2 py-0.5 rounded-md bg-white border text-navy-900"><i class="fa-solid fa-receipt mr-1 text-gold-600"></i>ค่าใช้จ่าย ${fmtMoney(money.exp)} ฿</span>` : ''}
@@ -6387,10 +6496,63 @@ ${st.leader2Name}
                         </button>
                     </div>
                 </div>`;
-            }).join('');
+            }).join('') : '';
+
+            // ---------- มุมมองรายการ (กดเพื่อดูรายละเอียด) ----------
+            const rows = view === 'list' ? list.map(m => {
+                const o = m.ops || {};
+                const struck = missionIsStruck(m);
+                const cancelled = missionIsCancelled(m);
+                const isOpen = pf.open.has(m.id);
+                const dp = String(m.date || '').split('-');
+                const hasDate = dp.length === 3;
+                const appt = missionApptText(m);
+                const sub = [o.area, appt].filter(Boolean).map(escHtml).join(' • ') || escHtml(m.supportUnit || '');
+                const strikeCls = struck ? 'line-through decoration-red-500 decoration-2 text-gray-400' : '';
+                const field = (icon, label, val) => `
+                    <div class="flex gap-2.5 py-2 border-b border-dashed border-gray-200 last:border-0">
+                        <div class="w-[118px] sm:w-[150px] shrink-0 text-gray-500 text-xs sm:text-sm"><i class="fa-solid ${icon} text-gold-600 w-4 mr-1"></i>${label}</div>
+                        <div class="min-w-0 flex-1 text-navy-900 text-sm font-medium break-words">${val}</div>
+                    </div>`;
+                return `
+                <div id="mission-card-${m.id}" class="border-b border-gray-100 last:border-0 ${struck ? 'bg-gray-50/80' : 'bg-white/60'} ${bulkOn && bulkSel.ids.has(m.id) ? 'ring-2 ring-inset ring-red-400' : ''}">
+                    <div class="flex items-center gap-3 px-3 sm:px-4 py-3 cursor-pointer hover:bg-amber-50/60 transition" onclick="toggleMissionRow('${m.id}')">
+                        ${bulkCbHtml('missions', m.id)}
+                        <div class="shrink-0 w-14 text-center rounded-xl py-1.5 ${struck ? 'bg-gray-200 text-gray-500' : 'bg-navy-900 text-gold-400'}">
+                            <div class="text-lg font-bold leading-none ${struck ? 'line-through' : ''}">${hasDate ? parseInt(dp[2], 10) : '-'}</div>
+                            <div class="text-[10px] mt-0.5">${hasDate ? THAI_MONTHS_SHORT[parseInt(dp[1], 10) - 1] + String(parseInt(dp[0], 10) + 543).slice(-2) : ''}</div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-sm sm:text-base truncate ${struck ? strikeCls : 'text-navy-900'}">${escHtml(m.name || '-')}</div>
+                            <div class="text-[11px] sm:text-xs text-gray-500 truncate mt-0.5 ${struck ? 'line-through decoration-gray-400' : ''}">${sub || '-'}</div>
+                        </div>
+                        <div class="hidden sm:block">${missionStateBadge(m)}</div>
+                        <i id="mission-chev-${m.id}" class="fa-solid fa-chevron-down text-gray-400 text-xs transition-transform" style="${isOpen ? 'transform: rotate(180deg)' : ''}"></i>
+                    </div>
+                    <div id="mission-detail-${m.id}" class="${isOpen ? '' : 'hidden'} px-3 sm:px-4 pb-4">
+                        <div class="sm:hidden mb-2">${missionStateBadge(m)}</div>
+                        <div class="rounded-xl border border-gold-500/30 bg-white px-3.5 py-1 shadow-sm">
+                            ${field('fa-flag', 'ภารกิจ', `<span class="${strikeCls}">${escHtml(m.name || '-')}</span>`)}
+                            ${field('fa-map-location-dot', 'พื้นที่ปฏิบัติ', escHtml(o.area || '-'))}
+                            ${field('fa-clock', 'การนัดหมาย<br class="sm:hidden"> (วันที่ เวลา)', escHtml(appt || '-'))}
+                            ${field('fa-location-dot', 'สถานที่นัดหมาย', escHtml(o.apptPlace || '-'))}
+                            ${field('fa-phone-volume', 'ผู้ประสานงาน', `<span class="inline-flex flex-wrap gap-1">${coordHtml(m, false)}</span>`)}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-3">
+                            <button type="button" onclick="navigate('mission_detail', { id: '${m.id}' })" class="px-3 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs font-semibold shadow"><i class="fa-solid fa-folder-open mr-1"></i>${m.ops ? 'เปิดภารกิจ' : 'กรอกแผนการปฏิบัติ'}</button>
+                            ${m.ops ? `<button type="button" onclick="openMissionSummary('${m.id}')" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-bolt mr-1 text-gold-600"></i>สรุปด่วน</button>` : ''}
+                            <button type="button" onclick="openMissionModal('${m.id}')" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไข</button>
+                            <button type="button" onclick="toggleMissionCancel('${m.id}')" class="px-3 py-2 rounded-xl bg-white text-xs font-semibold border ${cancelled ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50' : 'border-red-300 text-red-600 hover:bg-red-50'}"><i class="fa-solid ${cancelled ? 'fa-rotate-left' : 'fa-ban'} mr-1"></i>${cancelled ? 'คืนสถานะภารกิจ' : 'ยกเลิกภารกิจ'}</button>
+                            <button type="button" onclick="deleteItem('missions', '${m.id}')" class="px-2.5 py-2 rounded-xl text-red-600 hover:bg-red-50 text-xs ml-auto" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') : '';
+
+            const emptyHtml = `<div class="col-span-2 text-center py-12 text-gray-400">${db.missions.length ? 'ไม่มีภารกิจในช่วงที่เลือก' : 'ยังไม่มีรายการภารกิจ'}</div>`;
 
             container.innerHTML = `
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางภารกิจปฏิบัติการ</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">กดเข้าไปในภารกิจเพื่อกรอกแผนการปฏิบัติ กำลังพล ยานพาหนะ อุปกรณ์ และค่าใช้จ่าย</p>
@@ -6400,9 +6562,33 @@ ${st.leader2Name}
                         <button type="button" onclick="openMissionModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center"><i class="fa-solid fa-plus mr-2"></i> เพิ่มภารกิจใหม่</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    ${cards || '<div class="col-span-2 text-center py-12 text-gray-400">ยังไม่มีรายการภารกิจ</div>'}
-                </div>`;
+
+                <div class="glass-card rounded-2xl p-3 mb-4 flex flex-wrap items-end gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-600 mb-0.5">เดือน</label>
+                        <select onchange="setMissionFilter({ fMonth: this.value })" class="px-2.5 py-1.5 border rounded-lg text-sm bg-white min-w-[120px]">${monthOpts}</select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-600 mb-0.5">ปี (พ.ศ.)</label>
+                        <select onchange="setMissionFilter({ fYear: this.value })" class="px-2.5 py-1.5 border rounded-lg text-sm bg-white min-w-[110px]">${yearOpts}</select>
+                    </div>
+                    <button type="button" onclick="setMissionFilter({ fMonth: '${now.getMonth() + 1}', fYear: '${now.getFullYear()}' })" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-navy-900 bg-white"><i class="fa-solid fa-calendar-day mr-1 text-gold-600"></i>เดือนนี้</button>
+                    <button type="button" onclick="setMissionFilter({ fMonth: 'all', fYear: 'all' })" class="px-3 py-1.5 text-sm rounded-lg border ${filterActive ? 'border-gray-300 hover:bg-gray-100 bg-white text-navy-900' : 'border-navy-900 bg-navy-900 text-gold-400'}"><i class="fa-solid fa-layer-group mr-1"></i>แสดงทั้งหมด</button>
+                    <div class="ml-auto inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs font-semibold">
+                        <button type="button" onclick="setMissionFilter({ view: 'card' })" class="px-3 py-1.5 ${view === 'card' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-table-cells-large mr-1"></i>การ์ด</button>
+                        <button type="button" onclick="setMissionFilter({ view: 'list' })" class="px-3 py-1.5 ${view === 'list' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-list mr-1"></i>รายการ</button>
+                    </div>
+                </div>
+
+                <div class="mb-3 text-xs sm:text-sm text-navy-900 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span class="font-semibold"><i class="fa-solid fa-filter text-gold-600 mr-1.5"></i>${summaryText}</span>
+                    <span class="text-gray-500">ทั้งหมด ${list.length} ภารกิจ • รอปฏิบัติ ${activeN} • ผ่านไปแล้ว/ยกเลิก ${list.length - activeN}</span>
+                    <span class="text-[11px] text-gray-400"><span class="line-through decoration-red-500 decoration-2">ขีดฆ่า</span> = ยกเลิก หรือผ่านวันปฏิบัติไปแล้ว</span>
+                </div>
+
+                ${view === 'list'
+                    ? `<div class="glass-card gold-border-top rounded-2xl overflow-hidden">${rows || emptyHtml}</div>`
+                    : `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">${cards || emptyHtml}</div>`}`;
         }
 
         function renderMissionDetail(container, id) {
@@ -6429,6 +6615,7 @@ ${st.leader2Name}
                     <div class="luxury-header px-5 sm:px-6 py-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="min-w-0">
                             <span class="px-3 py-1 rounded-full bg-gold-500 text-navy-950 text-xs font-bold">คำสั่งปฏิบัติการ</span>
+                            ${missionIsCancelled(m) ? '<span class="ml-1 px-3 py-1 rounded-full bg-red-600 text-white text-xs font-bold"><i class="fa-solid fa-ban mr-1"></i>ยกเลิกแล้ว</span>' : (missionIsPast(m) ? '<span class="ml-1 px-3 py-1 rounded-full bg-gray-500 text-white text-xs font-bold"><i class="fa-solid fa-check-double mr-1"></i>ผ่านไปแล้ว</span>' : '')}
                             <h2 class="text-xl sm:text-2xl font-bold mt-2">${escHtml(m.name)}</h2>
                             <p class="text-gold-400 text-xs sm:text-sm mt-1"><i class="fa-solid fa-building-shield mr-1.5"></i> สนับสนุน: ${escHtml(m.supportUnit || '-')} | วันที่ปฏิบัติ: ${formatThaiDateFullYear(m.date)}</p>
                         </div>
