@@ -511,6 +511,8 @@
         .oc-level-body { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; width: 100%; }
         .oc-level-body.stack { flex-direction: column; align-items: center; }
         .oc-team .oc-card { width: 100%; max-width: 238px; }
+        .oc-team > .oc-level { position: relative; z-index: 1; }
+        .oc-team-svg { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; overflow: visible; }
 
         .oc-foot {
             position: relative; z-index: 2; width: 100%; display: flex; justify-content: space-between; gap: 12px;
@@ -1268,6 +1270,8 @@
                 db.orgHierarchy.row4[t] = db.orgHierarchy.row4[t].map(updateNode);
                 db.orgHierarchy.row5[t] = db.orgHierarchy.row5[t].map(updateNode);
             });
+            // อัปเดตแผนภาพตามสังกัดทีมอัตโนมัติ (ถ้าเปิดไว้)
+            if (db.orgHierarchy.autoSync) { try { orgApplyAutoPull('merge', { links: false }); } catch (e) { console.warn('org auto sync', e); } }
         }
 
         // ---------- สถานะการซิงค์ ----------
@@ -1914,11 +1918,16 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวรหนุมาน (ทีม A / B / C / D)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">แสดงช่วงเวลาเข้าเวร High, Low และ Rest แบบปฏิทินและตารางสรุป</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">แสดงช่วงเวลาเข้าเวร High, Low และ Rest แบบปฏิทินและตารางสรุป • กด "จัดตารางเวรอัตโนมัติ" เพื่อจัดวนรอบหลายเดือนในครั้งเดียว</p>
                     </div>
-                    <button onclick="openDutyHanumanModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center self-start">
-                        <i class="fa-solid fa-plus mr-2"></i> เพิ่มช่วงเวลาเข้าเวร
-                    </button>
+                    <div class="flex flex-wrap gap-2 self-start">
+                        <button onclick="openDutyHanumanAutoModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-navy-950 font-bold text-sm shadow flex items-center">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> จัดตารางเวรอัตโนมัติ
+                        </button>
+                        <button onclick="openDutyHanumanModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center">
+                            <i class="fa-solid fa-plus mr-2"></i> เพิ่มช่วงเวลาเข้าเวร
+                        </button>
+                    </div>
                 </div>
 
                 <div class="glass-card rounded-2xl p-4 sm:p-6 mb-8">
@@ -1980,6 +1989,358 @@
             if (m < 0) { m = 11; y--; }
             if (m > 11) { m = 0; y++; }
             navigate('duty_hanuman', { month: m, year: y }, false);
+        }
+
+        // ==========================================
+        // 2.1.1 จัดตารางเวรหนุมานอัตโนมัติ (วนรอบ High / Low / Rest)
+        // - กำหนดรอบเวร: เวรอะไร กี่วัน แล้วต่อด้วยเวรอะไร กี่วัน ... (วนซ้ำ)
+        // - แต่ละทีมเลือกว่าเริ่มที่ขั้นไหน (หรือต่อจากเวรเดิมอัตโนมัติ)
+        // - กำหนดวันเริ่ม และจำนวนเดือนที่ต้องการจัด
+        // ==========================================
+        const DHA_TEAMS = ['A', 'B', 'C', 'D'];
+        const DHA_STATUS = {
+            High: { label: 'High (เตรียมพร้อมสูงสุด)', chip: 'bg-red-600 text-white', soft: 'bg-red-50 border-red-200 text-red-700' },
+            Low: { label: 'Low (เวรสนับสนุน)', chip: 'bg-amber-500 text-navy-900', soft: 'bg-amber-50 border-amber-200 text-amber-800' },
+            Rest: { label: 'Rest (พักเวร)', chip: 'bg-emerald-600 text-white', soft: 'bg-emerald-50 border-emerald-200 text-emerald-700' }
+        };
+        let dhaState = null;
+        const dhaAdd = (iso, n) => cmdIsoAddDays(iso, n);
+        const dhaDaysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+
+        function dhaDefaultState() {
+            const now = new Date();
+            const m = currentRoute.params.month !== undefined ? currentRoute.params.month : now.getMonth();
+            const y = currentRoute.params.year !== undefined ? currentRoute.params.year : now.getFullYear();
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem('hanuman_dh_auto') || 'null'); } catch (e) {}
+            const base = {
+                months: 3,
+                overwrite: true,
+                steps: [
+                    { status: 'High', days: 10, note: 'เตรียมพร้อมสูงสุด 100%' },
+                    { status: 'Low', days: 10, note: 'สนับสนุนภารกิจรอง' },
+                    { status: 'Rest', days: 10, note: 'พักเวร' }
+                ],
+                teams: {
+                    A: { on: true, start: '0', day: 1 },
+                    B: { on: true, start: '1', day: 1 },
+                    C: { on: true, start: '2', day: 1 },
+                    D: { on: false, start: '0', day: 1 }
+                }
+            };
+            const st = saved && Array.isArray(saved.steps) && saved.steps.length ? { ...base, ...saved } : base;
+            st.teams = { ...base.teams, ...(st.teams || {}) };
+            st.start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+            return st;
+        }
+
+        function dhaEndDate(st) {
+            const [y, m, d] = st.start.split('-').map(Number);
+            const months = Math.max(1, parseInt(st.months, 10) || 1);
+            const dim = new Date(y, m - 1 + months + 1, 0).getDate();
+            const t = new Date(y, m - 1 + months, Math.min(d, dim));
+            t.setDate(t.getDate() - 1);
+            return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+        }
+
+        // หาว่าทีมนี้ "ต่อจากเวรเดิม" ควรเริ่มขั้นไหน วันที่เท่าไรของขั้นนั้น (null = ไม่พบเวรเดิมก่อนวันเริ่ม)
+        function dhaAutoStart(team, startIso, steps) {
+            const prevDay = dhaAdd(startIso, -1);
+            const list = db.dutyHanuman.filter(d => d.team === team);
+            const at = (iso) => list.find(d => iso >= d.startDate && iso <= d.endDate);
+            const last = at(prevDay);
+            if (!last) return null;
+            let run = 0, day = prevDay;
+            while (run < 400) { const e = at(day); if (!e || e.status !== last.status) break; run++; day = dhaAdd(day, -1); }
+            const idx = steps.findIndex(s => s.status === last.status);
+            if (idx < 0) return null;
+            if (run >= (parseInt(steps[idx].days, 10) || 1)) return { idx: (idx + 1) % steps.length, used: 0, from: last.status, run };
+            return { idx, used: run, from: last.status, run };
+        }
+
+        function dhaResolveTeamStart(st, team, i) {
+            const t = st.teams[team];
+            const n = st.steps.length;
+            if (t.start === 'auto') {
+                const a = dhaAutoStart(team, st.start, st.steps);
+                if (a) return { ...a, auto: true };
+                return { idx: i % n, used: 0, auto: true, notFound: true };
+            }
+            const idx = Math.min(n - 1, Math.max(0, parseInt(t.start, 10) || 0));
+            const maxDay = parseInt(st.steps[idx].days, 10) || 1;
+            const used = Math.min(maxDay, Math.max(1, parseInt(t.day, 10) || 1)) - 1;
+            return { idx, used };
+        }
+
+        // สร้างช่วงเวรของทุกทีมที่เลือก (ยังไม่บันทึก)
+        function dhaBuildPlan(st) {
+            const S = st.start, E = dhaEndDate(st);
+            const total = dhaDaysBetween(S, E) + 1;
+            const steps = st.steps.map(x => ({ ...x, days: Math.max(1, parseInt(x.days, 10) || 1) }));
+            const plan = [];
+            const enabled = DHA_TEAMS.filter(t => st.teams[t]?.on);
+            enabled.forEach((team, ti) => {
+                const start = dhaResolveTeamStart({ ...st, steps }, team, DHA_TEAMS.indexOf(team));
+                const existing = db.dutyHanuman.filter(d => d.team === team && !(d.endDate < S || d.startDate > E));
+                const covered = (iso) => !st.overwrite && existing.some(d => iso >= d.startDate && iso <= d.endDate);
+                let i = start.idx, used = start.used, seg = null;
+                const segs = [];
+                for (let k = 0; k < total; k++) {
+                    if (used >= steps[i].days) { i = (i + 1) % steps.length; used = 0; }
+                    const iso = dhaAdd(S, k);
+                    if (covered(iso)) { seg = null; used++; continue; }
+                    if (seg && seg.stepIdx === i) seg.endDate = iso;
+                    else { seg = { team, stepIdx: i, status: steps[i].status, note: steps[i].note || '', startDate: iso, endDate: iso }; segs.push(seg); }
+                    used++;
+                }
+                plan.push({ team, start, segs, replaced: st.overwrite ? existing.length : 0, kept: st.overwrite ? 0 : existing.length });
+            });
+            return { S, E, total, plan };
+        }
+
+        function dhaSaveSettings() {
+            try {
+                const { start, ...rest } = dhaState;
+                localStorage.setItem('hanuman_dh_auto', JSON.stringify(rest));
+            } catch (e) {}
+        }
+
+        function dhaStepsHtml() {
+            const st = dhaState;
+            return st.steps.map((s, i) => `
+                <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-xl border ${DHA_STATUS[s.status]?.soft || 'bg-gray-50'}">
+                    <span class="w-7 h-7 rounded-full bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center shrink-0">${i + 1}</span>
+                    <select onchange="dhaSetStep(${i}, 'status', this.value, true)" class="border rounded-lg px-2 py-1.5 text-sm bg-white font-semibold text-navy-900">
+                        ${Object.keys(DHA_STATUS).map(k => `<option value="${k}" ${s.status === k ? 'selected' : ''}>${DHA_STATUS[k].label}</option>`).join('')}
+                    </select>
+                    <div class="flex items-center gap-1">
+                        <input type="number" min="1" max="365" value="${escHtml(String(s.days))}" oninput="dhaSetStep(${i}, 'days', this.value, false)"
+                            class="w-16 border rounded-lg px-2 py-1.5 text-sm bg-white text-center font-bold">
+                        <span class="text-xs text-gray-600">วัน</span>
+                    </div>
+                    <input type="text" value="${escHtml(s.note || '')}" placeholder="หมายเหตุ (ไม่บังคับ)" oninput="dhaSetStep(${i}, 'note', this.value, false)"
+                        class="flex-grow min-w-[120px] border rounded-lg px-2 py-1.5 text-xs bg-white">
+                    <div class="flex gap-1 ml-auto">
+                        <button type="button" onclick="dhaMoveStep(${i}, -1)" ${i === 0 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-30" title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                        <button type="button" onclick="dhaMoveStep(${i}, 1)" ${i === st.steps.length - 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-30" title="เลื่อนลง"><i class="fa-solid fa-arrow-down text-xs"></i></button>
+                        <button type="button" onclick="dhaRemoveStep(${i})" ${st.steps.length <= 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 disabled:opacity-30" title="ลบขั้นนี้"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </div>
+                </div>
+                ${i < st.steps.length - 1 ? '<div class="text-center text-gray-400 text-xs -my-1"><i class="fa-solid fa-arrow-down"></i> แล้วไปเป็น</div>' : `<div class="text-center text-gray-400 text-[11px] -mt-1"><i class="fa-solid fa-rotate-left mr-1"></i>ครบแล้ววนกลับไปขั้นที่ 1</div>`}
+            `).join('');
+        }
+
+        function dhaTeamsHtml() {
+            const st = dhaState;
+            const stepOpts = (sel) => `<option value="auto" ${sel === 'auto' ? 'selected' : ''}>ต่อจากเวรเดิม (อัตโนมัติ)</option>` +
+                st.steps.map((s, i) => `<option value="${i}" ${String(sel) === String(i) ? 'selected' : ''}>เริ่มขั้น ${i + 1}: ${s.status} (${s.days} วัน)</option>`).join('');
+            return DHA_TEAMS.map(team => {
+                const t = st.teams[team];
+                const maxDay = t.start !== 'auto' ? (parseInt(st.steps[parseInt(t.start, 10) || 0]?.days, 10) || 1) : 1;
+                return `
+                    <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-xl border ${t.on ? 'border-navy-900/20 bg-white' : 'border-gray-200 bg-gray-50 opacity-60'}">
+                        <label class="flex items-center gap-2 cursor-pointer w-24 shrink-0">
+                            <input type="checkbox" ${t.on ? 'checked' : ''} onchange="dhaSetTeam('${team}', 'on', this.checked)" class="w-4 h-4 accent-navy-900">
+                            <span class="font-bold text-navy-900">ทีม ${team}</span>
+                        </label>
+                        <select ${t.on ? '' : 'disabled'} onchange="dhaSetTeam('${team}', 'start', this.value)" class="flex-grow min-w-[180px] border rounded-lg px-2 py-1.5 text-sm bg-white">${stepOpts(t.start)}</select>
+                        ${t.start !== 'auto' ? `
+                            <div class="flex items-center gap-1 text-xs text-gray-600">
+                                <span>เป็นวันที่</span>
+                                <input type="number" min="1" max="${maxDay}" value="${escHtml(String(t.day || 1))}" ${t.on ? '' : 'disabled'} oninput="dhaSetTeam('${team}', 'day', this.value, false)"
+                                    class="w-14 border rounded-lg px-1.5 py-1 text-center bg-white">
+                                <span>ของขั้นนี้</span>
+                            </div>` : ''}
+                    </div>`;
+            }).join('');
+        }
+
+        function dhaPreviewHtml() {
+            const st = dhaState;
+            const enabled = DHA_TEAMS.filter(t => st.teams[t]?.on);
+            if (!st.start) return '<p class="text-xs text-red-600">กรุณาเลือกวันเริ่มต้น</p>';
+            if (!enabled.length) return '<p class="text-xs text-red-600">กรุณาเลือกอย่างน้อย 1 ทีม</p>';
+            const { S, E, total, plan } = dhaBuildPlan(st);
+            const segCount = plan.reduce((a, p) => a + p.segs.length, 0);
+            const replaced = plan.reduce((a, p) => a + p.replaced, 0);
+            const kept = plan.reduce((a, p) => a + p.kept, 0);
+            const cycleDays = st.steps.reduce((a, x) => a + Math.max(1, parseInt(x.days, 10) || 1), 0);
+            const fmt = (a, b) => a === b ? formatThaiDate(a) : `${formatThaiDate(a)} – ${formatThaiDate(b)}`;
+            const rows = plan.map(p => {
+                const startTxt = p.start.auto
+                    ? (p.start.notFound ? `<span class="text-amber-700">ไม่พบเวรเดิม → เริ่มขั้น ${p.start.idx + 1}</span>` : `ต่อจากเวรเดิม (${escHtml(p.start.from)} ${p.start.run} วัน) → ขั้น ${p.start.idx + 1}${p.start.used ? ` วันที่ ${p.start.used + 1}` : ''}`)
+                    : `เริ่มขั้น ${p.start.idx + 1}${p.start.used ? ` (วันที่ ${p.start.used + 1})` : ''}`;
+                const chips = p.segs.slice(0, 8).map(sg => `
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${DHA_STATUS[sg.status]?.chip || 'bg-gray-200'}">
+                        ${sg.status} <span class="font-normal opacity-90">${fmt(sg.startDate, sg.endDate)}</span>
+                    </span>`).join(' ');
+                return `
+                    <div class="py-2 border-b last:border-0">
+                        <div class="flex flex-wrap items-baseline gap-x-2 mb-1">
+                            <b class="text-navy-900">ทีม ${p.team}</b>
+                            <span class="text-[11px] text-gray-500">${startTxt} • ${p.segs.length} ช่วง</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1">${chips || '<span class="text-[11px] text-gray-400">ไม่มีช่วงที่ต้องสร้าง</span>'}${p.segs.length > 8 ? `<span class="text-[11px] text-gray-500">… อีก ${p.segs.length - 8} ช่วง</span>` : ''}</div>
+                    </div>`;
+            }).join('');
+            return `
+                <div class="text-xs text-navy-900 mb-2">
+                    <i class="fa-regular fa-calendar-check text-gold-600 mr-1"></i>
+                    <b>${formatThaiDateFullYear(S)}</b> ถึง <b>${formatThaiDateFullYear(E)}</b> (${total} วัน) • รอบเวรละ ${cycleDays} วัน
+                    • จะสร้าง <b>${segCount}</b> รายการ
+                    ${replaced ? `• แทนที่/ตัดเวรเดิม <b class="text-red-600">${replaced}</b> รายการ` : ''}
+                    ${kept ? `• คงเวรเดิมไว้ ${kept} รายการ` : ''}
+                </div>
+                <div class="max-h-60 overflow-y-auto pr-1">${rows}</div>`;
+        }
+
+        function dhaRefresh(parts = 'all') {
+            const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+            if (parts === 'all' || parts.includes('steps')) set('dhaSteps', dhaStepsHtml());
+            if (parts === 'all' || parts.includes('teams')) set('dhaTeams', dhaTeamsHtml());
+            set('dhaPreview', dhaPreviewHtml());
+            const endEl = document.getElementById('dhaEndLabel');
+            if (endEl && dhaState.start) endEl.innerText = formatThaiDateFullYear(dhaEndDate(dhaState));
+        }
+
+        function dhaSetStep(i, key, val, rerender) {
+            dhaState.steps[i][key] = key === 'days' ? val : val;
+            dhaRefresh(rerender ? ['steps', 'teams'] : ['teams']);
+        }
+        function dhaAddStep() {
+            dhaState.steps.push({ status: 'Rest', days: 10, note: '' });
+            dhaRefresh(['steps', 'teams']);
+        }
+        function dhaRemoveStep(i) {
+            if (dhaState.steps.length <= 1) return;
+            dhaState.steps.splice(i, 1);
+            DHA_TEAMS.forEach(t => {
+                const tm = dhaState.teams[t];
+                if (tm.start !== 'auto') { const v = parseInt(tm.start, 10) || 0; tm.start = String(v === i ? 0 : v > i ? v - 1 : v); }
+            });
+            dhaRefresh(['steps', 'teams']);
+        }
+        function dhaMoveStep(i, dir) {
+            const j = i + dir;
+            if (j < 0 || j >= dhaState.steps.length) return;
+            [dhaState.steps[i], dhaState.steps[j]] = [dhaState.steps[j], dhaState.steps[i]];
+            dhaRefresh(['steps', 'teams']);
+        }
+        function dhaSetTeam(team, key, val, rerender = true) {
+            dhaState.teams[team][key] = val;
+            if (key === 'start') dhaState.teams[team].day = 1;
+            dhaRefresh(rerender ? ['teams'] : []);
+        }
+        function dhaSetField(key, val) {
+            dhaState[key] = val;
+            dhaRefresh([]);
+        }
+        // แบ่งทีมเริ่มคนละขั้นอัตโนมัติ (A ขั้น 1, B ขั้น 2, ...)
+        function dhaSpreadTeams() {
+            let k = 0;
+            DHA_TEAMS.forEach(t => {
+                const tm = dhaState.teams[t];
+                if (!tm.on) return;
+                tm.start = String(k % dhaState.steps.length); tm.day = 1; k++;
+            });
+            dhaRefresh(['teams']);
+        }
+        function dhaAllAuto() {
+            DHA_TEAMS.forEach(t => { dhaState.teams[t].start = 'auto'; dhaState.teams[t].day = 1; });
+            dhaRefresh(['teams']);
+        }
+
+        function openDutyHanumanAutoModal() {
+            dhaState = dhaDefaultState();
+            openModal('จัดตารางเวรหนุมานอัตโนมัติ', `
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-navy-900">
+                    <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i>
+                    กำหนด <b>รอบเวร</b> ว่าเข้าเวรอะไรกี่วัน แล้วต่อด้วยเวรอะไรกี่วัน (ครบแล้ววนซ้ำ) • เลือกว่าแต่ละทีมเริ่มที่ขั้นไหน • เลือกวันเริ่มและจำนวนเดือน แล้วกด "จัดตารางเวร"
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">เริ่มวันที่</label>
+                        <input type="date" id="dha_start" value="${dhaState.start}" onchange="dhaSetField('start', this.value)" class="w-full border rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">ระยะเวลา</label>
+                        <select onchange="dhaSetField('months', this.value)" class="w-full border rounded-xl px-3 py-2">
+                            ${[1, 2, 3, 4, 5, 6, 9, 12].map(m => `<option value="${m}" ${String(dhaState.months) === String(m) ? 'selected' : ''}>${m} เดือน</option>`).join('')}
+                        </select>
+                        <div class="text-[11px] text-gray-500 mt-1">ถึงวันที่ <b id="dhaEndLabel" class="text-navy-900">${formatThaiDateFullYear(dhaEndDate(dhaState))}</b></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-bold text-navy-900"><i class="fa-solid fa-arrows-spin text-gold-600 mr-1"></i>รอบเวร (เรียงตามลำดับ)</label>
+                        <button type="button" onclick="dhaAddStep()" class="px-2.5 py-1 rounded-lg border border-gold-500 text-navy-900 hover:bg-amber-50 text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่มขั้น</button>
+                    </div>
+                    <div id="dhaSteps" class="space-y-2">${dhaStepsHtml()}</div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <label class="text-sm font-bold text-navy-900"><i class="fa-solid fa-people-group text-gold-600 mr-1"></i>ทีมที่จัด และขั้นเริ่มต้น</label>
+                        <div class="flex gap-1.5 text-xs">
+                            <button type="button" onclick="dhaSpreadTeams()" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">แบ่งทีมคนละขั้น</button>
+                            <button type="button" onclick="dhaAllAuto()" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">ต่อจากเวรเดิมทุกทีม</button>
+                        </div>
+                    </div>
+                    <div id="dhaTeams" class="space-y-2">${dhaTeamsHtml()}</div>
+                </div>
+
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer">
+                    <input type="checkbox" ${dhaState.overwrite ? 'checked' : ''} onchange="dhaSetField('overwrite', this.checked)" class="w-4 h-4 mt-0.5 accent-navy-900">
+                    <span class="text-xs text-navy-900"><b>แทนที่เวรเดิมของทีมที่เลือกในช่วงวันที่นี้</b><br>หากไม่ติ๊ก ระบบจะคงเวรเดิมไว้ และจัดเฉพาะวันที่ทีมนั้นยังว่าง</span>
+                </label>
+
+                <div class="rounded-xl border-2 border-gold-500/50 bg-white p-3">
+                    <div class="text-sm font-bold text-navy-900 mb-1.5"><i class="fa-solid fa-eye text-gold-600 mr-1"></i>ตัวอย่างผลการจัด</div>
+                    <div id="dhaPreview">${dhaPreviewHtml()}</div>
+                </div>
+            `, { type: 'autoDutyHanuman' });
+            setModalWide(true);
+            const sb = document.getElementById('modalSaveBtn');
+            sb.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> จัดตารางเวร';
+        }
+
+        function runDutyHanumanAuto() {
+            const st = dhaState;
+            if (!st || !st.start) { showStatusPopup('ข้อมูลไม่ครบ', 'กรุณาเลือกวันเริ่มต้น', 'edit', 2000); return; }
+            if (!DHA_TEAMS.some(t => st.teams[t]?.on)) { showStatusPopup('ยังไม่ได้เลือกทีม', 'กรุณาเลือกอย่างน้อย 1 ทีม', 'edit', 2000); return; }
+            if (st.steps.some(x => !(parseInt(x.days, 10) >= 1))) { showStatusPopup('จำนวนวันไม่ถูกต้อง', 'จำนวนวันของแต่ละขั้นต้องเป็นตัวเลขตั้งแต่ 1 ขึ้นไป', 'edit', 2400); return; }
+
+            const { S, E, plan } = dhaBuildPlan(st);
+            let removed = 0, created = 0;
+            if (st.overwrite) {
+                const teams = new Set(plan.map(p => p.team));
+                const stamp = Date.now();
+                const next = [];
+                db.dutyHanuman.forEach(d => {
+                    if (!teams.has(d.team) || d.endDate < S || d.startDate > E) { next.push(d); return; }
+                    removed++;
+                    // ตัดเฉพาะส่วนที่อยู่ในช่วงที่จัดใหม่ เก็บส่วนก่อน/หลังไว้
+                    if (d.startDate < S) next.push({ ...d, endDate: dhaAdd(S, -1) });
+                    if (d.endDate > E) next.push({ ...d, id: d.startDate < S ? `${d.id}_s${stamp}` : d.id, startDate: dhaAdd(E, 1) });
+                });
+                db.dutyHanuman = next;
+            }
+            const stamp = Date.now();
+            plan.forEach(p => p.segs.forEach((sg, k) => {
+                db.dutyHanuman.push({ id: `dh_auto_${p.team}_${sg.startDate}_${stamp}_${k}`, team: p.team, status: sg.status, startDate: sg.startDate, endDate: sg.endDate, note: sg.note || '' });
+                created++;
+            }));
+            db.dutyHanuman.sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)) || String(a.team).localeCompare(String(b.team)));
+
+            dhaSaveSettings();
+            saveDB();
+            closeModal();
+            const [y, m] = S.split('-').map(Number);
+            navigate('duty_hanuman', { month: m - 1, year: y }, false);
+            showStatusPopup('จัดตารางเวรเรียบร้อย',
+                `${formatThaiDate(S)} – ${formatThaiDate(E)}: สร้าง ${created} รายการ${removed ? ` • แทนที่เวรเดิม ${removed} รายการ` : ''}`, 'success', 3200);
         }
 
         // ==========================================
@@ -4286,7 +4647,7 @@ ${st.leader2Name}
             `;
 
             const teamLevel = (rowKey, team, label, stack) => `
-                <div class="oc-level">
+                <div class="oc-level" data-row="${rowKey}">
                     <div class="oc-level-head">
                         <span class="oc-level-label">${label}</span>
                         <span class="oc-level-count">${oh[rowKey][team].length}</span>
@@ -4301,6 +4662,7 @@ ${st.leader2Name}
 
             const teamFrame = (team) => `
                 <section id="org-team-${team}" class="oc-team oc-team-${team}">
+                    <svg class="oc-team-svg"></svg>
                     <header class="oc-team-head">
                         <div class="oc-team-title">ทีม ${team}</div>
                         <div class="oc-team-sub">กำลังพล ${countTeam(team)} นาย</div>
@@ -4320,6 +4682,13 @@ ${st.leader2Name}
                         <p class="text-gray-500 text-xs sm:text-sm">คลิกที่กำลังพลเพื่อดูข้อมูลสรุป • จีบนิ้วหรือ Ctrl + ล้อเมาส์เพื่อย่อ-ขยาย ลากเพื่อเลื่อนดู • ส่งออก JPEG / PDF / พิมพ์</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" onclick="openOrgAutoPullModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-bold text-xs sm:text-sm shadow-md flex items-center">
+                            <i class="fa-solid fa-sitemap mr-1.5"></i> ดึงสังกัดทีมอัตโนมัติ
+                        </button>
+                        <button type="button" onclick="toggleOrgTeamChain()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center" title="เส้นต่อจากสารวัตร → รองสารวัตร → กำลังพล ภายในกรอบทีม">
+                            <i class="fa-solid ${oh.teamChain === false ? 'fa-toggle-off text-gray-400' : 'fa-toggle-on text-emerald-600'} mr-1.5"></i> เส้นสายในทีม
+                        </button>
+                        ${oh.autoSync ? '<span class="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold" title="จัดตำแหน่งตามสังกัดทีมให้อัตโนมัติเมื่อข้อมูลกำลังพลเปลี่ยน"><i class="fa-solid fa-rotate mr-1"></i>อัปเดตตามสังกัดอัตโนมัติ</span>' : ''}
                         <button type="button" onclick="refreshOrgChart()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center">
                             <i class="fa-solid fa-arrows-rotate mr-1.5 text-gold-600"></i> รีเฟรช
                         </button>
@@ -4576,7 +4945,259 @@ ${st.leader2Name}
             });
 
             svg.innerHTML = html;
+            drawOrgTeamChains();
             syncOrgSizer();
+        }
+
+        // ---- เส้นสายภายในกรอบทีม: สารวัตร → รองสารวัตร → กำลังพล (ต่อๆ กันลงไปข้างล่าง) ----
+        function drawOrgTeamChains() {
+            ensureOrgHierarchy();
+            const on = db.orgHierarchy.teamChain !== false;
+            ORG_TEAMS.forEach(t => {
+                const team = document.getElementById('org-team-' + t);
+                if (!team) return;
+                const svg = team.querySelector('.oc-team-svg');
+                if (!svg) return;
+                const W = team.offsetWidth, H = team.offsetHeight;
+                svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+                if (!on) { svg.innerHTML = ''; return; }
+                const boxOf = (el) => {
+                    let x = 0, y = 0, cur = el;
+                    while (cur && cur !== team) { x += cur.offsetLeft; y += cur.offsetTop; cur = cur.offsetParent; }
+                    return { l: x, t: y, r: x + el.offsetWidth, b: y + el.offsetHeight, w: el.offsetWidth, h: el.offsetHeight, cx: x + el.offsetWidth / 2 };
+                };
+                const color = (getComputedStyle(team).getPropertyValue('--tc') || '#b8913f').trim() || '#b8913f';
+                const levels = ['row3', 'row4', 'row5'].map(k => {
+                    const lv = team.querySelector(`.oc-level[data-row="${k}"]`);
+                    const cards = lv ? Array.from(lv.querySelectorAll('.oc-card')).map(boxOf) : [];
+                    const stack = !!(lv && lv.querySelector('.oc-level-body.stack'));
+                    return { cards, stack };
+                }).filter(l => l.cards.length);
+                const mk = `chainArrow${t}`;
+                let html = `<defs><marker id="${mk}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 L2,4 Z" fill="${color}" /></marker></defs>`;
+                const line = (pts) => {
+                    html += `<path d="${roundedOrthogonalPath(pts, 9)}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#${mk})" />`;
+                    html += `<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="3" fill="${color}" stroke="#fff" stroke-width="1" />`;
+                };
+                for (let i = 1; i < levels.length; i++) {
+                    const prev = levels[i - 1], cur = levels[i];
+                    // จุดต้นทาง: ใบสุดท้ายของระดับก่อนถ้าเรียงแนวตั้ง / กึ่งกลางของแถวถ้าเรียงแนวนอน
+                    let x1, y1;
+                    if (prev.stack) { const c = prev.cards[prev.cards.length - 1]; x1 = c.cx; y1 = c.b; }
+                    else {
+                        const l = Math.min(...prev.cards.map(c => c.l)), r = Math.max(...prev.cards.map(c => c.r));
+                        x1 = (l + r) / 2; y1 = Math.max(...prev.cards.map(c => c.b));
+                    }
+                    const targets = cur.stack ? [cur.cards[0]] : cur.cards;
+                    const topY = Math.min(...targets.map(c => c.t));
+                    const midY = y1 + (topY - y1) / 2;
+                    targets.forEach(c => {
+                        line(Math.abs(c.cx - x1) < 1 ? [[x1, y1], [c.cx, c.t]] : [[x1, y1], [x1, midY], [c.cx, midY], [c.cx, c.t]]);
+                    });
+                }
+                // กำลังพลที่เรียงแนวตั้ง: ต่อกันเป็นสายทีละคน
+                levels.forEach(lv => {
+                    if (!lv.stack) return;
+                    for (let j = 1; j < lv.cards.length; j++) {
+                        const a = lv.cards[j - 1], b = lv.cards[j];
+                        if (b.t - a.b < 4) continue;
+                        line([[a.cx, a.b], [b.cx, b.t]]);
+                    }
+                });
+                svg.innerHTML = html;
+            });
+        }
+
+        function toggleOrgTeamChain() {
+            ensureOrgHierarchy();
+            db.orgHierarchy.teamChain = db.orgHierarchy.teamChain === false;
+            saveDB();
+            render();
+        }
+
+        // ==========================================
+        // ดึงสังกัดทีมจากข้อมูลกำลังพลลงแผนภาพอัตโนมัติ
+        // - สังกัด ทีม A–D => จัดลงกรอบทีม ตามตำแหน่ง (สารวัตร / รองสารวัตร / กำลังพล)
+        // - ผู้กำกับการ / รองผู้กำกับการ => แถวบน
+        // - สร้างเส้นสาย ผกก. → รอง ผกก. → ทุกทีม และเส้นสายภายในทีมต่อลงไปข้างล่าง
+        // ==========================================
+        function orgRoleOf(p) {
+            const pos = String(p.position || '').replace(/\s+/g, '');
+            if (/รองผู้กำกับ|รองผกก/.test(pos)) return 'row2';
+            if (/ผู้กำกับ|ผกก/.test(pos)) return 'row1';
+            if (/รองสารวัตร|รองสว\.|รองหัวหน้าชุด|รองหน\.?ชุด|รองผบ\.?ชุด/.test(pos)) return 'row4';
+            if (/สารวัตร|^สว\.|หัวหน้าชุด|หน\.?ชุด|ผบ\.?ชุด/.test(pos)) return 'row3';
+            return 'row5';
+        }
+        function orgNodeFromPerson(p) {
+            const name = `${p.rank || ''}${p.firstName || ''} ${p.lastName || ''}`.trim();
+            return {
+                id: 'oh_p_' + p.id,
+                personnelId: p.id,
+                photo: p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.firstName || 'P')}&background=0a1128&color=c5a059&size=150`,
+                name,
+                position: p.position || '',
+                team: p.team || ''
+            };
+        }
+        function orgTeamKeyOf(team) {
+            const t = String(team || '').replace(/^ทีม\s*/, '').trim().toUpperCase();
+            return ORG_TEAMS.includes(t) ? t : null;
+        }
+        // วางตำแหน่งกำลังพลตามสังกัด/ตำแหน่ง (ยังไม่บันทึก)
+        function orgAutoPlan(promoteHead = true) {
+            const plan = { row1: [], row2: [], skipped: [] };
+            ['row3', 'row4', 'row5'].forEach(k => { plan[k] = {}; ORG_TEAMS.forEach(t => { plan[k][t] = []; }); });
+            sortPersonnelByRank(db.personnel).forEach(p => {
+                const role = orgRoleOf(p);
+                const tk = orgTeamKeyOf(p.team);
+                if (tk) plan[role === 'row1' || role === 'row2' ? 'row3' : role][tk].push(p);
+                else if (role === 'row1' || role === 'row2') plan[role].push(p);
+                else plan.skipped.push(p);
+            });
+            if (promoteHead) {
+                ORG_TEAMS.forEach(t => {
+                    // ไม่มีสารวัตร/หัวหน้าชุด => ใช้ผู้มียศสูงสุดในทีมเป็นหัวหน้า
+                    if (!plan.row3[t].length) {
+                        const src = plan.row4[t].length ? plan.row4[t] : plan.row5[t];
+                        if (src.length) plan.row3[t].push(src.shift());
+                    }
+                });
+            }
+            return plan;
+        }
+
+        function orgEnsureChainLinks() {
+            const oh = db.orgHierarchy;
+            const exists = (from, to) => oh.links.some(l => {
+                const a = resolveOrgEndpoint(l.from), b = resolveOrgEndpoint(l.to);
+                const A = resolveOrgEndpoint(from), B = resolveOrgEndpoint(to);
+                return a && b && A && B && a.key === A.key && b.key === B.key;
+            });
+            const add = (from, to) => { if (!exists(from, to)) oh.links.push({ id: 'lnk_auto_' + Date.now() + '_' + oh.links.length, from, to, style: 'solid', label: '' }); };
+            const top = oh.row1[0], second = oh.row2[0];
+            if (top && second) add(top.id, second.id);
+            const parent = second || top;
+            if (parent) ORG_TEAMS.forEach(t => add(parent.id, 'team:' + t));
+        }
+
+        function orgCleanLinks() {
+            const oh = db.orgHierarchy;
+            oh.links = oh.links.filter(l => resolveOrgEndpoint(l.from) && resolveOrgEndpoint(l.to));
+        }
+
+        // mode: 'replace' = สร้างใหม่ทั้งหมด / 'merge' = เพิ่มคนที่ยังไม่อยู่ในแผนภาพ + ย้ายทีมตามสังกัดล่าสุด
+        function orgApplyAutoPull(mode, opts = {}) {
+            ensureOrgHierarchy();
+            const oh = db.orgHierarchy;
+            const plan = orgAutoPlan(opts.promoteHead !== false);
+            const allRows = () => [['row1', null], ['row2', null], ...['row3', 'row4', 'row5'].flatMap(k => ORG_TEAMS.map(t => [k, t]))];
+            const arrOf = (k, t) => t ? oh[k][t] : oh[k];
+            let added = 0, moved = 0, removed = 0;
+
+            if (mode === 'replace') {
+                allRows().forEach(([k, t]) => {
+                    const keep = opts.keepManual !== false ? arrOf(k, t).filter(n => !n.personnelId) : [];
+                    removed += arrOf(k, t).length - keep.length;
+                    const people = t ? plan[k][t] : plan[k];
+                    const nodes = keep.concat(people.map(orgNodeFromPerson));
+                    if (t) oh[k][t] = nodes; else oh[k] = nodes;
+                    added += people.length;
+                });
+                removed = Math.max(0, removed - added);
+            } else {
+                // ลบการ์ดของกำลังพลที่ถูกลบไปแล้ว
+                allRows().forEach(([k, t]) => {
+                    const arr = arrOf(k, t);
+                    const next = arr.filter(n => !n.personnelId || db.personnel.some(p => p.id === n.personnelId));
+                    removed += arr.length - next.length;
+                    if (t) oh[k][t] = next; else oh[k] = next;
+                });
+                // ย้ายทีมตามสังกัดล่าสุด (คงระดับเดิม)
+                ['row3', 'row4', 'row5'].forEach(k => ORG_TEAMS.forEach(t => {
+                    oh[k][t] = oh[k][t].filter(n => {
+                        const p = n.personnelId && db.personnel.find(x => x.id === n.personnelId);
+                        const nt = p ? orgTeamKeyOf(p.team) : null;
+                        if (p && nt && nt !== t) { oh[k][nt].push(n); moved++; return false; }
+                        return true;
+                    });
+                }));
+                // เพิ่มคนที่ยังไม่อยู่ในแผนภาพ
+                const inChart = new Set();
+                allRows().forEach(([k, t]) => arrOf(k, t).forEach(n => { if (n.personnelId) inChart.add(n.personnelId); }));
+                allRows().forEach(([k, t]) => {
+                    const people = (t ? plan[k][t] : plan[k]).filter(p => !inChart.has(p.id));
+                    people.forEach(p => { arrOf(k, t).push(orgNodeFromPerson(p)); inChart.add(p.id); added++; });
+                });
+            }
+            // เรียงตามยศในแต่ละระดับ
+            const rankOf = (n) => { const p = db.personnel.find(x => x.id === n.personnelId); return p ? getRankOrder(p.rank) : 999; };
+            allRows().forEach(([k, t]) => { const arr = arrOf(k, t); arr.sort((a, b) => rankOf(a) - rankOf(b)); });
+
+            orgCleanLinks();
+            if (opts.links !== false) orgEnsureChainLinks();
+            return { added, moved, removed, skipped: plan.skipped };
+        }
+
+        function openOrgAutoPullModal() {
+            ensureOrgHierarchy();
+            const plan = orgAutoPlan(true);
+            const nm = (p) => escHtml(`${p.rank || ''}${p.firstName || ''} ${p.lastName || ''}`.trim());
+            const top = (k, label) => `
+                <div class="flex items-start gap-2 text-xs"><span class="w-28 shrink-0 font-semibold text-navy-900">${label}</span>
+                <span class="text-gray-700">${plan[k].map(nm).join(', ') || '<span class="text-gray-400">-</span>'}</span></div>`;
+            const teamCols = ORG_TEAMS.map(t => `
+                <div class="rounded-xl border p-2.5 bg-white">
+                    <div class="font-bold text-navy-900 text-sm mb-1">ทีม ${t} <span class="text-[11px] font-normal text-gray-500">(${plan.row3[t].length + plan.row4[t].length + plan.row5[t].length} นาย)</span></div>
+                    ${[['row3', 'สารวัตร'], ['row4', 'รองสารวัตร'], ['row5', 'กำลังพล']].map(([k, l]) => `
+                        <div class="text-[11px] mt-1"><span class="text-gray-500">${l}:</span> ${plan[k][t].map(nm).join(', ') || '<span class="text-gray-400">-</span>'}</div>`).join('<div class="text-center text-gray-300 text-[10px] leading-none">│</div>')}
+                </div>`).join('');
+            openModal('ดึงสังกัดทีมลงแผนภาพอัตโนมัติ', `
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-navy-900">
+                    <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i>
+                    ระบบอ่าน <b>สังกัด (ทีม)</b> และ <b>ตำแหน่ง</b> ของกำลังพลทุกนาย แล้วจัดลงแผนภาพ: ผู้กำกับการ → รองผู้กำกับการ → กรอบทีม A–D (สารวัตร → รองสารวัตร → กำลังพล) พร้อมเส้นสายต่อๆ ลงไปข้างล่าง • ตำแหน่งที่มีคำว่า "สารวัตร / หัวหน้าชุด" ขึ้นแถวสารวัตร, "รองสารวัตร / รองหัวหน้าชุด" ขึ้นแถวรองสารวัตร
+                </div>
+                <div class="rounded-xl border-2 border-gold-500/50 p-3 space-y-2 bg-amber-50/30">
+                    <div class="text-sm font-bold text-navy-900"><i class="fa-solid fa-eye text-gold-600 mr-1"></i>ตัวอย่างการจัด</div>
+                    ${top('row1', 'ผู้กำกับการ')}
+                    ${top('row2', 'รองผู้กำกับการ')}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${teamCols}</div>
+                    ${plan.skipped.length ? `<div class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ไม่ได้จัดลงแผนภาพ ${plan.skipped.length} นาย (ไม่มีสังกัดทีม A–D และไม่ใช่ ผกก./รอง ผกก.): ${plan.skipped.map(nm).join(', ')}</div>` : ''}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">วิธีดึงข้อมูล</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-gold-500 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="oap_mode" value="merge" checked class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>เพิ่ม / อัปเดตตามสังกัด</b><br>เพิ่มคนที่ยังไม่อยู่ในแผนภาพ ย้ายทีมตามสังกัดล่าสุด คงตำแหน่งที่จัดไว้เดิม</span>
+                        </label>
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-gold-500 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="oap_mode" value="replace" class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>จัดใหม่ทั้งหมด</b><br>ล้างการ์ดที่ผูกกับข้อมูลกำลังพล แล้วจัดใหม่ตามตัวอย่างด้านบน (การ์ดที่เพิ่มเองยังอยู่)</span>
+                        </label>
+                    </div>
+                </div>
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 cursor-pointer">
+                    <input type="checkbox" id="oap_auto" ${db.orgHierarchy.autoSync ? 'checked' : ''} class="w-4 h-4 mt-0.5 accent-navy-900">
+                    <span class="text-xs text-navy-900"><b>อัปเดตอัตโนมัติทุกครั้งที่ข้อมูลกำลังพลเปลี่ยน</b><br>เพิ่มคนใหม่ / ย้ายทีม / ลบคนที่ไม่มีแล้ว ลงแผนภาพให้เองโดยไม่ต้องกดปุ่มนี้อีก</span>
+                </label>
+            `, { type: 'orgAutoPull' });
+            setModalWide(true);
+            document.getElementById('modalSaveBtn').innerHTML = '<i class="fa-solid fa-sitemap mr-1.5"></i> ดึงลงแผนภาพ';
+        }
+
+        function runOrgAutoPull() {
+            const mode = (document.querySelector('input[name="oap_mode"]:checked') || {}).value === 'replace' ? 'replace' : 'merge';
+            const auto = !!document.getElementById('oap_auto')?.checked;
+            const r = orgApplyAutoPull(mode);
+            db.orgHierarchy.autoSync = auto;
+            db.orgHierarchy.teamChain = true;
+            saveDB();
+            closeModal();
+            render();
+            showStatusPopup('ดึงสังกัดทีมเรียบร้อย',
+                `เพิ่ม ${r.added} นาย${r.moved ? ` • ย้ายทีม ${r.moved} นาย` : ''}${r.removed ? ` • นำออก ${r.removed} การ์ด` : ''}${r.skipped.length ? ` • ไม่มีสังกัดทีม ${r.skipped.length} นาย` : ''}${auto ? ' • เปิดอัปเดตอัตโนมัติแล้ว' : ''}`,
+                'success', 3200);
         }
 
         window.addEventListener('resize', () => {
@@ -4872,23 +5493,78 @@ ${st.leader2Name}
             return 'fa-car-side';
         }
 
+        // สถานะยานพาหนะ (สี/ไอคอน ใช้ร่วมกันทุกหน้า)
+        const VEH_STATUS = {
+            'พร้อมใช้งาน': { badge: 'bg-emerald-600 text-white', soft: 'bg-emerald-100 text-emerald-800', icon: 'fa-circle-check', border: 'border-emerald-500', text: 'text-emerald-700', iconBg: 'bg-emerald-100 text-emerald-700' },
+            'ปฏิบัติภารกิจ': { badge: 'bg-blue-600 text-white', soft: 'bg-blue-100 text-blue-800', icon: 'fa-route', border: 'border-blue-500', text: 'text-blue-700', iconBg: 'bg-blue-100 text-blue-700' },
+            'ซ่อมบำรุง': { badge: 'bg-amber-500 text-navy-900', soft: 'bg-amber-100 text-amber-800', icon: 'fa-wrench', border: 'border-amber-500', text: 'text-amber-700', iconBg: 'bg-amber-100 text-amber-700' },
+            'ไม่พร้อมใช้งาน': { badge: 'bg-red-600 text-white', soft: 'bg-red-100 text-red-800', icon: 'fa-ban', border: 'border-red-500', text: 'text-red-700', iconBg: 'bg-red-100 text-red-700' }
+        };
+        const VEH_STATUS_KEYS = Object.keys(VEH_STATUS);
+        const vehStatusOf = (v) => VEH_STATUS[v.status] ? v.status : 'พร้อมใช้งาน';
+
+        function getVehUi() {
+            let ui = {};
+            try { ui = JSON.parse(localStorage.getItem('hanuman_veh_ui') || '{}') || {}; } catch (e) {}
+            return { view: ui.view === 'list' ? 'list' : 'card', sort: ui.sort || 'type', dir: ui.dir === 'desc' ? 'desc' : 'asc', status: ui.status || 'all' };
+        }
+        function setVehUi(patch) {
+            const ui = { ...getVehUi(), ...patch };
+            try { localStorage.setItem('hanuman_veh_ui', JSON.stringify(ui)); } catch (e) {}
+            render();
+        }
+        function toggleVehSort(key) {
+            const ui = getVehUi();
+            setVehUi(ui.sort === key ? { dir: ui.dir === 'asc' ? 'desc' : 'asc' } : { sort: key, dir: 'asc' });
+        }
+        function updateVehicleStatus(id, status) {
+            const v = db.vehicles.find(x => x.id === id);
+            if (!v || !VEH_STATUS[status]) return;
+            v.status = status;
+            saveDB();
+            showStatusPopup('อัปเดตสถานะรถแล้ว', `${v.brand || ''} ${v.plate || ''} → ${status}`, 'success', 1500);
+            render();
+        }
+
         function renderVehicles(container) {
             updateBreadcrumbs([
                 { label: 'หน้าหลัก', action: "navigate('home')" },
                 { label: '4. ตารางสถานะรถ' }
             ]);
 
+            const ui = getVehUi();
             const totalVehicles = db.vehicles.length;
-            const readyCount = db.vehicles.filter(v => v.status === 'พร้อมใช้งาน').length;
-            const missionCount = db.vehicles.filter(v => v.status === 'ปฏิบัติภารกิจ').length;
-            const maintCount = db.vehicles.filter(v => v.status === 'ซ่อมบำรุง').length;
+            const countOf = (st) => db.vehicles.filter(v => vehStatusOf(v) === st).length;
 
+            // กรองตามสถานะ + จัดเรียง
+            const sortVal = {
+                type: v => v.type || '',
+                brand: v => v.brand || '',
+                plate: v => v.plate || '',
+                status: v => String(VEH_STATUS_KEYS.indexOf(vehStatusOf(v))),
+                note: v => v.note || ''
+            }[ui.sort] || (v => v.type || '');
+            const list = db.vehicles
+                .filter(v => ui.status === 'all' || vehStatusOf(v) === ui.status)
+                .slice()
+                .sort((x, y) => {
+                    const r = String(sortVal(x)).localeCompare(String(sortVal(y)), 'th', { numeric: true })
+                        || String(x.type || '').localeCompare(String(y.type || ''), 'th')
+                        || String(x.plate || '').localeCompare(String(y.plate || ''), 'th', { numeric: true });
+                    return ui.dir === 'desc' ? -r : r;
+                });
+
+            const statusBadge = (v, extra = '') => {
+                const k = vehStatusOf(v), c = VEH_STATUS[k];
+                return `<span class="px-2.5 py-1 rounded-full text-xs font-semibold shadow inline-flex items-center gap-1 ${c.badge} ${extra}"><i class="fa-solid ${c.icon}"></i>${k}</span>`;
+            };
+
+            // ---- มุมมองการ์ด (แยกตามประเภทรถ) ----
             const grouped = {};
-            db.vehicles.forEach(v => {
+            list.forEach(v => {
                 if (!grouped[v.type]) grouped[v.type] = [];
                 grouped[v.type].push(v);
             });
-
             const groupsHtml = Object.keys(grouped).map(type => {
                 const iconClass = getVehicleTypeIcon(type);
                 return `
@@ -4904,17 +5580,14 @@ ${st.leader2Name}
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         ${grouped[type].map(v => `
-                            <div id="vehicle-card-${v.id}" class="glass-card rounded-2xl overflow-hidden border border-gray-200 hover:border-gold-500 transition flex flex-col">
+                            <div id="vehicle-card-${v.id}" class="glass-card rounded-2xl overflow-hidden border border-gray-200 hover:border-gold-500 transition flex flex-col ${vehStatusOf(v) === 'ไม่พร้อมใช้งาน' ? 'ring-2 ring-red-300' : ''}">
                                 <div class="h-48 bg-gray-100 relative overflow-hidden">
                                     ${isBulk('vehicles') ? `<div class="absolute bottom-3 left-3 z-10 bg-white rounded-lg p-1.5 shadow">${bulkCbHtml('vehicles', v.id)}</div>` : ''}
-                                    <img src="${v.photo || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle'}" class="w-full h-full object-cover">
+                                    <img src="${v.photo || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle'}" class="w-full h-full object-cover ${vehStatusOf(v) === 'ไม่พร้อมใช้งาน' ? 'grayscale' : ''}">
                                     <span class="absolute top-3 left-3 w-9 h-9 rounded-xl bg-navy-950/85 text-gold-400 border border-gold-500/40 flex items-center justify-center text-sm shadow">
                                         <i class="fa-solid ${iconClass}"></i>
                                     </span>
-                                    <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-semibold shadow flex items-center gap-1 ${v.status === 'พร้อมใช้งาน' ? 'bg-emerald-600 text-white' : (v.status === 'ปฏิบัติภารกิจ' ? 'bg-blue-600 text-white' : 'bg-amber-500 text-navy-900')}">
-                                        <i class="fa-solid ${v.status === 'พร้อมใช้งาน' ? 'fa-circle-check' : (v.status === 'ปฏิบัติภารกิจ' ? 'fa-route' : 'fa-wrench')}"></i>
-                                        ${v.status || 'พร้อมใช้งาน'}
-                                    </span>
+                                    ${statusBadge(v, 'absolute top-3 right-3')}
                                 </div>
                                 <div class="p-5 flex-grow flex flex-col justify-between">
                                     <div>
@@ -4938,6 +5611,81 @@ ${st.leader2Name}
                 </div>
             `}).join('');
 
+            // ---- มุมมองรายการ (ตาราง จัดเรียงได้) ----
+            const th = (key, label, cls = '') => {
+                const on = ui.sort === key;
+                return `<th class="px-3 py-3 ${cls}">
+                    <button type="button" onclick="toggleVehSort('${key}')" class="inline-flex items-center gap-1 font-semibold uppercase hover:text-navy-900 ${on ? 'text-navy-900' : ''}">
+                        ${label}<i class="fa-solid ${on ? (ui.dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-gray-300'} text-[10px]"></i>
+                    </button></th>`;
+            };
+            const listRows = list.map((v, i) => {
+                const k = vehStatusOf(v), c = VEH_STATUS[k];
+                return `
+                    <tr id="vehicle-row-${v.id}" class="border-b hover:bg-gray-50 transition ${k === 'ไม่พร้อมใช้งาน' ? 'bg-red-50/40' : ''}">
+                        ${isBulk('vehicles') ? `<td class="pl-3 py-2.5 w-8">${bulkCbHtml('vehicles', v.id)}</td>` : ''}
+                        <td class="px-3 py-2.5 text-xs text-gray-500">${i + 1}</td>
+                        <td class="px-3 py-2.5">
+                            <img src="${escHtml(v.photo || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle')}" onerror="this.style.visibility='hidden'" class="w-16 h-11 rounded-lg object-cover border ${k === 'ไม่พร้อมใช้งาน' ? 'grayscale' : ''}">
+                        </td>
+                        <td class="px-3 py-2.5 text-sm whitespace-nowrap"><i class="fa-solid ${getVehicleTypeIcon(v.type)} text-gold-600 mr-1.5"></i>${escHtml(v.type || '-')}</td>
+                        <td class="px-3 py-2.5 text-sm font-semibold text-navy-900">${escHtml(v.brand || '-')}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-navy-900 text-gold-400 font-bold text-xs">${escHtml(v.plate || '-')}</span></td>
+                        <td class="px-3 py-2.5">
+                            <div class="relative inline-flex items-center">
+                                <i class="fa-solid ${c.icon} absolute left-2.5 text-xs pointer-events-none ${c.text}"></i>
+                                <select onchange="updateVehicleStatus('${v.id}', this.value)" title="เปลี่ยนสถานะ"
+                                    class="pl-7 pr-2 py-1 rounded-full text-xs font-semibold border-0 cursor-pointer ${c.soft}">
+                                    ${VEH_STATUS_KEYS.map(s2 => `<option value="${s2}" ${s2 === k ? 'selected' : ''}>${s2}</option>`).join('')}
+                                </select>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2.5 text-xs text-gray-600 font-body">${escHtml(v.note || '-')}</td>
+                        <td class="px-3 py-2.5 text-right whitespace-nowrap space-x-2">
+                            <button onclick="openVehicleModal('${v.id}')" class="text-amber-600 hover:text-amber-800" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteItem('vehicles', '${v.id}')" class="text-red-600 hover:text-red-800" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+            const listHtml = `
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-100 text-gray-600 text-xs">
+                                <tr>
+                                    ${isBulk('vehicles') ? '<th class="pl-3 py-3 w-8"></th>' : ''}
+                                    <th class="px-3 py-3">#</th>
+                                    <th class="px-3 py-3">รูป</th>
+                                    ${th('type', 'ประเภท')}
+                                    ${th('brand', 'ยี่ห้อ / รุ่น')}
+                                    ${th('plate', 'ทะเบียน')}
+                                    ${th('status', 'สถานะ')}
+                                    ${th('note', 'หมายเหตุ')}
+                                    <th class="px-3 py-3 text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>${listRows || `<tr><td colspan="9" class="text-center py-8 text-gray-400">ไม่มีรถในสถานะนี้</td></tr>`}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+
+            // ---- การ์ดสรุป (กดเพื่อกรองตามสถานะ) ----
+            const sumCard = (key, label, count, icon, border, text, iconBg) => {
+                const on = ui.status === key;
+                return `
+                    <button type="button" onclick="setVehUi({ status: '${on && key !== 'all' ? 'all' : key}' })"
+                        class="glass-card rounded-2xl p-4 border-l-4 ${border} flex items-center justify-between text-left transition hover:shadow-md ${on ? 'ring-2 ring-gold-500 bg-amber-50/40' : ''}">
+                        <div>
+                            <div class="text-xs text-gray-500 font-medium">${label}</div>
+                            <div class="text-xl sm:text-2xl font-bold ${text} mt-0.5">${count} คัน</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center text-lg">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                    </button>`;
+            };
+            const sortOpts = [['type', 'ประเภทรถ'], ['status', 'สถานะ'], ['plate', 'ทะเบียน'], ['brand', 'ยี่ห้อ / รุ่น']];
+
             container.innerHTML = `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3.5">
@@ -4946,7 +5694,7 @@ ${st.leader2Name}
                         </div>
                         <div>
                             <h2 class="text-xl sm:text-2xl font-bold text-navy-900">แผนภาพและตารางสถานะยานพาหนะ</h2>
-                            <p class="text-gray-500 text-xs sm:text-sm">แสดงภาพถ่ายยานพาหนะ แยกตามประเภทรถ ยี่ห้อ และหมายเลขทะเบียน</p>
+                            <p class="text-gray-500 text-xs sm:text-sm">แสดงภาพถ่ายยานพาหนะ แยกตามประเภทรถ ยี่ห้อ และหมายเลขทะเบียน • สลับเป็นแบบรายการเพื่อจัดเรียงและเปลี่ยนสถานะได้เร็ว</p>
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 self-start">
@@ -4957,46 +5705,40 @@ ${st.leader2Name}
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
-                    <div class="glass-card rounded-2xl p-4 border-l-4 border-navy-900 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500 font-medium">ยานพาหนะทั้งหมด</div>
-                            <div class="text-xl sm:text-2xl font-bold text-navy-900 mt-0.5">${totalVehicles} คัน</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-navy-900/10 text-navy-900 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-cars"></i>
-                        </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+                    ${sumCard('all', 'ยานพาหนะทั้งหมด', totalVehicles, 'fa-cars', 'border-navy-900', 'text-navy-900', 'bg-navy-900/10 text-navy-900')}
+                    ${VEH_STATUS_KEYS.map(k => sumCard(k, k, countOf(k), VEH_STATUS[k].icon, VEH_STATUS[k].border, VEH_STATUS[k].text, VEH_STATUS[k].iconBg)).join('')}
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div class="inline-flex rounded-xl border bg-white p-1 shadow-sm">
+                        <button type="button" onclick="setVehUi({ view: 'card' })" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition ${ui.view === 'card' ? 'bg-navy-900 text-gold-400 shadow' : 'text-navy-900 hover:bg-gray-100'}">
+                            <i class="fa-solid fa-table-cells-large mr-1.5"></i>แผนภาพ (การ์ด)
+                        </button>
+                        <button type="button" onclick="setVehUi({ view: 'list' })" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition ${ui.view === 'list' ? 'bg-navy-900 text-gold-400 shadow' : 'text-navy-900 hover:bg-gray-100'}">
+                            <i class="fa-solid fa-list mr-1.5"></i>รายการ (ตาราง)
+                        </button>
                     </div>
-                    <div class="glass-card rounded-2xl p-4 border-l-4 border-emerald-500 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500 font-medium">พร้อมใช้งาน</div>
-                            <div class="text-xl sm:text-2xl font-bold text-emerald-700 mt-0.5">${readyCount} คัน</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                    </div>
-                    <div class="glass-card rounded-2xl p-4 border-l-4 border-blue-500 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500 font-medium">ปฏิบัติภารกิจ</div>
-                            <div class="text-xl sm:text-2xl font-bold text-blue-700 mt-0.5">${missionCount} คัน</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-route"></i>
-                        </div>
-                    </div>
-                    <div class="glass-card rounded-2xl p-4 border-l-4 border-amber-500 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-gray-500 font-medium">ซ่อมบำรุง</div>
-                            <div class="text-xl sm:text-2xl font-bold text-amber-700 mt-0.5">${maintCount} คัน</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-wrench"></i>
-                        </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                        <span class="text-gray-500">จัดเรียงตาม</span>
+                        <select onchange="setVehUi({ sort: this.value })" class="border rounded-lg px-2 py-1.5 bg-white">
+                            ${sortOpts.map(([k, l]) => `<option value="${k}" ${ui.sort === k ? 'selected' : ''}>${l}</option>`).join('')}
+                            ${ui.sort === 'note' ? '<option value="note" selected>หมายเหตุ</option>' : ''}
+                        </select>
+                        <button type="button" onclick="setVehUi({ dir: '${ui.dir === 'asc' ? 'desc' : 'asc'}' })" class="px-2.5 py-1.5 rounded-lg border bg-white hover:bg-gray-100" title="${ui.dir === 'asc' ? 'น้อย → มาก' : 'มาก → น้อย'}">
+                            <i class="fa-solid ${ui.dir === 'asc' ? 'fa-arrow-down-a-z' : 'fa-arrow-up-z-a'}"></i>
+                        </button>
+                        ${ui.status !== 'all' ? `
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${VEH_STATUS[ui.status]?.soft || 'bg-gray-100'}">
+                                กรอง: ${escHtml(ui.status)}
+                                <button type="button" onclick="setVehUi({ status: 'all' })" class="ml-1 hover:opacity-70"><i class="fa-solid fa-xmark"></i></button>
+                            </span>` : ''}
                     </div>
                 </div>
 
-                ${groupsHtml || '<div class="text-center py-12 text-gray-400">ยังไม่มีข้อมูลยานพาหนะ</div>'}
+                ${ui.view === 'list'
+                    ? listHtml
+                    : (groupsHtml || `<div class="text-center py-12 text-gray-400">${db.vehicles.length ? 'ไม่มีรถในสถานะนี้' : 'ยังไม่มีข้อมูลยานพาหนะ'}</div>`)}
             `;
         }
 
@@ -5676,6 +6418,7 @@ ${st.leader2Name}
                             <option value="พร้อมใช้งาน" ${v.status==='พร้อมใช้งาน'?'selected':''}>พร้อมใช้งาน</option>
                             <option value="ปฏิบัติภารกิจ" ${v.status==='ปฏิบัติภารกิจ'?'selected':''}>ปฏิบัติภารกิจ</option>
                             <option value="ซ่อมบำรุง" ${v.status==='ซ่อมบำรุง'?'selected':''}>ซ่อมบำรุง</option>
+                            <option value="ไม่พร้อมใช้งาน" ${v.status==='ไม่พร้อมใช้งาน'?'selected':''}>ไม่พร้อมใช้งาน</option>
                         </select>
                     </div>
                 </div>
@@ -5691,6 +6434,8 @@ ${st.leader2Name}
             const { type, id } = currentModalContext;
             const isEdit = Boolean(id);
             if (type === 'autoW5') { runW5AutoArrange(); return; }
+            if (type === 'autoDutyHanuman') { runDutyHanumanAuto(); return; }
+            if (type === 'orgAutoPull') { runOrgAutoPull(); return; }
             if (type === 'w5ClearMonth') { submitW5ClearMonth(); return; }
             if (type === 'presetManage') { submitPresetManager(currentModalContext.key); return; }
             if (type === 'exportPreview') { closeModal(); return; }
@@ -7201,7 +7946,7 @@ ${st.leader2Name}
         }
         function opsVehiclesHtml() {
             const d = opsDraft;
-            const stCls = s => s === 'พร้อมใช้งาน' ? 'bg-emerald-100 text-emerald-800' : (s === 'ปฏิบัติภารกิจ' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800');
+            const stCls = s => (VEH_STATUS[s] || VEH_STATUS['พร้อมใช้งาน']).soft;
             const items = db.vehicles.map(v => {
                 const on = d.vehicleIds.includes(v.id);
                 return `<label class="ops-veh flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition ${on ? 'border-gold-500 bg-amber-50/70' : 'bg-white border-gray-200'}">
