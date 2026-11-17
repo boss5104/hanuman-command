@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#0a1128">
+    <!-- ===== แจ้งเตือนอัปเดตอัตโนมัติ: ระบบตรวจว่าไฟล์บนเซิร์ฟเวอร์ถูกแก้ไขโค้ดหรือไม่ (ไม่ต้องแก้เลขเวอร์ชันเอง)
+         app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
+         app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
+    <meta name="app-update-required" content="1">
+    <meta name="app-update-note" content="">
     <title>HANUMAN TACTICAL COMMAND | ระบบบริหารจัดการภารกิจและกำลังพล</title>
     <!-- Google Fonts: Prompt & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1096,6 +1101,8 @@
             ['dutyHanuman', 'dutyW5', 'missions', 'personnel', 'vehicles'].forEach(k => { db[k] = parse(db[k], []); if (!Array.isArray(db[k])) db[k] = []; });
             db.dutyBusy = parse(db.dutyBusy, []); if (!Array.isArray(db.dutyBusy)) db.dutyBusy = [];
             db.missionBills = parse(db.missionBills, []); if (!Array.isArray(db.missionBills)) db.missionBills = [];
+            db.cmdDaily = parse(db.cmdDaily, {});
+            if (!db.cmdDaily || typeof db.cmdDaily !== 'object' || Array.isArray(db.cmdDaily)) db.cmdDaily = {};
             db.presets = parse(db.presets, {});
             if (!db.presets || typeof db.presets !== 'object' || Array.isArray(db.presets)) db.presets = {};
             Object.keys(DEFAULT_PRESETS).forEach(k => { db.presets[k] = parse(db.presets[k], null); if (!Array.isArray(db.presets[k])) db.presets[k] = DEFAULT_PRESETS[k].slice(); });
@@ -1151,16 +1158,16 @@
             sec3StartDate: '2026-11-14',
             sec3StartTime: '07.00 น.',
             sec3StartCustomTime: false,
-            sec3EndDate: '2026-11-14',
-            sec3EndTime: '19.00 น.',
+            sec3EndDate: '2026-11-15',
+            sec3EndTime: '07.00 น.',
             sec3EndCustomTime: false,
             sec3Data: COMMANDER_AREAS.map((area, idx) => {
                 if (idx === 1) return { area, dead: '0', injured: '1' };
                 if (idx === 3) return { area, dead: '5', injured: '2' };
                 return { area, dead: '0', injured: '0' };
             }),
-            sec4EndDate: '2026-11-14',
-            sec4EndTime: '19.00 น.',
+            sec4EndDate: '2026-11-15',
+            sec4EndTime: '07.00 น.',
             sec4EndCustomTime: false,
             sec4BaseData: [
                 { area: 'พระตำหนักราชฤทธิ์รุ่งโรจน์', dead: 61, injured: 34 },
@@ -1172,12 +1179,12 @@
                 { area: 'สี่เสาเทเวศร์', dead: 13, injured: 0 },
                 { area: 'พระราม 5ข', dead: 129, injured: 53 }
             ],
-            sec5EndDate: '2026-11-14',
-            sec5EndTime: '19.00 น.',
+            sec5EndDate: '2026-11-15',
+            sec5EndTime: '07.00 น.',
             sec5EndCustomTime: false,
             sec5BaseDead: 7448,
             sec5BaseInjured: 3467,
-            sec6EndDate: '2026-11-14',
+            sec6EndDate: '2026-11-15',
             sec6BaseDead: 458,
             sec6BaseInjured: 238,
             // ปรับยอด "รวมทุกพื้นที่" ข้อ 3 / ข้อ 4 ด้วยมือ (เก็บเป็นส่วนต่างจากผลรวมรายพื้นที่ เพื่อให้สะสมต่อได้)
@@ -1203,7 +1210,9 @@
         let activeThaiCalPicker = null;
         let thaiCalPickerView = { month: 10, year: 2026 };
 
-        function saveCmdReportState() {
+        // markDirty=false ใช้ตอนโหลด/บันทึกยอดรายวัน (ไม่นับเป็นการแก้ไขที่ยังไม่บันทึก)
+        function saveCmdReportState(markDirty = true) {
+            if (markDirty) cmdReportState.dayDirty = true;
             try {
                 localStorage.setItem('hanuman_cmd_report', JSON.stringify(cmdReportState));
             } catch (e) {}
@@ -1298,7 +1307,7 @@
                     if ((!Array.isArray(rm.expenses) || !rm.expenses.length) && localM && Array.isArray(localM.expenses) && localM.expenses.length) rm.expenses = localM.expenses;
                 });
             }
-            ['dutyBusy', 'presets', 'missionBills', 'orgHierarchy'].forEach(k => {
+            ['dutyBusy', 'presets', 'missionBills', 'orgHierarchy', 'cmdDaily'].forEach(k => {
                 const rv = remoteData[k];
                 if (rv === undefined || rv === null || rv === '') remoteData[k] = db[k];
             });
@@ -2183,7 +2192,7 @@
         // ==========================================
         // 3.1.1 หน้า "รายงาน ทม."
         // ==========================================
-        function renderThaiMiniCalendar(selectedDateStr, viewMonth, viewYear, onSelectFnName, onNavFnName, fieldKey = '') {
+        function renderThaiMiniCalendar(selectedDateStr, viewMonth, viewYear, onSelectFnName, onNavFnName, fieldKey = '', markedDates = null) {
             const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
             const firstDay = new Date(viewYear, viewMonth, 1).getDay();
             const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -2195,12 +2204,14 @@
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateVal = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const isSelected = dateVal === selectedDateStr;
+                const isMarked = !!(markedDates && markedDates.has(dateVal));
                 const clickCall = fieldKey ? `${onSelectFnName}('${fieldKey}', '${dateVal}')` : `${onSelectFnName}('${dateVal}')`;
                 cells += `
-                    <button type="button" onclick="${clickCall}"
-                        class="thai-cal-day-btn h-8 w-8 mx-auto rounded-full text-sm font-medium flex items-center justify-center transition
+                    <button type="button" onclick="${clickCall}" ${isMarked ? 'title="มียอดที่บันทึกไว้"' : ''}
+                        class="thai-cal-day-btn relative h-8 w-8 mx-auto rounded-full text-sm font-medium flex items-center justify-center transition
                         ${isSelected ? 'bg-navy-900 text-gold-400 font-bold shadow' : 'text-stone-700 hover:bg-rose-200/60'}">
                         ${d}
+                        ${isMarked ? `<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-gold-400' : 'bg-emerald-500'}"></span>` : ''}
                     </button>
                 `;
             }
@@ -2227,6 +2238,7 @@
                     </div>
                     <div class="mt-3 pt-2 border-t border-rose-200/80 text-center text-xs text-navy-900 font-semibold">
                         วันที่เลือก: ${formatThaiDateFullYear(selectedDateStr)}
+                        ${markedDates ? `<div class="mt-1 text-[10px] font-normal text-gray-500"><span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 align-middle mr-1"></span>วันที่มียอดบันทึกไว้</div>` : ''}
                     </div>
                 </div>
             `;
@@ -2578,22 +2590,285 @@
             };
         }
 
-        function selectCmdThaiDate(fieldKey, newDateStr) {
-            const oldDateStr = cmdReportState[fieldKey];
-            const changed = !!oldDateStr && oldDateStr !== newDateStr;
+        // ==========================================
+        // บันทึกยอดรายวัน (ชป.นก) — เก็บใน db.cmdDaily และซิงค์ขึ้น Google Sheet พร้อมข้อมูลอื่น
+        // แต่ละวันเก็บ: ยอดข้อ 3 + ยอดสะสมก่อนวันนั้น (base) + ส่วนต่างที่ปรับเอง (corr)
+        // ยอดสะสมของวันถัดไป = base วันก่อน + ยอดข้อ 3 วันก่อน + corr ของวันนั้น
+        // => แก้ยอดวันใด วันหลังจากนั้นคำนวณใหม่ให้อัตโนมัติ
+        // ==========================================
+        const CMD_DAY_META_FIELDS = [
+            'sec3StartTime', 'sec3StartCustomTime', 'sec3EndDate', 'sec3EndTime', 'sec3EndCustomTime',
+            'sec4EndDate', 'sec4EndTime', 'sec4EndCustomTime',
+            'sec5EndDate', 'sec5EndTime', 'sec5EndCustomTime', 'sec6EndDate',
+            'leader1StartDate', 'leader2StartDate', 'leader1Date', 'leader1Id', 'leader1Name', 'leader1Phone',
+            'leader2Date', 'leader2Id', 'leader2Name', 'leader2Phone'
+        ];
+        const CMD_MAIN_TIMES = ['07.00 น.', '19.00 น.'];
 
-            if (fieldKey === 'sec3StartDate' || fieldKey === 'headerDate') {
-                // เปลี่ยน "ในวันที่" => ทบยอด + รีเซ็ตข้อ 3 (หัวรายงานใช้วันที่นี้)
-                if (changed) rolloverSec3AndReset();
-                cmdReportState.headerDate = newDateStr;
-                cmdReportState.sec3StartDate = newDateStr;
-                if (!cmdReportState.sec3EndDate || cmdReportState.sec3EndDate < newDateStr) {
-                    cmdReportState.sec3EndDate = newDateStr;
+        function getCmdDaily() {
+            if (!db.cmdDaily || typeof db.cmdDaily !== 'object' || Array.isArray(db.cmdDaily)) db.cmdDaily = {};
+            return db.cmdDaily;
+        }
+        function cmdDailyList() {
+            return Object.values(getCmdDaily()).filter(r => r && r.date && r.base).sort((a, b) => a.date.localeCompare(b.date));
+        }
+        function cmdSavedDateSet() { return new Set(cmdDailyList().map(r => r.date)); }
+
+        const cmdN = (v) => Number(v) || 0;
+        function cmdAreaCount() { return Math.max(cmdReportState.sec4BaseData.length, cmdReportState.sec3Data.length); }
+
+        function cmdBaseFromState(st = cmdReportState) {
+            return {
+                sec4: st.sec4BaseData.map(r => ({ dead: cmdN(r.dead), injured: cmdN(r.injured) })),
+                adjDead: cmdN(st.sec4TotalAdjDead), adjInjured: cmdN(st.sec4TotalAdjInjured),
+                s5Dead: cmdN(st.sec5BaseDead), s5Inj: cmdN(st.sec5BaseInjured),
+                s6Dead: cmdN(st.sec6BaseDead), s6Inj: cmdN(st.sec6BaseInjured)
+            };
+        }
+        function cmdApplyBase(st, base) {
+            st.sec4BaseData = st.sec4BaseData.map((r, i) => ({ area: r.area, dead: cmdN(base.sec4?.[i]?.dead), injured: cmdN(base.sec4?.[i]?.injured) }));
+            st.sec4TotalAdjDead = cmdN(base.adjDead); st.sec4TotalAdjInjured = cmdN(base.adjInjured);
+            st.sec5BaseDead = cmdN(base.s5Dead); st.sec5BaseInjured = cmdN(base.s5Inj);
+            st.sec6BaseDead = cmdN(base.s6Dead); st.sec6BaseInjured = cmdN(base.s6Inj);
+        }
+        function cmdBaseOp(a, b, sign) {
+            const len = Math.max(a?.sec4?.length || 0, b?.sec4?.length || 0, cmdAreaCount());
+            const g = (o, k) => cmdN(o?.[k]);
+            const out = { sec4: [] };
+            for (let i = 0; i < len; i++) {
+                out.sec4.push({
+                    dead: cmdN(a?.sec4?.[i]?.dead) + sign * cmdN(b?.sec4?.[i]?.dead),
+                    injured: cmdN(a?.sec4?.[i]?.injured) + sign * cmdN(b?.sec4?.[i]?.injured)
+                });
+            }
+            ['adjDead', 'adjInjured', 's5Dead', 's5Inj', 's6Dead', 's6Inj'].forEach(k => { out[k] = g(a, k) + sign * g(b, k); });
+            return out;
+        }
+        const cmdBaseAdd = (a, b) => cmdBaseOp(a, b, 1);
+        const cmdBaseSub = (a, b) => cmdBaseOp(a, b, -1);
+
+        // ยอดข้อ 3 ของวันหนึ่ง ในรูปแบบที่บวกเข้ายอดสะสม (ตรงกับการทบยอดเดิม)
+        function cmdDailyDelta(rec) {
+            const rows = rec.sec3Data || [];
+            const rowD = rows.reduce((a, r) => a + cmdN(r.dead), 0);
+            const rowI = rows.reduce((a, r) => a + cmdN(r.injured), 0);
+            const raj = rows[0] || {};
+            return {
+                sec4: rows.map(r => ({ dead: cmdN(r.dead), injured: cmdN(r.injured) })),
+                adjDead: cmdN(rec.sec3TotalAdjDead), adjInjured: cmdN(rec.sec3TotalAdjInjured),
+                s5Dead: Math.max(0, rowD + cmdN(rec.sec3TotalAdjDead)),
+                s5Inj: Math.max(0, rowI + cmdN(rec.sec3TotalAdjInjured)),
+                s6Dead: cmdN(raj.dead), s6Inj: cmdN(raj.injured)
+            };
+        }
+
+        // ยอดสะสม "ก่อนวันที่ iso" จากวันที่บันทึกไว้ล่าสุดก่อนหน้า (null = ไม่มีวันก่อนหน้า)
+        function cmdChainBaseFor(iso) {
+            const prev = cmdDailyList().filter(r => r.date < iso).pop();
+            return prev ? cmdBaseAdd(prev.base, cmdDailyDelta(prev)) : null;
+        }
+
+        // คำนวณยอดสะสมของทุกวันที่บันทึกไว้ใหม่ตามลำดับวันที่
+        function cmdRechain() {
+            const recs = cmdDailyList();
+            recs.forEach((rec, i) => {
+                if (i === 0) { rec.corr = null; return; }
+                const prev = recs[i - 1];
+                const chain = cmdBaseAdd(prev.base, cmdDailyDelta(prev));
+                if (!rec.corr) rec.corr = cmdBaseSub(rec.base, chain);
+                rec.base = cmdBaseAdd(chain, rec.corr);
+            });
+        }
+
+        // ยอดรวมของวันที่บันทึกไว้ (สำหรับแสดงในรายการประวัติ)
+        function cmdRecordTotals(rec) {
+            const st = cmdReportState;
+            const pseudo = {
+                sec3Data: (rec.sec3Data || []),
+                sec3TotalAdjDead: rec.sec3TotalAdjDead, sec3TotalAdjInjured: rec.sec3TotalAdjInjured,
+                sec4BaseData: st.sec4BaseData.map((r, i) => ({ area: r.area, dead: cmdN(rec.base.sec4?.[i]?.dead), injured: cmdN(rec.base.sec4?.[i]?.injured) })),
+                sec4TotalAdjDead: rec.base.adjDead, sec4TotalAdjInjured: rec.base.adjInjured,
+                sec5BaseDead: rec.base.s5Dead, sec5BaseInjured: rec.base.s5Inj,
+                sec6BaseDead: rec.base.s6Dead, sec6BaseInjured: rec.base.s6Inj
+            };
+            return getCmdTotals(pseudo);
+        }
+
+        // ตั้งช่วงเวลาข้อ 3: 'overnight' = วันที่เลือก 07.00 น. ถึงวันถัดไป 07.00 น. / 'day' = 07.00 น. ถึง 19.00 น. วันเดียวกัน
+        function applyCmdPeriodPreset(kind, iso) {
+            const st = cmdReportState;
+            const d = iso || st.sec3StartDate || todayIso();
+            const endDate = kind === 'day' ? d : cmdIsoAddDays(d, 1);
+            const endTime = kind === 'day' ? '19.00 น.' : '07.00 น.';
+            st.sec3StartTime = '07.00 น.'; st.sec3StartCustomTime = false;
+            st.sec3EndDate = endDate; st.sec3EndTime = endTime; st.sec3EndCustomTime = false;
+            st.sec4EndDate = endDate; st.sec4EndTime = endTime; st.sec4EndCustomTime = false;
+            st.sec5EndDate = endDate; st.sec5EndTime = endTime; st.sec5EndCustomTime = false;
+            st.sec6EndDate = endDate;
+        }
+        function cmdCurrentPeriodKind() {
+            const st = cmdReportState, d = st.sec3StartDate;
+            if (st.sec3StartTime !== '07.00 น.') return 'custom';
+            if (st.sec3EndDate === cmdIsoAddDays(d, 1) && st.sec3EndTime === '07.00 น.') return 'overnight';
+            if (st.sec3EndDate === d && st.sec3EndTime === '19.00 น.') return 'day';
+            return 'custom';
+        }
+        function setCmdPeriodPreset(kind) {
+            applyCmdPeriodPreset(kind);
+            saveCmdReportState();
+            render();
+        }
+
+        // เปลี่ยนเวลา (ถ้าเป็นเวลา "ถึง" ของข้อ 3 จะปรับเวลาข้อ 4, 5 ให้ตรงกันด้วย)
+        function setCmdTimeField(timeKey, val, rerender) {
+            const st = cmdReportState;
+            st[timeKey] = val;
+            if (timeKey === 'sec3EndTime') {
+                const isMain = CMD_MAIN_TIMES.includes(val);
+                st.sec4EndTime = val; st.sec5EndTime = val;
+                st.sec4EndCustomTime = !isMain; st.sec5EndCustomTime = !isMain;
+            }
+            saveCmdReportState();
+            if (rerender) render(); else updateCmdPreviewBox();
+        }
+
+        function loadCmdDayRecord(rec) {
+            const st = cmdReportState;
+            st.sec3Data = st.sec3Data.map((r, i) => ({
+                area: r.area,
+                dead: String(rec.sec3Data?.[i]?.dead ?? '0'),
+                injured: String(rec.sec3Data?.[i]?.injured ?? '0')
+            }));
+            st.sec3TotalAdjDead = cmdN(rec.sec3TotalAdjDead);
+            st.sec3TotalAdjInjured = cmdN(rec.sec3TotalAdjInjured);
+            cmdApplyBase(st, rec.base);
+            const meta = rec.meta || {};
+            CMD_DAY_META_FIELDS.forEach(k => { if (meta[k] !== undefined) st[k] = meta[k]; });
+            st.headerDate = rec.date;
+            st.sec3StartDate = rec.date;
+        }
+
+        // บันทึกยอดของ "ในวันที่" ปัจจุบัน แล้วคำนวณยอดสะสมของวันอื่นใหม่
+        function saveCmdDayRecord(silent) {
+            const st = cmdReportState;
+            const iso = st.sec3StartDate;
+            if (!iso) return false;
+            const workBase = cmdBaseFromState(st);
+            const chain = cmdChainBaseFor(iso);
+            const meta = {};
+            CMD_DAY_META_FIELDS.forEach(k => { meta[k] = st[k]; });
+            const daily = getCmdDaily();
+            const laterCount = cmdDailyList().filter(r => r.date > iso).length;
+            daily[iso] = {
+                date: iso,
+                savedAt: Date.now(),
+                sec3Data: st.sec3Data.map(r => ({ area: r.area, dead: String(r.dead ?? '0'), injured: String(r.injured ?? '0') })),
+                sec3TotalAdjDead: cmdN(st.sec3TotalAdjDead),
+                sec3TotalAdjInjured: cmdN(st.sec3TotalAdjInjured),
+                base: workBase,
+                corr: chain ? cmdBaseSub(workBase, chain) : null,
+                meta
+            };
+            cmdRechain();
+            st.dayDirty = false;
+            saveCmdReportState(false);
+            saveDB();
+            if (!silent) {
+                const extra = laterCount ? ` และคำนวณยอดสะสมของ ${laterCount} วันถัดไปใหม่แล้ว` : '';
+                showStatusPopup('บันทึกยอดเรียบร้อย', `บันทึกยอดวันที่ ${formatThaiDate(iso)}${extra}`, 'success', 2200);
+            }
+            return true;
+        }
+
+        function saveCmdDayRecordAndRender() {
+            saveCmdDayRecord(false);
+            render();
+        }
+
+        function deleteCmdDayRecord(iso) {
+            showConfirmPopup('ลบยอดที่บันทึกไว้', `ต้องการลบยอดที่บันทึกของวันที่ ${formatThaiDate(iso)} ใช่หรือไม่? (ยอดสะสมของวันถัดไปจะคำนวณใหม่)`, () => {
+                const recs = cmdDailyList();
+                const idx = recs.findIndex(r => r.date === iso);
+                const rec = recs[idx], next = recs[idx + 1];
+                // ถ้าลบวันแรกสุด: วันถัดไปกลายเป็นวันตั้งต้น โดยไม่นับยอดของวันที่ลบ
+                if (rec && next && idx === 0) {
+                    const corr = next.corr || cmdBaseSub(next.base, cmdBaseAdd(rec.base, cmdDailyDelta(rec)));
+                    next.base = cmdBaseAdd(rec.base, corr);
+                    next.corr = null;
                 }
-                cmdReportState.sec4EndDate = cmdReportState.sec3EndDate;
-                cmdReportState.sec5EndDate = cmdReportState.sec3EndDate;
-                cmdReportState.sec6EndDate = cmdReportState.sec3EndDate;
-                if (changed) setCmdLeaderDates(newDateStr);
+                delete getCmdDaily()[iso];
+                cmdRechain();
+                if (cmdReportState.sec3StartDate === iso) cmdReportState.dayDirty = true;
+                saveCmdReportState(false);
+                saveDB();
+                showStatusPopup('ลบยอดเรียบร้อย', `ลบยอดวันที่ ${formatThaiDate(iso)} แล้ว`, 'delete', 1800);
+                render();
+            });
+        }
+
+        function openCmdDayRecord(iso) {
+            if (iso !== cmdReportState.sec3StartDate) switchCmdDay(iso, true);
+            activeThaiCalPicker = null;
+            saveCmdReportState(false);
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // เปลี่ยน "ในวันที่" ของข้อ 3: โหลดยอดที่บันทึกไว้ หรือเริ่มวันใหม่ด้วยยอดสะสมต่อจากวันก่อนหน้า
+        function switchCmdDay(newIso, autoSave) {
+            const st = cmdReportState;
+            const cur = st.sec3StartDate;
+            // บันทึกยอดวันปัจจุบันให้อัตโนมัติก่อนเปลี่ยนวัน ถ้ามีการแก้ไขที่ยังไม่บันทึก (หรือยังไม่เคยบันทึกเลย)
+            if (autoSave && cur && cur !== newIso && (st.dayDirty || !cmdDailyList().length)) saveCmdDayRecord(true);
+
+            const rec = getCmdDaily()[newIso];
+            if (rec && rec.base) {
+                loadCmdDayRecord(rec);
+            } else {
+                let base = cmdChainBaseFor(newIso);
+                if (!base) { const first = cmdDailyList()[0]; if (first) base = first.base; }
+                if (base) cmdApplyBase(st, base);
+                st.sec3Data = st.sec3Data.map(r => ({ area: r.area, dead: '0', injured: '0' }));
+                st.sec3TotalAdjDead = 0;
+                st.sec3TotalAdjInjured = 0;
+                st.headerDate = newIso;
+                st.sec3StartDate = newIso;
+                applyCmdPeriodPreset('overnight', newIso);
+                setCmdLeaderDates(newIso);
+            }
+            st.dayDirty = false;
+        }
+
+        // ถ้าวันปัจจุบันไม่มีการแก้ไขค้าง ให้ยอดตรงกับที่บันทึก/คำนวณล่าสุด (เช่น หลังแก้ยอดวันก่อนหน้า หรือซิงค์จากเครื่องอื่น)
+        function refreshCmdWorkingDayFromLedger() {
+            const st = cmdReportState;
+            if (st.dayDirty || !st.sec3StartDate) return;
+            const rec = getCmdDaily()[st.sec3StartDate];
+            if (rec && rec.base) { loadCmdDayRecord(rec); saveCmdReportState(false); return; }
+            const chain = cmdChainBaseFor(st.sec3StartDate);
+            if (chain) { cmdApplyBase(st, chain); saveCmdReportState(false); }
+        }
+
+        function cmdSaveBadgeHtml() {
+            const st = cmdReportState;
+            const rec = getCmdDaily()[st.sec3StartDate];
+            if (rec && !st.dayDirty) {
+                const t = new Date(rec.savedAt || Date.now());
+                const when = `${formatThaiDate(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`)} ${String(t.getHours()).padStart(2, '0')}.${String(t.getMinutes()).padStart(2, '0')} น.`;
+                return `<span class="text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>บันทึกยอดวันนี้แล้ว (${when})</span>`;
+            }
+            if (rec) return `<span class="text-amber-700"><i class="fa-solid fa-pen mr-1"></i>มีการแก้ไขที่ยังไม่บันทึก</span>`;
+            return `<span class="text-gray-500"><i class="fa-regular fa-circle mr-1"></i>ยังไม่ได้บันทึกยอดของวันนี้</span>`;
+        }
+
+        function selectCmdThaiDate(fieldKey, newDateStr) {
+            if (fieldKey === 'sec3StartDate' || fieldKey === 'headerDate') {
+                // เปลี่ยน "ในวันที่" => โหลดยอดที่บันทึกของวันนั้น / เริ่มวันใหม่ (ถึงวันที่ = วันถัดไป 07.00 น. อัตโนมัติ)
+                if (newDateStr !== cmdReportState.sec3StartDate) switchCmdDay(newDateStr, true);
+                activeThaiCalPicker = null;
+                saveCmdReportState(false);
+                render();
+                return;
             } else if (fieldKey === 'sec3EndDate') {
                 // เปลี่ยน "ถึงวันที่" => ไม่รีเซ็ตข้อมูล แค่ปรับวันที่สิ้นสุดของข้อ 3-6
                 cmdReportState.sec3EndDate = newDateStr;
@@ -2650,18 +2925,18 @@
             }));
         }
 
+        // บันทึกยอดวันนี้ แล้วขึ้นวันถัดไป (ยอดสะสมข้อ 4-6 ต่อจากวันนี้ / ถ้าวันถัดไปเคยบันทึกไว้ จะเปิดยอดที่บันทึก)
         function advanceToNextDayCmdReport() {
-            const nextStr = cmdIsoAddDays(cmdReportState.sec3StartDate || todayIso(), 1);
-            rolloverSec3AndReset();
-            cmdReportState.headerDate = nextStr;
-            cmdReportState.sec3StartDate = nextStr;
-            cmdReportState.sec3EndDate = nextStr;
-            cmdReportState.sec4EndDate = nextStr;
-            cmdReportState.sec5EndDate = nextStr;
-            cmdReportState.sec6EndDate = nextStr;
-            setCmdLeaderDates(nextStr);
-            saveCmdReportState();
-            showStatusPopup('ขึ้นวันถัดไปเรียบร้อย', 'ทบยอดสะสมเข้าข้อ 4-6 รีเซ็ตข้อ 3 เป็น 0 และดึงหัวหน้าชุดจากเวร ว.5 แล้ว', 'success');
+            const cur = cmdReportState.sec3StartDate || todayIso();
+            const nextStr = cmdIsoAddDays(cur, 1);
+            saveCmdDayRecord(true);
+            switchCmdDay(nextStr, false);
+            activeThaiCalPicker = null;
+            saveCmdReportState(false);
+            const hasRec = !!getCmdDaily()[nextStr];
+            showStatusPopup('ขึ้นวันถัดไปเรียบร้อย',
+                hasRec ? `บันทึกยอดวันที่ ${formatThaiDate(cur)} แล้ว และเปิดยอดที่บันทึกไว้ของวันที่ ${formatThaiDate(nextStr)}`
+                       : `บันทึกยอดวันที่ ${formatThaiDate(cur)} แล้ว ทบยอดสะสมเข้าข้อ 4-6 รีเซ็ตข้อ 3 เป็น 0 และดึงหัวหน้าชุดจากเวร ว.5 แล้ว`, 'success');
             render();
         }
 
@@ -2687,7 +2962,7 @@
                             <label class="block text-xs font-bold text-navy-900 mb-1">เลือกเวลา</label>
                             <div class="flex items-center gap-1.5">
                                 ${!isCustom ? `
-                                    <select onchange="cmdReportState['${timeFieldKey}']=this.value; saveCmdReportState(); updateCmdPreviewBox();"
+                                    <select onchange="setCmdTimeField('${timeFieldKey}', this.value, true)"
                                         class="flex-grow px-2.5 py-2 border rounded-xl text-xs sm:text-sm font-semibold bg-white text-navy-900">
                                         <option value="07.00 น." ${timeVal === '07.00 น.' ? 'selected' : ''}>07.00 น.</option>
                                         <option value="19.00 น." ${timeVal === '19.00 น.' ? 'selected' : ''}>19.00 น.</option>
@@ -2698,9 +2973,9 @@
                                     </button>
                                 ` : `
                                     <input type="text" value="${timeVal}" placeholder="เช่น 08.30 น."
-                                        oninput="cmdReportState['${timeFieldKey}']=this.value; saveCmdReportState(); updateCmdPreviewBox();"
+                                        oninput="setCmdTimeField('${timeFieldKey}', this.value, false)"
                                         class="flex-grow px-2.5 py-2 border-2 border-gold-500 rounded-xl text-xs sm:text-sm font-semibold bg-white text-navy-900">
-                                    <button type="button" onclick="cmdReportState['${customFlagKey}']=false; cmdReportState['${timeFieldKey}']='07.00 น.'; saveCmdReportState(); render();"
+                                    <button type="button" onclick="cmdReportState['${customFlagKey}']=false; setCmdTimeField('${timeFieldKey}', '07.00 น.', true);"
                                         class="px-2.5 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold shrink-0" title="กลับไปเลือกเวลาหลัก">
                                         ตัวเลือกหลัก
                                     </button>
@@ -2711,7 +2986,7 @@
 
                     ${isOpen ? `
                         <div class="pt-2">
-                            ${renderThaiMiniCalendar(dateVal, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', dateFieldKey)}
+                            ${renderThaiMiniCalendar(dateVal, thaiCalPickerView.month, thaiCalPickerView.year, 'selectCmdThaiDate', 'navThaiCalPickerMonth', dateFieldKey, dateFieldKey === 'sec3StartDate' ? cmdSavedDateSet() : null)}
                         </div>
                     ` : ''}
                 </div>
@@ -2726,7 +3001,63 @@
                 { label: 'รายงานผู้บังคับบัญชา' }
             ]);
 
+            refreshCmdWorkingDayFromLedger();
             const st = cmdReportState;
+
+            // ช่วงเวลาข้อ 3 (กดเลือกแบบด่วน / แก้ไขเองได้ทุกช่อง)
+            const periodKind = cmdCurrentPeriodKind();
+            const renderPeriodPresets = () => {
+                const chip = (kind, text) => `
+                    <button type="button" onclick="setCmdPeriodPreset('${kind}')"
+                        class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${periodKind === kind ? 'bg-navy-900 text-gold-400 border-navy-900 shadow' : 'bg-white text-navy-900 hover:border-gold-500'}">
+                        ${text}
+                    </button>`;
+                return `
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span class="text-gray-600 font-semibold">ช่วงเวลา:</span>
+                        ${chip('overnight', `07.00 น. ถึงวันถัดไป 07.00 น.`)}
+                        ${chip('day', `07.00 น. ถึง 19.00 น.`)}
+                        ${periodKind === 'custom' ? `<span class="px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold">กำหนดเอง</span>` : ''}
+                    </div>`;
+            };
+
+            // รายการยอดที่บันทึกไว้รายวัน
+            const renderCmdHistory = () => {
+                const recs = cmdDailyList().slice().reverse();
+                if (!recs.length) return `<p class="text-xs text-gray-500">ยังไม่มียอดที่บันทึกไว้ — กรอกยอดข้อ 3 แล้วกด "บันทึกยอดวันนี้" ก่อนส่งรายงาน</p>`;
+                const f = (v) => Number(v || 0).toLocaleString();
+                return `
+                    <div class="max-h-80 overflow-y-auto divide-y border rounded-xl bg-white">
+                        ${recs.map(r => {
+                            const t = cmdRecordTotals(r);
+                            const isCur = r.date === st.sec3StartDate;
+                            const endD = r.meta?.sec3EndDate || r.date;
+                            return `
+                                <div class="p-3 flex flex-wrap items-center justify-between gap-2 text-xs ${isCur ? 'bg-amber-50/70' : ''}">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-navy-900">
+                                            <i class="fa-regular fa-calendar-check text-gold-600 mr-1"></i>${formatThaiDate(r.date)}${endD !== r.date ? ` → ${formatThaiDate(endD)}` : ''}
+                                            ${isCur ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-navy-900 text-gold-400 text-[10px]">กำลังแสดง</span>' : ''}
+                                        </div>
+                                        <div class="text-gray-600 mt-0.5">
+                                            ข้อ 3: ตาย <b>${f(t.s3Dead)}</b> บาดเจ็บ <b>${f(t.s3Inj)}</b>
+                                            • ข้อ 4: ${f(t.s4Dead)}/${f(t.s4Inj)}
+                                            • ข้อ 5: ${f(t.s5Dead)}/${f(t.s5Inj)}
+                                            • ข้อ 6: ${f(t.s6Dead)}/${f(t.s6Inj)}
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-1.5 shrink-0">
+                                        <button type="button" onclick="openCmdDayRecord('${r.date}')" class="px-2.5 py-1 rounded-lg border bg-white hover:bg-gray-100 font-semibold text-navy-900">
+                                            <i class="fa-regular fa-folder-open mr-1"></i>เปิด
+                                        </button>
+                                        <button type="button" onclick="deleteCmdDayRecord('${r.date}')" class="px-2.5 py-1 rounded-lg border border-red-200 bg-white hover:bg-red-50 font-semibold text-red-600" title="ลบยอดที่บันทึกของวันนี้">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>`;
+                        }).join('')}
+                    </div>`;
+            };
             const officerOptions = sortPersonnelByRank(db.personnel.filter(p => p.category === 'officer')).map(p => `
                 <option value="${p.id}">${p.rank}${p.firstName} ${p.lastName}</option>
             `).join('');
@@ -2852,11 +3183,15 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">รายงานผลการปฏิบัติ ชป.นก (รายงานผู้บังคับบัญชา)</h2>
-                        <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • ยอดข้อ 4, 5 และ 6 สะสมอัตโนมัติ และรีเซ็ตข้อ 3 เป็น 0 เมื่อเปลี่ยน "ในวันที่" (การเปลี่ยน "ถึงวันที่" ไม่รีเซ็ต) • ยอดรวมข้อ 3-4 แก้ไขได้</p>
+                        <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • เลือก "ในวันที่" แล้ว "ถึงวันที่" เป็นวันถัดไป 07.00 น. อัตโนมัติ (แก้ไขได้) • กด "บันทึกยอดวันนี้" เพื่อเก็บยอดรายวัน เลือกวันย้อนหลังเพื่อดูยอดที่บันทึก • แก้ยอดวันใด ยอดสะสมข้อ 4-6 ของวันถัดไปคำนวณใหม่ให้อัตโนมัติ</p>
+                        <p id="cmdSaveBadge" class="text-xs font-semibold mt-1">${cmdSaveBadgeHtml()}</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="รวมยอดข้อ 3 สะสมเข้าข้อ 4-6 แล้วรีเซ็ตข้อ 3 เป็น 0">
-                            <i class="fa-solid fa-forward-step mr-1.5"></i> ขึ้นวันถัดไป (สะสมยอด & รีเซ็ตข้อ 3)
+                        <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดวันนี้ แล้วขึ้นวันถัดไป (ยอดข้อ 3 สะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0)">
+                            <i class="fa-solid fa-forward-step mr-1.5"></i> บันทึก & ขึ้นวันถัดไป
+                        </button>
+                        <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดของวันที่นี้ไว้ใช้ครั้งถัดไป">
+                            <i class="fa-solid fa-floppy-disk mr-1.5"></i> บันทึกยอดวันนี้
                         </button>
                         <button type="button" onclick="copyTextToClipboard(buildCommanderReportText())" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow">
                             <i class="fa-regular fa-copy mr-1.5"></i> คัดลอก
@@ -2891,7 +3226,8 @@
                                 </span>
                             </div>
                             ${renderThaiDateTimeRow('ในวันที่', 'sec3StartDate', 'sec3StartTime', 'sec3StartCustomTime')}
-                            ${renderThaiDateTimeRow('ถึงวันที่', 'sec3EndDate', 'sec3EndTime', 'sec3EndCustomTime')}
+                            ${renderThaiDateTimeRow('ถึงวันที่ (อัตโนมัติ = วันถัดไป แก้ไขได้)', 'sec3EndDate', 'sec3EndTime', 'sec3EndCustomTime')}
+                            ${renderPeriodPresets()}
 
                             <div class="grid grid-cols-12 gap-2 text-[11px] font-bold text-gray-500 pt-2 pb-1 border-b">
                                 <div class="col-span-5 sm:col-span-6">พื้นที่</div>
@@ -2968,13 +3304,24 @@
                             ${renderLeaderBlock(1)}
                             ${renderLeaderBlock(2)}
                         </div>
+
+                        <div class="glass-card gold-border-top rounded-2xl p-5 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="font-bold text-navy-900 text-sm sm:text-base"><i class="fa-solid fa-clock-rotate-left text-gold-600 mr-1.5"></i>ยอดที่บันทึกไว้รายวัน</h3>
+                                <span class="text-[11px] text-gray-500">กด "เปิด" เพื่อดู/แก้ไขยอดของวันนั้น</span>
+                            </div>
+                            ${renderCmdHistory()}
+                        </div>
                     </div>
 
                     <div class="lg:col-span-5">
                         <div class="glass-card rounded-2xl overflow-hidden border-2 border-[#06C755]/40 sticky top-28">
                             <div class="bg-navy-900 px-4 py-3 text-white flex items-center justify-between">
                                 <span class="text-xs sm:text-sm font-semibold"><i class="fa-brands fa-line text-[#06C755] mr-1.5"></i>ตัวอย่างข้อความรายงานผู้บังคับบัญชา</span>
-                                <button type="button" onclick="shareTextToLine(buildCommanderReportText())" class="px-3 py-1 rounded-lg bg-[#06C755] text-white text-xs font-bold">ส่ง LINE</button>
+                                <div class="flex gap-1.5">
+                                    <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก</button>
+                                    <button type="button" onclick="shareTextToLine(buildCommanderReportText())" class="px-3 py-1 rounded-lg bg-[#06C755] text-white text-xs font-bold">ส่ง LINE</button>
+                                </div>
                             </div>
                             <div class="p-4 bg-gray-50">
                                 <textarea id="cmdPreviewTextarea" rows="28" readonly class="w-full p-3.5 rounded-xl border bg-white font-body text-xs sm:text-sm text-gray-800 leading-relaxed focus:outline-none">${buildCommanderReportText()}</textarea>
@@ -3095,6 +3442,8 @@
         function updateCmdPreviewBox() {
             const el = document.getElementById('cmdPreviewTextarea');
             if (el) el.value = buildCommanderReportText();
+            const badge = document.getElementById('cmdSaveBadge');
+            if (badge) badge.innerHTML = cmdSaveBadgeHtml();
         }
 
         function buildCommanderReportText() {
@@ -7672,8 +8021,138 @@ ${st.leader2Name}
             dd.classList.add('hidden');
         });
 
+        // ==========================================
+        // แจ้งเตือนอัปเดตอัตโนมัติเมื่อมีการแก้ไขโค้ด
+        // - ดึงไฟล์ index.html ล่าสุดจากเซิร์ฟเวอร์เป็นระยะ แล้วเทียบ "ลายนิ้วมือโค้ด" กับหน้าที่เปิดอยู่
+        // - โค้ดเปลี่ยน => app-update-required=1 (ค่าเริ่มต้น) บังคับรีเฟรช / =0 แจ้งเตือนให้กดรีเฟรชเอง
+        // ==========================================
+        const metaContent = (doc, name) => (doc.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || '').trim();
+        // hash ข้อความแบบเร็ว (cyrb53) — ใช้ได้ทั้ง http/https
+        function quickHash(str) {
+            let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+            for (let i = 0; i < str.length; i++) {
+                const ch = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+        }
+        // ลายนิ้วมือโค้ด = สคริปต์ในไฟล์ทั้งหมด (ไม่รวมไลบรารีภายนอก) — เก็บตอนเปิดหน้า ก่อนมีอะไรมาแทรก
+        const codeFingerprint = (doc) => quickHash(Array.from(doc.querySelectorAll('script:not([src])')).map(s => s.textContent).join('\n/*--*/\n'));
+        const APP_CODE_FP = codeFingerprint(document);
+        let appFileBaseline = '';      // hash ของไฟล์ทั้งไฟล์ (ครั้งแรกที่ดึงได้) — จับการแก้ HTML ส่วนที่ไม่ใช่สคริปต์
+        let appUpdateShownFor = '';
+        let appUpdateForceTimer = null;
+
+        async function reloadToLatestVersion(tag) {
+            try { if (GAS_WEB_APP_URL && isDirty()) await Promise.race([syncToGoogleSheets(false), new Promise(r => setTimeout(r, 6000))]); } catch (e) {}
+            try { localStorage.setItem('hanuman_reload_target', tag || ''); localStorage.setItem('hanuman_updated_pending', '1'); } catch (e) {}
+            const url = new URL(location.href);
+            url.searchParams.set('v', tag || Date.now());
+            location.replace(url.toString());
+        }
+
+        function showAppUpdateNotice(tag, required, note) {
+            document.getElementById('appUpdateNotice')?.remove();
+            const box = document.createElement('div');
+            box.id = 'appUpdateNotice';
+            const safeNote = escHtml(note || '');
+            if (required) {
+                box.className = 'fixed inset-0 z-[90] bg-navy-950/80 backdrop-blur-sm flex items-center justify-center p-4';
+                box.innerHTML = `
+                    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-gold-500/60">
+                        <div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-amber-100 text-amber-600">
+                            <i class="fa-solid fa-rotate"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-navy-900 mb-1">ระบบมีการแก้ไขโค้ดใหม่</h4>
+                        <p class="text-xs text-gray-500 mb-2">จำเป็นต้องรีเฟรชเพื่อใช้งานเวอร์ชันล่าสุด</p>
+                        ${safeNote ? `<p class="text-sm text-gray-700 bg-gray-50 border rounded-xl p-3 mb-3 text-left">${safeNote}</p>` : ''}
+                        <p class="text-sm text-gray-600 mb-4">ระบบจะรีเฟรชอัตโนมัติใน <b id="appUpdateCountdown" class="text-red-600">15</b> วินาที<br><span class="text-[11px]">(ข้อมูลที่กรอกไว้ถูกเก็บในเครื่องและซิงค์ก่อนรีเฟรช)</span></p>
+                        <button type="button" onclick="reloadToLatestVersion('${escHtml(tag)}')" class="w-full py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold text-sm shadow">
+                            <i class="fa-solid fa-rotate-right mr-1.5"></i>รีเฟรชตอนนี้
+                        </button>
+                    </div>`;
+                document.body.appendChild(box);
+                let left = 15;
+                clearInterval(appUpdateForceTimer);
+                appUpdateForceTimer = setInterval(() => {
+                    left--;
+                    const el = document.getElementById('appUpdateCountdown');
+                    if (el) el.innerText = Math.max(0, left);
+                    if (left <= 0) { clearInterval(appUpdateForceTimer); reloadToLatestVersion(tag); }
+                }, 1000);
+            } else {
+                box.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] w-[calc(100%-2rem)] max-w-md';
+                box.innerHTML = `
+                    <div class="bg-navy-900 text-white rounded-2xl shadow-2xl border border-gold-500/60 p-4 flex items-start gap-3">
+                        <i class="fa-solid fa-circle-arrow-up text-gold-400 text-2xl mt-0.5"></i>
+                        <div class="flex-grow min-w-0">
+                            <div class="font-bold text-sm">มีการอัปเดตโค้ดใหม่ กรุณารีเฟรช</div>
+                            ${safeNote ? `<div class="text-xs text-gray-300 mt-0.5">${safeNote}</div>` : ''}
+                            <div class="flex gap-2 mt-2.5">
+                                <button type="button" onclick="reloadToLatestVersion('${escHtml(tag)}')" class="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-navy-950 text-xs font-bold">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i>รีเฟรชเลย
+                                </button>
+                                <button type="button" onclick="document.getElementById('appUpdateNotice')?.remove()" class="px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/10 text-xs font-semibold">ภายหลัง</button>
+                            </div>
+                        </div>
+                    </div>`;
+                document.body.appendChild(box);
+            }
+        }
+
+        async function checkForAppUpdate() {
+            if (!/^https?:$/.test(location.protocol) || !navigator.onLine) return;
+            try {
+                const url = new URL(location.href);
+                url.search = '';
+                url.hash = '';
+                url.searchParams.set('_uc', Date.now());
+                const res = await fetch(url.toString(), { cache: 'no-store' });
+                if (!res.ok) return;
+                const text = await res.text();
+                const doc = new DOMParser().parseFromString(text, 'text/html');
+                const remoteFp = codeFingerprint(doc);
+                const fileHash = quickHash(text);
+                if (!appFileBaseline) appFileBaseline = fileHash;
+                const codeChanged = remoteFp !== APP_CODE_FP;
+                const fileChanged = fileHash !== appFileBaseline;
+                if (!codeChanged && !fileChanged) return;
+                const tag = remoteFp + '-' + fileHash;
+                if (appUpdateShownFor === tag) return;
+                appUpdateShownFor = tag;
+                const required = metaContent(doc, 'app-update-required') !== '0';
+                // กันรีเฟรชวนซ้ำ: เพิ่งบังคับรีเฟรชไปที่โค้ดชุดนี้แล้วแต่ยังได้ไฟล์เก่า (แคช) => แจ้งเตือนแบบปกติแทน
+                const loopGuard = localStorage.getItem('hanuman_reload_target') === tag;
+                showAppUpdateNotice(tag, required && !loopGuard, metaContent(doc, 'app-update-note'));
+            } catch (e) { /* ออฟไลน์/เชื่อมต่อไม่ได้ ข้ามไป */ }
+        }
+
+        // หลังรีเฟรชเพื่ออัปเดต: แจ้งว่าอัปเดตแล้ว และล้าง ?v= ออกจากลิงก์
+        function announceAppUpdatedIfNeeded() {
+            try {
+                const url = new URL(location.href);
+                if (url.searchParams.has('v')) { url.searchParams.delete('v'); history.replaceState(history.state, '', url.toString()); }
+                if (localStorage.getItem('hanuman_updated_pending') === '1') {
+                    localStorage.removeItem('hanuman_updated_pending');
+                    const note = metaContent(document, 'app-update-note');
+                    setTimeout(() => showStatusPopup('อัปเดตเป็นเวอร์ชันล่าสุดแล้ว', note || 'ระบบโหลดโค้ดชุดใหม่เรียบร้อย', 'upload', 3500), 600);
+                }
+                const target = localStorage.getItem('hanuman_reload_target') || '';
+                if (target && target.split('-')[0] === APP_CODE_FP) localStorage.removeItem('hanuman_reload_target');
+            } catch (e) {}
+        }
+
+        // ตรวจทันทีหลังเปิดแอป (เก็บค่าตั้งต้น), ทุก 2 นาที และทุกครั้งที่กลับมาที่หน้าแอป
+        setTimeout(checkForAppUpdate, 1500);
+        setInterval(checkForAppUpdate, 2 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForAppUpdate(); });
+
         // Initial Boot & Auto Sync from Google Sheets
         window.onload = async function() {
+            announceAppUpdatedIfNeeded();
             // กันการกด Enter ในฟอร์มป๊อปอัพแล้วหน้าเว็บรีโหลด
             document.getElementById('modalForm').addEventListener('submit', e => e.preventDefault());
             const savedTheme = localStorage.getItem('hanuman_theme') || 'light';
