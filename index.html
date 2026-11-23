@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.0.0: อัปโหลดไฟล์และวิเคราะห์สรุปภารกิจจากเอกสาร • ซิงค์ Google Calendar หลายบัญชี • มุมมองปฏิทินภารกิจ • แผนภาพบังคับบัญชาพอดีจอ ซูมได้ • แก้ไอคอนสถานะรถทับตัวหนังสือ">
-    <meta name="app-version" content="2.0.0">
+    <meta name="app-update-note" content="อัปเดต v2.1.0: เชื่อม Google Calendar ได้ง่ายขึ้น — กด “อนุญาต” ครั้งเดียวผ่าน Google Apps Script ไม่ต้องสร้าง Client ID และใช้ได้ทุกเครื่องในหน่วย (ตั้งค่า &gt; Google Calendar)">
+    <meta name="app-version" content="2.1.0">
     <title>HANUMAN TACTICAL COMMAND | ระบบบริหารจัดการภารกิจและกำลังพล</title>
     <!-- Google Fonts: Prompt & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -9309,7 +9309,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.0.0';
+        const APP_VERSION = '2.1.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -10347,7 +10347,7 @@ ${st.leader2Name}
         }
         function gcalSave(s) { lsSet('hanuman_gcal', JSON.stringify(s)); }
         function gcalClientId() { return (lsGet('hanuman_gclient_id', '') || (db.appConfig && db.appConfig.googleClientId) || '').trim(); }
-        function gcalTokenValid(acc) { return !!(acc && acc.token && acc.exp && acc.exp - 60000 > Date.now()); }
+        function gcalTokenValid(acc) { return !!(acc && (acc.bridge || (acc.token && acc.exp && acc.exp - 60000 > Date.now()))); }
         function gcalAllCalendars() {
             const out = [];
             gcalState().accounts.forEach(a => a.calendars.forEach(c => out.push({ ...c, account: a.email })));
@@ -10360,6 +10360,196 @@ ${st.leader2Name}
         function gcalDefaultTargets() { const s = gcalState(); return s.autoPush ? s.accounts.flatMap(a => a.push) : []; }
         function gcalDriveReady() { const s = gcalState(); return !!(s.drive && s.accounts.length); }
         function gcalAccountForCalendar(calId) { return gcalState().accounts.find(a => a.calendars.some(c => c.id === calId)) || null; }
+
+        // ---------- วิธีง่าย: เชื่อมผ่าน Google Apps Script ของผู้ใช้เอง (กด “อนุญาต” ครั้งเดียว ไม่ต้องมี Client ID) ----------
+        // ค่าการเชื่อมต่อ (URL + รหัส) แชร์ให้ทุกเครื่องผ่าน Google Sheet (db.appConfig.gcalBridges)
+        const BRIDGE_CODE = [
+            "// HANUMAN – ตัวเชื่อม Google Calendar / Drive (วางทั้งหมดนี้แทนโค้ดเดิมใน Apps Script)",
+            "var SECRET = '__KEY__'; // รหัสเชื่อมต่อ ห้ามเปิดเผย",
+            "var TZ = 'Asia/Bangkok';",
+            "function doGet(e) { return handle_(e && e.parameter ? e.parameter : {}); }",
+            "function doPost(e) { var p = {}; try { p = JSON.parse(e.postData.contents); } catch (x) {} return handle_(p); }",
+            "function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }",
+            "function ymd_(d, tz) { return Utilities.formatDate(d, tz || TZ, 'yyyy-MM-dd'); }",
+            "function cal_(id) { var c = CalendarApp.getCalendarById(id); if (!c) throw new Error('ไม่พบปฏิทิน ' + id); return c; }",
+            "function authorize() { CalendarApp.getDefaultCalendar(); DriveApp.getRootFolder(); }",
+            "function handle_(p) {",
+            "  try {",
+            "    if (!p.key || p.key !== SECRET) return out_({ ok: false, error: 'รหัสเชื่อมต่อไม่ตรงกัน กรุณาคัดลอกโค้ดล่าสุดจากหน้าตั้งค่า' });",
+            "    var me = Session.getEffectiveUser().getEmail();",
+            "    if (p.action === 'ping') return out_({ ok: true, email: me });",
+            "    if (p.action === 'calendars') {",
+            "      var items = CalendarApp.getAllCalendars().map(function (c) {",
+            "        return { id: c.getId(), summary: c.getName(), bg: c.getColor(), primary: c.isMyPrimaryCalendar(), role: c.isOwnedByMe() ? 'owner' : 'writer' };",
+            "      });",
+            "      return out_({ ok: true, email: me, items: items });",
+            "    }",
+            "    if (p.action === 'events') {",
+            "      var cal = cal_(p.calendarId), tz = cal.getTimeZone();",
+            "      var evs = cal.getEvents(new Date(p.timeMin), new Date(p.timeMax)).slice(0, 1500).map(function (ev) {",
+            "        var all = ev.isAllDayEvent(), s = all ? ev.getAllDayStartDate() : ev.getStartTime(), en = all ? ev.getAllDayEndDate() : ev.getEndTime();",
+            "        return { id: ev.getId(), summary: ev.getTitle(), date: ymd_(s, tz), endDate: all ? ymd_(new Date(en.getTime() - 86400000), tz) : ymd_(en, tz),",
+            "          time: all ? '' : Utilities.formatDate(s, tz, 'HH:mm'), endTime: all ? '' : Utilities.formatDate(en, tz, 'HH:mm'),",
+            "          location: ev.getLocation() || '', description: String(ev.getDescription() || '').slice(0, 1500), missionId: ev.getTag('hanumanMissionId') || '' };",
+            "      });",
+            "      return out_({ ok: true, items: evs });",
+            "    }",
+            "    if (p.action === 'upsert') {",
+            "      var c2 = cal_(p.calendarId), b = p.body || {}, ev2 = null;",
+            "      if (p.eventId) { try { ev2 = c2.getEventById(p.eventId); } catch (x) { ev2 = null; } }",
+            "      var opt = { description: b.description || '', location: b.location || '' };",
+            "      var sd = b.allDay ? Utilities.parseDate(b.date, TZ, 'yyyy-MM-dd') : new Date(b.start), ed = b.allDay ? null : new Date(b.end);",
+            "      if (ev2) {",
+            "        ev2.setTitle(b.summary || ''); ev2.setDescription(opt.description); ev2.setLocation(opt.location);",
+            "        if (b.allDay) ev2.setAllDayDate(sd); else ev2.setTime(sd, ed);",
+            "      } else {",
+            "        ev2 = b.allDay ? c2.createAllDayEvent(b.summary || '', sd, opt) : c2.createEvent(b.summary || '', sd, ed, opt);",
+            "      }",
+            "      if (b.missionId) ev2.setTag('hanumanMissionId', b.missionId);",
+            "      return out_({ ok: true, id: ev2.getId() });",
+            "    }",
+            "    if (p.action === 'delete') { var ev3 = null; try { ev3 = cal_(p.calendarId).getEventById(p.eventId); } catch (x) {} if (ev3) ev3.deleteEvent(); return out_({ ok: true }); }",
+            "    if (p.action === 'upload') {",
+            "      var it = DriveApp.getFoldersByName('HANUMAN – ไฟล์ภารกิจ'), folder = it.hasNext() ? it.next() : DriveApp.createFolder('HANUMAN – ไฟล์ภารกิจ');",
+            "      var f = folder.createFile(Utilities.newBlob(Utilities.base64Decode(p.data), p.mimeType || 'application/octet-stream', p.name || 'file'));",
+            "      return out_({ ok: true, id: f.getId(), webViewLink: f.getUrl() });",
+            "    }",
+            "    return out_({ ok: false, error: 'ไม่รู้จักคำสั่ง' });",
+            "  } catch (err) { return out_({ ok: false, error: String((err && err.message) || err) }); }",
+            "}"
+        ].join('\n');
+        function gcalBridges() { const b = db.appConfig && db.appConfig.gcalBridges; return Array.isArray(b) ? b : []; }
+        function bridgeOf(acc) { return acc && acc.bridge ? (gcalBridges().find(b => b.url === acc.bridgeUrl) || null) : null; }
+        function bridgeDraftKey() {
+            let k = lsGet('hanuman_bridge_key', '');
+            if (!k) {
+                const a = new Uint8Array(18); (window.crypto || window.msCrypto).getRandomValues(a);
+                k = Array.from(a, x => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'[x % 56]).join('');
+                lsSet('hanuman_bridge_key', k);
+            }
+            return k;
+        }
+        function bridgeCodeText() { return BRIDGE_CODE.replace('__KEY__', bridgeDraftKey()); }
+        function copyBridgeCode() {
+            const t = bridgeCodeText();
+            const done = () => showStatusPopup('คัดลอกโค้ดแล้ว', 'เปิด script.new แล้ววางแทนโค้ดเดิม จากนั้นกด Deploy', 'success', 2600);
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => { fallbackCopyText(t); done(); });
+            else { fallbackCopyText(t); done(); }
+        }
+        async function bridgeCall(br, action, params = {}) {
+            if (!br) throw new Error('ไม่พบการตั้งค่า Apps Script ของบัญชีนี้');
+            let res;
+            try { res = await fetch(br.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...params, action, key: br.key }) }); }
+            catch (e) { throw new Error('ติดต่อ Apps Script ไม่ได้ — ตรวจสอบอินเทอร์เน็ต และตั้ง “ผู้ที่มีสิทธิ์เข้าถึง: ทุกคน”'); }
+            const txt = await res.text();
+            let j; try { j = JSON.parse(txt); } catch (e) { throw new Error('Apps Script ไม่ได้ตอบกลับเป็นข้อมูล — ตรวจว่า Deploy เป็นเว็บแอป และกด “อนุญาต” แล้ว'); }
+            if (!j || j.ok === false) throw new Error((j && j.error) || 'Apps Script แจ้งข้อผิดพลาด');
+            return j;
+        }
+        // นำบัญชีแบบ Apps Script (ที่แชร์ผ่าน Google Sheet) เข้ามาในรายการบัญชีของเครื่องนี้
+        async function gcalSyncBridgeAccounts() {
+            let changed = false;
+            const urls = new Set(gcalBridges().map(b => b.url));
+            for (const br of gcalBridges()) {
+                const cur = gcalState();
+                const have = cur.accounts.find(a => a.bridge && a.bridgeUrl === br.url);
+                if (have && have.calendars.length) continue;
+                try {
+                    const j = await bridgeCall(br, 'calendars');
+                    const s = gcalState();
+                    let acc = s.accounts.find(a => a.bridge && a.bridgeUrl === br.url);
+                    if (!acc) { acc = { email: j.email || br.email || 'Google Apps Script', bridge: true, bridgeUrl: br.url, show: [], push: [] }; s.accounts.push(acc); }
+                    acc.calendars = j.items || [];
+                    const pr = acc.calendars.find(c => c.primary);
+                    if (pr && !acc.show.length && !acc.push.length) { acc.show = [pr.id]; acc.push = [pr.id]; }
+                    gcalSave(s); changed = true;
+                } catch (e) { console.warn('bridge sync', e); }
+            }
+            const s = gcalState();
+            const before = s.accounts.length;
+            s.accounts = s.accounts.filter(a => !a.bridge || urls.has(a.bridgeUrl));
+            if (s.accounts.length !== before) { gcalSave(s); changed = true; }
+            return changed;
+        }
+        async function gcalConnectBridge() {
+            const inp = document.getElementById('br_url');
+            const url = ((inp && inp.value) || '').trim();
+            if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)) { showStatusPopup('URL ไม่ถูกต้อง', 'ต้องเป็นลิงก์เว็บแอปที่ขึ้นต้น https://script.google.com/ และลงท้ายด้วย /exec', 'edit', 3500); return; }
+            const btn = document.getElementById('br_connect_btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+            const br = { url, key: bridgeDraftKey() };
+            try {
+                const j = await bridgeCall(br, 'ping');
+                br.email = j.email || '';
+                db.appConfig.gcalBridges = gcalBridges().filter(b => b.url !== url && (!br.email || b.email !== br.email)).concat([br]);
+                saveDB();
+                lsSet('hanuman_bridge_key', null); // บัญชีถัดไปใช้รหัสใหม่
+                await gcalSyncBridgeAccounts();
+                renderGcalSettingsBody();
+                showStatusPopup('เชื่อมต่อ Google Calendar สำเร็จ', `${br.email || 'บัญชี Google'} — เลือกปฏิทินที่จะดึงมาแสดง/ส่งภารกิจไปลงได้เลย`, 'success', 3000);
+                gcalPull(false);
+            } catch (e) {
+                showStatusPopup('เชื่อมต่อไม่สำเร็จ', e.message, 'delete', 5000);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-link mr-1"></i>เชื่อมต่อ'; }
+            }
+        }
+        // แปลงข้อมูลกิจกรรม (รูปแบบ Calendar API) ให้ Apps Script
+        function toBridgeBody(b) {
+            const allDay = !!b.start.date;
+            return {
+                summary: b.summary, description: b.description, location: b.location, allDay,
+                missionId: (b.extendedProperties && b.extendedProperties.private && b.extendedProperties.private.hanumanMissionId) || '',
+                date: allDay ? b.start.date : '', start: allDay ? '' : b.start.dateTime + '+07:00', end: allDay ? '' : b.end.dateTime + '+07:00'
+            };
+        }
+        // สร้าง/แก้ไข/ลบกิจกรรม — ใช้ได้ทั้งบัญชี OAuth และ Apps Script
+        async function calUpsert(acc, calId, evId, body) {
+            if (acc.bridge) return (await bridgeCall(bridgeOf(acc), 'upsert', { calendarId: calId, eventId: evId || '', body: toBridgeBody(body) })).id;
+            const base = `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events`;
+            if (evId) {
+                try { await gApi(acc, `${base}/${encodeURIComponent(evId)}`, { method: 'PATCH', body: JSON.stringify(body) }); return evId; }
+                catch (e) { if (e.status !== 404 && e.status !== 410) throw e; }
+            }
+            return (await gApi(acc, base, { method: 'POST', body: JSON.stringify(body) })).id;
+        }
+        async function calDelete(acc, calId, evId) {
+            if (acc.bridge) { await bridgeCall(bridgeOf(acc), 'delete', { calendarId: calId, eventId: evId }); return; }
+            try { await gApi(acc, `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`, { method: 'DELETE' }); }
+            catch (e) { if (e.status !== 404 && e.status !== 410) throw e; }
+        }
+        async function calListEvents(acc, calId, cal, tMin, tMax) {
+            const meta = { calId, calName: cal ? cal.summary : calId, color: cal ? cal.bg : '#4285f4', account: acc.email };
+            if (acc.bridge) {
+                const j = await bridgeCall(bridgeOf(acc), 'events', { calendarId: calId, timeMin: tMin, timeMax: tMax });
+                return (j.items || []).filter(ev => isIsoDate(ev.date)).map(ev => ({
+                    __g: true, key: calId + '|' + ev.id + '|' + ev.date, id: ev.id, ...meta,
+                    name: ev.summary || '(ไม่มีชื่อ)', date: ev.date, time: ev.time || '', endTime: ev.endTime || '', endDate: ev.endDate || ev.date,
+                    location: ev.location || '', description: String(ev.description || '').replace(/<[^>]+>/g, ' ').slice(0, 1500),
+                    link: `https://calendar.google.com/calendar/r/day/${ev.date.replace(/-/g, '/')}`, missionId: ev.missionId || ''
+                }));
+            }
+            let pageToken = '', items = [];
+            do {
+                const j = await gApi(acc, `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}${pageToken ? '&pageToken=' + pageToken : ''}`);
+                items = items.concat(j.items || []);
+                pageToken = j.nextPageToken || '';
+            } while (pageToken && items.length < 1000);
+            const out = [];
+            items.filter(ev => ev.status !== 'cancelled').forEach(ev => {
+                const sd = ev.start || {}, ed = ev.end || {};
+                const date = sd.date || (sd.dateTime ? toLocalIso(sd.dateTime) : '');
+                if (!date) return;
+                out.push({
+                    __g: true, key: calId + '|' + ev.id, id: ev.id, ...meta,
+                    name: ev.summary || '(ไม่มีชื่อ)', date, time: sd.dateTime ? toLocalHM(sd.dateTime) : '', endTime: ed.dateTime ? toLocalHM(ed.dateTime) : '',
+                    endDate: ed.date ? isoAddDays(ed.date, -1) : (ed.dateTime ? toLocalIso(ed.dateTime) : date),
+                    location: ev.location || '', description: (ev.description || '').replace(/<[^>]+>/g, ' ').slice(0, 1500), link: ev.htmlLink || '',
+                    missionId: (ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.hanumanMissionId) || ''
+                });
+            });
+            return out;
+        }
 
         async function gisReady() {
             await loadScriptOnce(CDN.gis);
@@ -10388,6 +10578,7 @@ ${st.leader2Name}
             return j;
         }
         async function gcalFetchCalendars(acc) {
+            if (acc.bridge) return (await bridgeCall(bridgeOf(acc), 'calendars')).items || [];
             const j = await gApi(acc, `${G_CAL_API}/users/me/calendarList?maxResults=250&minAccessRole=reader`);
             return (j.items || []).map(c => ({ id: c.id, summary: c.summaryOverride || c.summary || c.id, bg: c.backgroundColor || '#4285f4', primary: !!c.primary, role: c.accessRole }));
         }
@@ -10425,9 +10616,12 @@ ${st.leader2Name}
             if (after) after();
         }
         function gcalRemoveAccount(email) {
-            showConfirmPopup('ยกเลิกการเชื่อมต่อบัญชี', `นำบัญชี ${email} ออกจากเครื่องนี้ (กิจกรรมในปฏิทินยังอยู่ตามเดิม)`, () => {
+            const acc0 = gcalState().accounts.find(x => x.email === email);
+            const isBridge = !!(acc0 && acc0.bridge);
+            showConfirmPopup('ยกเลิกการเชื่อมต่อบัญชี', isBridge ? `ยกเลิกการเชื่อม ${email} (ผ่าน Apps Script) สำหรับทุกเครื่องในหน่วย — กิจกรรมในปฏิทินยังอยู่ตามเดิม` : `นำบัญชี ${email} ออกจากเครื่องนี้ (กิจกรรมในปฏิทินยังอยู่ตามเดิม)`, () => {
                 const s = gcalState();
                 const a = s.accounts.find(x => x.email === email);
+                if (a && a.bridge) { db.appConfig.gcalBridges = gcalBridges().filter(b => b.url !== a.bridgeUrl); saveDB(); }
                 if (a && a.token && window.google && google.accounts && google.accounts.oauth2) { try { google.accounts.oauth2.revoke(a.token, () => {}); } catch (e) {} }
                 s.accounts = s.accounts.filter(x => x.email !== email);
                 gcalSave(s);
@@ -10470,38 +10664,39 @@ ${st.leader2Name}
             const origin = /^https?:/.test(location.protocol) ? location.origin : '(ต้องเปิดผ่านเว็บ https://...)';
             box.innerHTML = `
                 <div class="space-y-4">
-                    <div class="rounded-2xl border p-3 sm:p-4 bg-gray-50/70">
-                        <label class="block text-sm font-bold text-navy-900 mb-1"><i class="fa-solid fa-key text-gold-600 mr-1"></i>Google OAuth Client ID</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="gcal_client" value="${escHtml(cid)}" placeholder="xxxxxxxx.apps.googleusercontent.com" class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-xs font-mono bg-white">
-                            <button type="button" onclick="gcalSaveClientId()" class="px-3 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold shrink-0">บันทึก</button>
+                    <div class="rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 p-3 sm:p-4 space-y-2.5">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">แนะนำ</span>
+                            <span class="text-sm font-bold text-navy-900">เชื่อมด้วยบัญชี Google ของท่าน — กด “อนุญาต” ครั้งเดียว</span>
                         </div>
-                        <details class="mt-2 text-[11px] text-gray-600">
-                            <summary class="cursor-pointer text-gold-600 font-semibold"><i class="fa-solid fa-circle-question mr-1"></i>วิธีสร้าง Client ID (ทำครั้งเดียว โดยผู้ดูแลระบบ)</summary>
-                            <ol class="list-decimal ml-5 mt-1.5 space-y-1">
-                                <li>เปิด <b>console.cloud.google.com</b> → สร้าง/เลือกโปรเจกต์</li>
-                                <li>APIs &amp; Services → Library → เปิดใช้ <b>Google Calendar API</b> และ <b>Google Drive API</b></li>
-                                <li>OAuth consent screen → External → ใส่ชื่อแอป และเพิ่มอีเมลผู้ใช้งานใน Test users (หรือ Publish)</li>
-                                <li>Credentials → Create credentials → <b>OAuth client ID</b> → ประเภท <b>Web application</b></li>
-                                <li>Authorized JavaScript origins ใส่ <code class="bg-white px-1 rounded border">${escHtml(origin)}</code></li>
-                                <li>คัดลอก Client ID มาวางในช่องด้านบน แล้วกด “บันทึก” (ระบบจะแชร์ Client ID ให้ทุกเครื่องผ่าน Google Sheet)</li>
-                            </ol>
-                        </details>
+                        <p class="text-[11px] text-gray-600">ไม่ต้องสร้าง Client ID • ใช้เวลาประมาณ 2 นาที • เชื่อมครั้งเดียว ทุกเครื่องในหน่วยใช้ได้ทันที (แชร์ผ่าน Google Sheet) และไม่ต้องต่ออายุทุกชั่วโมง</p>
+                        <ol class="text-xs text-navy-900 space-y-2">
+                            <li class="flex gap-2"><span class="ai-step">1</span><span class="flex-1">กดปุ่ม <button type="button" onclick="copyBridgeCode()" class="px-2.5 py-1 rounded-lg bg-navy-900 text-gold-400 text-[11px] font-bold"><i class="fa-regular fa-copy mr-1"></i>คัดลอกโค้ดเชื่อมปฏิทิน</button>
+                                <details class="mt-1"><summary class="cursor-pointer text-[11px] text-gray-500">ดู / คัดลอกโค้ดเอง</summary><textarea readonly rows="5" onclick="this.select()" class="w-full mt-1 border rounded-lg p-2 text-[10px] font-mono bg-white">${escHtml(bridgeCodeText())}</textarea></details></span></li>
+                            <li class="flex gap-2"><span class="ai-step">2</span><span class="flex-1">เปิด <a href="https://script.new" target="_blank" rel="noopener" class="font-bold text-[#1a73e8] underline">script.new</a> ด้วยบัญชี Google ที่มีปฏิทิน → ลบโค้ดเดิมทั้งหมด แล้ววางโค้ด → กดบันทึก (รูปแผ่นดิสก์)</span></li>
+                            <li class="flex gap-2"><span class="ai-step">3</span><span class="flex-1">กด <b>ทำให้ใช้งานได้ (Deploy)</b> → <b>การทำให้ใช้งานได้รายการใหม่</b> → ประเภท <b>เว็บแอป</b> → เรียกใช้ในฐานะ <b>ฉัน</b> → ผู้มีสิทธิ์เข้าถึง <b>ทุกคน</b> → ทำให้ใช้งานได้</span></li>
+                            <li class="flex gap-2"><span class="ai-step">4</span><span class="flex-1">กด <b>ให้สิทธิ์เข้าถึง / อนุญาต</b> แล้วเลือกบัญชี <span class="text-gray-500">(ถ้าขึ้นว่า “Google ไม่ได้ยืนยันแอปนี้” ให้กด <b>ขั้นสูง</b> → <b>ไปที่ … (ไม่ปลอดภัย)</b> → <b>อนุญาต</b> — เป็นสคริปต์ของท่านเอง)</span></span></li>
+                            <li class="flex gap-2"><span class="ai-step">5</span><span class="flex-1">คัดลอก <b>URL ของเว็บแอป</b> (ลงท้ายด้วย /exec) มาวาง แล้วกดเชื่อมต่อ
+                                <div class="flex gap-2 mt-1.5">
+                                    <input type="url" id="br_url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-xs font-mono bg-white">
+                                    <button type="button" id="br_connect_btn" onclick="gcalConnectBridge()" class="px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0"><i class="fa-solid fa-link mr-1"></i>เชื่อมต่อ</button>
+                                </div></span></li>
+                        </ol>
+                        <p class="text-[11px] text-gray-500"><i class="fa-solid fa-users mr-1"></i>ต้องการหลายบัญชี: ทำซ้ำขั้นตอนนี้ด้วยบัญชี Google อื่น (กดคัดลอกโค้ดใหม่ทุกครั้ง) หรือให้เจ้าของปฏิทินแชร์ปฏิทินให้บัญชีที่ติดตั้งสคริปต์แบบ “ทำการเปลี่ยนแปลงกิจกรรม” แล้วกดปุ่มรีเฟรชรายการปฏิทิน</p>
                     </div>
 
                     <div>
                         <div class="flex items-center justify-between gap-2 mb-2">
-                            <span class="text-sm font-bold text-navy-900"><i class="fa-brands fa-google text-[#4285f4] mr-1"></i>บัญชีที่เชื่อมต่อในเครื่องนี้ (${s.accounts.length})</span>
-                            <button type="button" onclick="gcalAddAccount()" ${cid ? '' : 'disabled'} class="px-3 py-2 rounded-xl ${cid ? 'bg-[#1a73e8] hover:bg-[#1765cc]' : 'bg-gray-400 cursor-not-allowed'} text-white text-xs font-semibold shadow"><i class="fa-solid fa-plus mr-1"></i>เพิ่มบัญชี Google</button>
+                            <span class="text-sm font-bold text-navy-900"><i class="fa-brands fa-google text-[#4285f4] mr-1"></i>บัญชีที่เชื่อมต่อ (${s.accounts.length})</span>
                         </div>
-                        ${s.accounts.length ? '' : `<div class="text-center text-xs text-gray-500 border border-dashed rounded-2xl py-6">${cid ? 'กด “เพิ่มบัญชี Google” เพื่อเลือกบัญชีที่จะซิงค์ (เพิ่มได้หลายบัญชี)' : 'ใส่ Client ID ก่อน แล้วจึงเพิ่มบัญชี'}</div>`}
+                        ${s.accounts.length ? '' : `<div class="text-center text-xs text-gray-500 border border-dashed rounded-2xl py-6">ยังไม่มีบัญชี — ทำตามขั้นตอนด้านบนเพื่อเชื่อมต่อ</div>`}
                         <div class="space-y-3">
                             ${s.accounts.map(a => `
                                 <div class="rounded-2xl border overflow-hidden">
                                     <div class="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-white border-b">
                                         <i class="fa-solid fa-circle-user text-xl text-navy-700"></i>
                                         <div class="min-w-0 flex-1"><div class="text-sm font-semibold text-navy-900 truncate">${escHtml(a.email)}</div>
-                                            <div class="text-[11px] ${gcalTokenValid(a) ? 'text-emerald-700' : 'text-amber-700'}">${gcalTokenValid(a) ? '<i class="fa-solid fa-circle-check mr-1"></i>เชื่อมต่ออยู่' : '<i class="fa-solid fa-clock mr-1"></i>สิทธิ์หมดอายุ — กด “ต่ออายุ”'}</div></div>
+                                            <div class="text-[11px] ${gcalTokenValid(a) ? 'text-emerald-700' : 'text-amber-700'}">${a.bridge ? '<i class="fa-solid fa-circle-check mr-1"></i>เชื่อมผ่าน Apps Script • ใช้ได้ทุกเครื่อง' : (gcalTokenValid(a) ? '<i class="fa-solid fa-circle-check mr-1"></i>เชื่อมต่ออยู่ (เฉพาะเครื่องนี้)' : '<i class="fa-solid fa-clock mr-1"></i>สิทธิ์หมดอายุ — กด “ต่ออายุ”')}</div></div>
                                         ${gcalTokenValid(a) ? '' : `<button type="button" onclick="gcalReconnectAll(renderGcalSettingsBody)" class="px-2.5 py-1.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-semibold">ต่ออายุ</button>`}
                                         <button type="button" onclick="gcalRefreshCalendars('${escHtml(a.email)}')" class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold text-navy-900" title="โหลดรายการปฏิทินใหม่"><i class="fa-solid fa-rotate"></i></button>
                                         <button type="button" onclick="gcalRemoveAccount('${escHtml(a.email)}')" class="px-2.5 py-1.5 rounded-lg border border-red-300 text-red-600 text-xs font-semibold" title="ยกเลิกการเชื่อมต่อ"><i class="fa-solid fa-link-slash"></i></button>
@@ -10523,13 +10718,30 @@ ${st.leader2Name}
                         </div>
                     </div>
 
+                    <details class="rounded-2xl border p-3 bg-gray-50/70" ${cid && !s.accounts.some(x => x.bridge) ? 'open' : ''}>
+                        <summary class="cursor-pointer text-xs font-bold text-navy-900"><i class="fa-solid fa-screwdriver-wrench text-gold-600 mr-1"></i>ขั้นสูง: เชื่อมด้วย Google OAuth Client ID (สำหรับผู้ดูแลระบบ)</summary>
+                        <div class="mt-2 space-y-2">
+                            <div class="flex gap-2">
+                                <input type="text" id="gcal_client" value="${escHtml(cid)}" placeholder="xxxxxxxx.apps.googleusercontent.com" class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-xs font-mono bg-white">
+                                <button type="button" onclick="gcalSaveClientId()" class="px-3 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold shrink-0">บันทึก</button>
+                            </div>
+                            <button type="button" onclick="gcalAddAccount()" ${cid ? '' : 'disabled'} class="px-3 py-2 rounded-xl ${cid ? 'bg-[#1a73e8] hover:bg-[#1765cc]' : 'bg-gray-400 cursor-not-allowed'} text-white text-xs font-semibold shadow"><i class="fa-solid fa-plus mr-1"></i>เพิ่มบัญชี Google (OAuth)</button>
+                            <ol class="list-decimal ml-5 text-[11px] text-gray-600 space-y-1">
+                                <li>console.cloud.google.com → เปิดใช้ Google Calendar API และ Google Drive API</li>
+                                <li>ตั้งค่า OAuth consent screen แล้วสร้าง OAuth client ID ประเภท Web application</li>
+                                <li>Authorized JavaScript origins: <code class="bg-white px-1 rounded border">${escHtml(origin)}</code></li>
+                                <li>วิธีนี้เป็นสิทธิ์เฉพาะเครื่อง และต้องต่ออายุทุกประมาณ 1 ชั่วโมง</li>
+                            </ol>
+                        </div>
+                    </details>
+
                     <div class="rounded-2xl border p-3 space-y-2 text-xs">
                         <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="mt-0.5 w-4 h-4 accent-amber-600" ${s.autoPush ? 'checked' : ''} onchange="gcalSetOpt('autoPush', this.checked)">
                             <span><b class="text-navy-900">ส่งภารกิจใหม่ไปลง Google Calendar อัตโนมัติ</b><br><span class="text-gray-500">ภารกิจใหม่จะเลือกปฏิทินในคอลัมน์ “ส่งภารกิจไปลง” ไว้ให้ (เปลี่ยนได้ในฟอร์มภารกิจ) และอัปเดตเมื่อแก้ไข/ยกเลิก/ลบ</span></span></label>
                         <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="mt-0.5 w-4 h-4 accent-emerald-600" ${s.drive ? 'checked' : ''} onchange="gcalSetOpt('drive', this.checked)">
                             <span><b class="text-navy-900">อัปโหลดไฟล์แนบภารกิจขึ้น Google Drive</b><br><span class="text-gray-500">เก็บไว้ในโฟลเดอร์ “HANUMAN – ไฟล์ภารกิจ” ของบัญชีแรก เพื่อเปิดไฟล์ได้จากทุกเครื่อง (ไฟล์เป็นส่วนตัวของบัญชีนั้น)</span></span></label>
                     </div>
-                    <p class="text-[11px] text-gray-500"><i class="fa-solid fa-shield-halved mr-1"></i>สิทธิ์การเข้าถึง Google เก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ถูกส่งขึ้น Google Sheet • สิทธิ์มีอายุประมาณ 1 ชั่วโมง เมื่อหมดอายุให้กดปุ่ม “ต่ออายุ”</p>
+                    <p class="text-[11px] text-gray-500"><i class="fa-solid fa-shield-halved mr-1"></i>แบบ Apps Script: สคริปต์ทำงานในบัญชี Google ของท่าน และรับคำสั่งเฉพาะที่มีรหัสเชื่อมต่อที่ถูกต้อง ผู้ใช้ระบบนี้ทุกคนจะอ่าน/เพิ่มกิจกรรมในปฏิทินที่เลือกได้ • ยกเลิกได้ทุกเมื่อโดยลบการ Deploy ใน Apps Script หรือกดปุ่ม <i class="fa-solid fa-link-slash"></i></p>
                 </div>`;
         }
         function gcalSaveClientId() {
@@ -10551,8 +10763,10 @@ ${st.leader2Name}
         // ---------- ดึงกิจกรรมจาก Google Calendar ----------
         let gcalPullBusy = false;
         async function gcalPull(showPopup) {
+            if (gcalPullBusy) return;
+            if (gcalBridges().length) { try { await gcalSyncBridgeAccounts(); } catch (e) {} }
             const s = gcalState();
-            if (!s.accounts.length || gcalPullBusy) return;
+            if (!s.accounts.length) return;
             gcalPullBusy = true;
             const now = new Date();
             const tMin = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
@@ -10566,24 +10780,7 @@ ${st.leader2Name}
                 for (const calId of shown) {
                     const cal = a.calendars.find(c => c.id === calId);
                     try {
-                        let pageToken = '', items = [];
-                        do {
-                            const j = await gApi(a, `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}${pageToken ? '&pageToken=' + pageToken : ''}`);
-                            items = items.concat(j.items || []);
-                            pageToken = j.nextPageToken || '';
-                        } while (pageToken && items.length < 1000);
-                        items.filter(ev => ev.status !== 'cancelled').forEach(ev => {
-                            const sd = ev.start || {}, ed = ev.end || {};
-                            const date = sd.date || (sd.dateTime ? toLocalIso(sd.dateTime) : '');
-                            if (!date) return;
-                            out.push({
-                                __g: true, key: calId + '|' + ev.id, id: ev.id, calId, calName: cal ? cal.summary : calId, color: cal ? cal.bg : '#4285f4', account: a.email,
-                                name: ev.summary || '(ไม่มีชื่อ)', date, time: sd.dateTime ? toLocalHM(sd.dateTime) : '', endTime: ed.dateTime ? toLocalHM(ed.dateTime) : '',
-                                endDate: ed.date ? isoAddDays(ed.date, -1) : (ed.dateTime ? toLocalIso(ed.dateTime) : date),
-                                location: ev.location || '', description: (ev.description || '').replace(/<[^>]+>/g, ' ').slice(0, 1500), link: ev.htmlLink || '',
-                                missionId: (ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.hanumanMissionId) || ''
-                            });
-                        });
+                        out = out.concat(await calListEvents(a, calId, cal, tMin, tMax));
                     } catch (e) { if (e.authExpired) expired++; else errors++; console.warn('gcal pull', calId, e); out = out.concat(prev.filter(x => x.calId === calId)); }
                 }
             }
@@ -10750,20 +10947,13 @@ ${st.leader2Name}
                 if (!acc) continue; // ปฏิทินของผู้ใช้เครื่องอื่น
                 if (!gcalTokenValid(acc)) { waiting = true; continue; }
                 const evId = m.gcal.events[calId];
-                const base = `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events`;
                 try {
                     if (!m.gcal.targets.includes(calId)) {
-                        if (evId) { try { await gApi(acc, `${base}/${encodeURIComponent(evId)}`, { method: 'DELETE' }); } catch (e) { if (e.status !== 404 && e.status !== 410) throw e; } }
+                        if (evId) await calDelete(acc, calId, evId);
                         delete m.gcal.events[calId]; changed = true;
-                    } else if (evId) {
-                        try { await gApi(acc, `${base}/${encodeURIComponent(evId)}`, { method: 'PATCH', body: JSON.stringify(body) }); }
-                        catch (e) {
-                            if (e.status !== 404 && e.status !== 410) throw e;
-                            const r = await gApi(acc, base, { method: 'POST', body: JSON.stringify(body) }); m.gcal.events[calId] = r.id; changed = true;
-                        }
                     } else {
-                        const r = await gApi(acc, base, { method: 'POST', body: JSON.stringify(body) });
-                        m.gcal.events[calId] = r.id; changed = true;
+                        const nid = await calUpsert(acc, calId, evId, body);
+                        if (nid && nid !== evId) { m.gcal.events[calId] = nid; changed = true; }
                     }
                 } catch (e) { if (e.authExpired) waiting = true; else { failed++; console.warn('gcal push', e); } }
             }
@@ -10798,7 +10988,7 @@ ${st.leader2Name}
                 if (!m.gcal || !m.gcal.events) return;
                 Object.entries(m.gcal.events).forEach(([calId, evId]) => {
                     const acc = s.accounts.find(a => a.calendars.some(c => c.id === calId));
-                    if (acc && gcalTokenValid(acc)) gApi(acc, `${G_CAL_API}/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(evId)}`, { method: 'DELETE' }).catch(() => {});
+                    if (acc && gcalTokenValid(acc)) calDelete(acc, calId, evId).catch(() => {});
                 });
             });
         }
@@ -10883,6 +11073,10 @@ ${st.leader2Name}
         }
         async function driveUploadFile(file, name) {
             const acc = await driveAccount();
+            if (acc.bridge) {
+                const data = (await readAsDataURL(file)).split(',')[1];
+                return bridgeCall(bridgeOf(acc), 'upload', { name: name || file.name, mimeType: file.type || 'application/octet-stream', data });
+            }
             const folder = await driveFolderId(acc);
             const meta = { name: name || file.name, parents: [folder] };
             const fd = new FormData();
@@ -11052,14 +11246,14 @@ ${st.leader2Name}
             applyVersionLabels();
             // Client ID ที่แชร์ผ่าน Google Sheet
             const s = gcalState();
-            if (s.accounts.some(gcalTokenValid)) {
+            if (s.accounts.some(gcalTokenValid) || gcalBridges().length) {
                 setTimeout(() => { gcalPull(false); gcalFlushPending(); }, 2500);
             }
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState !== 'visible') return;
             const last = +lsGet('hanuman_gcal_last', 0);
-            if (Date.now() - last > 5 * 60000 && gcalState().accounts.some(gcalTokenValid)) gcalPull(false);
+            if (Date.now() - last > 5 * 60000 && (gcalState().accounts.some(gcalTokenValid) || gcalBridges().length)) gcalPull(false);
         });
     </script>
 </body>
