@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.1.0: เชื่อม Google Calendar ได้ง่ายขึ้น — กด “อนุญาต” ครั้งเดียวผ่าน Google Apps Script ไม่ต้องสร้าง Client ID และใช้ได้ทุกเครื่องในหน่วย (ตั้งค่า &gt; Google Calendar)">
-    <meta name="app-version" content="2.1.0">
+    <meta name="app-update-note" content="อัปเดต v2.1.1: แก้ไขแจ้งเตือน “มีการอัปเดตโค้ดใหม่” เด้งซ้ำหลังรีเฟรช • เชื่อม Google Calendar ได้ง่าย — กด “อนุญาต” ครั้งเดียวผ่าน Google Apps Script (ตั้งค่า &gt; Google Calendar)">
+    <meta name="app-version" content="2.1.1">
     <title>HANUMAN TACTICAL COMMAND | ระบบบริหารจัดการภารกิจและกำลังพล</title>
     <!-- Google Fonts: Prompt & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -9160,7 +9160,9 @@ ${st.leader2Name}
         }
         // ลายนิ้วมือโค้ด = สคริปต์ในไฟล์ทั้งหมด (ไม่รวมไลบรารีภายนอก) — เก็บตอนเปิดหน้า ก่อนมีอะไรมาแทรก
         const codeFingerprint = (doc) => quickHash(Array.from(doc.querySelectorAll('script:not([src])')).map(s => s.textContent).join('\n/*--*/\n'));
-        const APP_CODE_FP = codeFingerprint(document);
+        // ต้องคำนวณหลังอ่านสคริปต์ครบทุกบล็อกในไฟล์ (ตอนนี้ยังอ่านไม่ถึงสคริปต์ที่อยู่ท้ายไฟล์) — ไม่เช่นนั้นจะไม่ตรงกับไฟล์บนเว็บและแจ้งอัปเดตซ้ำไม่จบ
+        let APP_CODE_FP = codeFingerprint(document);
+        document.addEventListener('DOMContentLoaded', () => { APP_CODE_FP = codeFingerprint(document); });
         let appFileBaseline = '';      // hash ของไฟล์ทั้งไฟล์ (ครั้งแรกที่ดึงได้) — จับการแก้ HTML ส่วนที่ไม่ใช่สคริปต์
         let appUpdateShownFor = '';
         let appUpdateForceTimer = null;
@@ -9309,7 +9311,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.1.0';
+        const APP_VERSION = '2.1.1';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
