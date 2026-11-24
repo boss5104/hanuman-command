@@ -8,8 +8,20 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.1.1: แก้ไขแจ้งเตือน “มีการอัปเดตโค้ดใหม่” เด้งซ้ำหลังรีเฟรช • เชื่อม Google Calendar ได้ง่าย — กด “อนุญาต” ครั้งเดียวผ่าน Google Apps Script (ตั้งค่า &gt; Google Calendar)">
-    <meta name="app-version" content="2.1.1">
+    <meta name="app-update-note" content="อัปเดต v2.2.0: ไอคอนแอปใหม่ — กด “เพิ่มไปยังหน้าจอโฮม” บนโทรศัพท์ หรือ “เพิ่มไปยัง Dock” บน MacBook จะได้ไอคอนโล่ทองตัว H สวยงาม">
+    <meta name="app-version" content="2.2.0">
+    <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
+    <link rel="icon" href="icons/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HANUMAN">
+    <meta name="application-name" content="HANUMAN">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>HANUMAN TACTICAL COMMAND | ระบบบริหารจัดการภารกิจและกำลังพล</title>
     <!-- Google Fonts: Prompt & Sarabun -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -9311,7 +9323,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.1.1';
+        const APP_VERSION = '2.2.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
