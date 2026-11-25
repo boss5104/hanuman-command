@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.2.0: ไอคอนแอปใหม่ — กด “เพิ่มไปยังหน้าจอโฮม” บนโทรศัพท์ หรือ “เพิ่มไปยัง Dock” บน MacBook จะได้ไอคอนโล่ทองตัว H สวยงาม">
-    <meta name="app-version" content="2.2.0">
+    <meta name="app-update-note" content="อัปเดต v2.2.1: สรุปภารกิจอ่านง่ายขึ้น — อุปกรณ์/อาวุธ/การแต่งกายใช้สีเรียบแบบทางการ, ชื่อเล่นและหน้าที่จัดกึ่งกลางช่อง และรวมช่อง (merge) หน้าที่ที่ซ้ำกัน">
+    <meta name="app-version" content="2.2.1">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -660,7 +660,9 @@
         .xp-kv { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px; }
         .xp-k { font-size: 11.5px; color: #64748b; }
         .xp-v { font-size: 14.5px; font-weight: 600; color: #0a1128; }
-        .xp-chip { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #0a1128; color: #f3d98b; font-size: 12px; margin: 2px 4px 2px 0; }
+        .xp-chip { display: inline-block; padding: 2px 10px; border-radius: 6px; background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; font-size: 12.5px; font-weight: 600; margin: 2px 4px 2px 0; }
+        .xp-table th.ctr, .xp-table td.ctr { text-align: center; vertical-align: middle; }
+        .xp-table td.xp-merge { background: #fff !important; font-weight: 600; }
         .xp-foot { margin-top: 14px; padding-top: 8px; border-top: 1px solid #e5dcc3; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
         .a4 { width: 794px; height: 1123px; box-sizing: border-box; padding: 42px 46px; background: #fff; color: #0a1128; font-family: 'Sarabun', 'Prompt', sans-serif; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         .a4-info { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 12px; }
@@ -8513,6 +8515,20 @@ ${st.leader2Name}
             const veh = opsVehicleNames(o);
             const chips = arr => arr.length ? arr.map(x => `<span class="xp-chip">${escHtml(x)}</span>`).join('') : '<span style="color:#94a3b8">-</span>';
             const kv = (k, v) => `<div class="xp-kv"><div class="xp-k">${k}</div><div class="xp-v">${v}</div></div>`;
+            // รวมช่อง (merge) หน้าที่ที่เหมือนกันในแถวติดกัน
+            const spans = key => {
+                const vals = crew.map(x => (x.c[key] || '').trim() || '-');
+                const out = vals.map(() => 0);
+                for (let i = 0; i < vals.length;) {
+                    let j = i + 1;
+                    while (j < vals.length && vals[j] === vals[i] && vals[i] !== '-') j++;
+                    out[i] = j - i;
+                    i = j;
+                }
+                return { vals, out };
+            };
+            const prepS = spans('prepDuty'), opS = spans('opDuty');
+            const dutyTd = (S, i) => S.out[i] ? `<td class="ctr${S.out[i] > 1 ? ' xp-merge' : ''}"${S.out[i] > 1 ? ` rowspan="${S.out[i]}"` : ''}>${escHtml(S.vals[i])}</td>` : '';
             const coords = (m.coordinators || []).filter(c => c.name || c.phone);
             return `<div class="xp-sheet">
                 ${xpHeadHtml('สรุปภารกิจ • MISSION BRIEF', escHtml(m.name), `${m.supportUnit ? 'สนับสนุน: ' + escHtml(m.supportUnit) + ' • ' : ''}ผู้ควบคุม: ${escHtml(m.commander || '-')}`)}
@@ -8528,8 +8544,8 @@ ${st.leader2Name}
                     ${kv('การแต่งกาย', chips(o.uniforms))}
                 </div>
                 <div class="xp-sec">กำลังพลที่ปฏิบัติ (${crew.length} นาย)</div>
-                <table class="xp-table"><thead><tr><th style="width:34px">#</th><th>ยศ ชื่อ - สกุล</th><th>ชื่อเล่น</th><th>หน้าที่เตรียมของ</th><th>หน้าที่ปฏิบัติงาน</th></tr></thead>
-                <tbody>${crew.map((x, i) => `<tr><td>${i + 1}</td><td style="font-weight:600;white-space:nowrap">${escHtml(personFullName(x.p))}</td><td>${escHtml(x.p.nickname || '-')}</td><td>${escHtml(x.c.prepDuty || '-')}</td><td>${escHtml(x.c.opDuty || '-')}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8">-</td></tr>'}</tbody></table>
+                <table class="xp-table"><thead><tr><th class="ctr" style="width:34px">#</th><th>ยศ ชื่อ - สกุล</th><th class="ctr">ชื่อเล่น</th><th class="ctr">หน้าที่เตรียมของ</th><th class="ctr">หน้าที่ปฏิบัติงาน</th></tr></thead>
+                <tbody>${crew.map((x, i) => `<tr><td class="ctr">${i + 1}</td><td style="font-weight:600;white-space:nowrap">${escHtml(personFullName(x.p))}</td><td class="ctr">${escHtml(x.p.nickname || '-')}</td>${dutyTd(prepS, i)}${dutyTd(opS, i)}</tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8">-</td></tr>'}</tbody></table>
                 ${coords.length ? `<div class="xp-sec">ผู้ประสานงาน</div><div style="font-size:14px">${coords.map(c => `${escHtml(c.name)}${c.phone ? ' โทร ' + escHtml(c.phone) : ''}`).join(' • ')}</div>` : ''}
                 ${m.note ? `<div class="xp-sec">หมายเหตุ / ข้อควรระวัง</div><div style="font-size:14px;color:#9a3412">${escHtml(m.note)}</div>` : ''}
                 ${xpFootHtml()}
@@ -9323,7 +9339,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.2.0';
+        const APP_VERSION = '2.2.1';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
