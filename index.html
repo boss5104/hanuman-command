@@ -18,8 +18,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.8.3: แตะช่องค้นหา/เลือกชื่อผู้ตรวจ (และช่องกรอกอื่น ๆ) บน iPhone/iPad หน้าจอจะไม่ขยายเองอีกต่อไป">
-    <meta name="app-version" content="2.8.3">
+    <meta name="app-update-note" content="อัปเดต v2.8.4: เจ้าหน้าที่หลายเครื่องบันทึกผลตรวจเช็คสภาพรถพร้อมกันได้ ผลการตรวจไม่หาย — ระบบรวมผลทีละคันและใช้ฉบับที่บันทึกล่าสุด">
+    <meta name="app-version" content="2.8.4">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -1849,11 +1849,13 @@
             //         กันยอดหายเมื่อเครื่องที่มีข้อมูลเก่าส่งขึ้นไปทับ (วันที่ลบตั้งใจมีเครื่องหมายลบ จึงไม่ฟื้นกลับ)
             const cmdMerge = mergeCmdDailyMaps(db.cmdDaily, remoteData.cmdDaily);
             remoteData.cmdDaily = cmdMerge.map;
+            const vcMerge = mergeVehicleChecks(db.vehicleChecks, remoteData.vehicleChecks);
+            remoteData.vehicleChecks = vcMerge.list;
             db = remoteData;
             ensureOrgHierarchy();
             ensureExtraCollections();
-            if (cmdMerge.localWins) {
-                try { cmdRechain(); } catch (e) { console.warn('cmd rechain', e); }
+            if (cmdMerge.localWins || vcMerge.localWins) {
+                if (cmdMerge.localWins) { try { cmdRechain(); } catch (e) { console.warn('cmd rechain', e); } }
                 setDirty(true);
                 clearTimeout(syncTimer);
                 syncTimer = setTimeout(() => syncToGoogleSheets(false), 1500);
@@ -1875,6 +1877,27 @@
                 if (!b || (Number(a.savedAt) || 0) > (Number(b.savedAt) || 0)) { out[d] = a; localWins = true; }
             });
             return { map: out, localWins };
+        }
+
+        // v2.8.4: ผลการตรวจเช็คสภาพรถ — รวมทีละรายการ (รถ 1 คัน / 1 วัน = 1 ผล) ใช้ฉบับที่บันทึกล่าสุด
+        //         กันผลการตรวจหายเมื่อเจ้าหน้าที่หลายเครื่องกดบันทึกใกล้ ๆ กัน (ผลที่ลบตั้งใจมีเครื่องหมายลบ จึงไม่ฟื้นกลับ)
+        function vcLive() { return (db.vehicleChecks || []).filter(r => r && !r.deleted); }
+        function mergeVehicleChecks(localArr, remoteArr) {
+            const parse = (v) => { if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = []; } } return Array.isArray(v) ? v.filter(r => r && typeof r === 'object') : []; };
+            const L = parse(localArr), R = parse(remoteArr);
+            const keyOf = r => (r.date && r.vehicleId) ? r.date + '|' + r.vehicleId : 'id|' + r.id;
+            const ts = r => Date.parse(r.updatedAt || r.createdAt || '') || 0;
+            const out = new Map();
+            R.forEach(r => { const k = keyOf(r), o = out.get(k); if (!o || ts(r) > ts(o)) out.set(k, r); });
+            let localWins = false;
+            L.forEach(a => {
+                const k = keyOf(a), b = out.get(k);
+                if (!b || ts(a) > ts(b)) { out.set(k, a); localWins = true; }
+            });
+            // ล้างเครื่องหมายลบที่เก่ากว่า 120 วัน
+            const cutoff = Date.now() - 120 * 86400000;
+            const list = Array.from(out.values()).filter(r => !(r.deleted && ts(r) < cutoff));
+            return { list, localWins };
         }
 
         async function callGas(payload) {
@@ -10244,7 +10267,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.8.3';
+        const APP_VERSION = '2.8.4';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -12451,7 +12474,35 @@ ${st.leader2Name}
         function vcTouch() { vcDraft.dirty = true; vcPersist(); }
         function vcRerender() { const y = window.scrollY; render(); window.scrollTo(0, y); }
 
-        function vcRecordFor(date, vehicleId) { return (db.vehicleChecks || []).find(r => r.date === date && r.vehicleId === vehicleId) || null; }
+        // v2.8.4: ส่งผลการตรวจขึ้น Sheet แล้วดึงผลของเครื่องอื่นมารวมทันที (ไม่ต้องรอรีเฟรช)
+        //         หากใน Sheet ไม่มีผลที่บันทึกในเครื่องนี้ (ถูกเครื่องอื่นส่งทับ) จะส่งกลับขึ้นไปใหม่อัตโนมัติ
+        let vcRecBusy = false, vcRecAgain = false, vcRecLast = 0;
+        async function vcReconcile() {
+            if (!GAS_WEB_APP_URL) return;
+            if (vcRecBusy) { vcRecAgain = true; return; }
+            vcRecBusy = true; vcRecLast = Date.now();
+            try {
+                clearTimeout(syncTimer);
+                if (isDirty()) await syncToGoogleSheets(false);
+                if (isDirty()) return; // ส่งไม่สำเร็จ — ระบบจะลองใหม่เอง
+                const r = await callGas({ action: 'getAll' });
+                if (r && r.ok === false) return;
+                const remote = r && r.ok !== undefined ? r.data : r;
+                if (!remote || typeof remote !== 'object' || !(remote.personnel || remote.missions)) return;
+                const before = JSON.stringify(db.vehicleChecks || []);
+                const m = mergeVehicleChecks(db.vehicleChecks, remote.vehicleChecks);
+                db.vehicleChecks = m.list;
+                if (m.localWins) saveDB();
+                else { try { localStorage.setItem('hanuman_db', JSON.stringify(db)); } catch (e) {} }
+                if (JSON.stringify(db.vehicleChecks) !== before && currentRoute && (currentRoute.page === 'vcheck_history' || (currentRoute.page === 'vcheck' && vcDraft.step !== 'form')) && !document.querySelector('#vc_insp_q:focus')) vcRerender();
+            } catch (e) { console.warn('vcReconcile', e); }
+            finally {
+                vcRecBusy = false;
+                if (vcRecAgain) { vcRecAgain = false; setTimeout(vcReconcile, 300); }
+            }
+        }
+
+        function vcRecordFor(date, vehicleId) { return vcLive().find(r => r.date === date && r.vehicleId === vehicleId) || null; }
         function vcVehicleById(id) { return db.vehicles.find(v => v.id === id) || null; }
         function vcVehLabel(v) { return v ? (String(v.brand || '').trim() || String(v.type || '').trim() || 'ยานพาหนะ') : '-'; }
         function vcPhoto(v) { return (v && v.photo) || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle'; }
@@ -12483,7 +12534,7 @@ ${st.leader2Name}
             navigationHistory = [];
             updateBreadcrumbs([]);
             const today = todayIso();
-            const done = (db.vehicleChecks || []).filter(r => r.date === today);
+            const done = vcLive().filter(r => r.date === today);
             const total = db.vehicles.length;
             const pct = total ? Math.round(Math.min(done.length, total) / total * 100) : 0;
             const cnt = k => done.filter(r => r.overall === k).length;
@@ -12532,7 +12583,7 @@ ${st.leader2Name}
                             <p class="text-gray-500 text-sm font-body mt-1 leading-relaxed">ดูผลการตรวจที่บันทึกไว้ แยกตามวันที่ และกดแก้ไขผลการตรวจของรถแต่ละคันได้</p>
                         </div>
                         <div class="shrink-0 px-5 py-3 rounded-2xl border-2 border-gold-500 text-navy-900 font-bold text-sm text-center bg-white/70">
-                            ${(db.vehicleChecks || []).length} รายการ <i class="fa-solid fa-arrow-right ml-1 text-gold-600"></i>
+                            ${vcLive().length} รายการ <i class="fa-solid fa-arrow-right ml-1 text-gold-600"></i>
                         </div>
                     </div>
                     </div>
@@ -12666,8 +12717,9 @@ ${st.leader2Name}
 
         function renderVcSetup(container) {
             vcBreadcrumbs();
+            if (Date.now() - vcRecLast > 30000) setTimeout(vcReconcile, 0); // ดูความคืบหน้าของเจ้าหน้าที่เครื่องอื่น
             const date = vcDraft.date || todayIso();
-            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const recs = vcLive().filter(r => r.date === date);
             const total = db.vehicles.length;
             const doneN = db.vehicles.filter(v => recs.some(r => r.vehicleId === v.id)).length;
             const pct = total ? Math.round(doneN / total * 100) : 0;
@@ -13065,7 +13117,7 @@ ${st.leader2Name}
             const missing = vcItemCount() - vcCheckedCount(vcDraft.items);
             const doSave = () => {
                 const v = vcVehicleById(vcDraft.vehicleId);
-                const existing = vcRecordFor(vcDraft.date, vcDraft.vehicleId) || (vcDraft.recId && db.vehicleChecks.find(r => r.id === vcDraft.recId));
+                const existing = vcRecordFor(vcDraft.date, vcDraft.vehicleId) || (vcDraft.recId && vcLive().find(r => r.id === vcDraft.recId));
                 const items = {};
                 Object.entries(vcDraft.items).forEach(([k, x]) => { if (x && (typeof x.s === 'number' || x.n)) items[k] = { s: typeof x.s === 'number' ? x.s : null, n: String(x.n || '').trim() }; });
                 const rec = {
@@ -13078,12 +13130,13 @@ ${st.leader2Name}
                     overall: vcDraft.overall, watch: vcDraft.overall === 'usable' ? String(vcDraft.watch || '').trim() : '', action: String(vcDraft.action || '').trim(),
                     by: authRole() || '', createdAt: existing ? existing.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString()
                 };
-                db.vehicleChecks = (db.vehicleChecks || []).filter(r => r.id !== rec.id && !(r.date === rec.date && r.vehicleId === rec.vehicleId));
+                db.vehicleChecks = (db.vehicleChecks || []).filter(r => r.id !== rec.id && !(r.date === rec.date && r.vehicleId === rec.vehicleId)); // แทนที่ทั้งผลเดิมและเครื่องหมายลบของรถคันนี้/วันนี้
                 db.vehicleChecks.push(rec);
                 vcDraft.recId = rec.id;
                 vcDraft.dirty = false;
                 vcPersist();
                 saveDB();
+                vcReconcile();
                 showStatusPopup(existing ? 'อัปเดตผลการตรวจเรียบร้อย' : 'บันทึกผลการตรวจเรียบร้อย', `${vcVehLabel(v)} ทะเบียน ${v.plate || '-'} • ${VC_OVERALL[rec.overall].label}`, 'success', 1900);
                 if (typeof after === 'function') after(); else vcRerender();
             };
@@ -13227,18 +13280,18 @@ ${st.leader2Name}
         // ---------- 6) ส่วนผู้ดูแลระบบ: แท็บหน้าสถานะรถ ----------
         function vehPageHeadHtml(ui) {
             const dates = vcCheckDates();
-            const lastN = dates.length ? (db.vehicleChecks || []).filter(r => r.date === dates[0]).length : 0;
+            const lastN = dates.length ? vcLive().filter(r => r.date === dates[0]).length : 0;
             return `<div class="vtab-bar">
                 <button type="button" class="vtab ${ui.tab !== 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'status' })"><i class="fa-solid fa-table-cells-large"></i><span class="hidden sm:inline">แผนภาพและตารางสถานะยานพาหนะ</span><span class="sm:hidden">สถานะยานพาหนะ</span><span class="bd">${db.vehicles.length}</span></button>
                 <button type="button" class="vtab ${ui.tab === 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'checks' })"><i class="fa-solid fa-clipboard-check"></i><span class="hidden sm:inline">ผลการตรวจสภาพยานพาหนะ</span><span class="sm:hidden">ผลตรวจสภาพรถ</span>${lastN ? `<span class="bd">${lastN}</span>` : ''}</button>
             </div>`;
         }
         function vcCheckDates() {
-            return Array.from(new Set((db.vehicleChecks || []).map(r => r.date).filter(Boolean))).sort().reverse();
+            return Array.from(new Set(vcLive().map(r => r.date).filter(Boolean))).sort().reverse();
         }
         // ผลการตรวจของวันที่เลือก เรียงตามลำดับรถในตารางสถานะรถ (รถที่ถูกลบไปแล้วต่อท้าย)
         function vcRoundRows(date, typeFilter = 'all') {
-            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const recs = vcLive().filter(r => r.date === date);
             const rows = [];
             db.vehicles.forEach(v => {
                 if (typeFilter !== 'all' && (v.type || 'ไม่ระบุประเภท') !== typeFilter) return;
@@ -13284,7 +13337,7 @@ ${st.leader2Name}
             return Array.from(new Set(parts.map(x => String(x).trim()).filter(Boolean))).join(', ');
         }
         function vcRoundMeta(date) {
-            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const recs = vcLive().filter(r => r.date === date);
             const times = recs.map(r => r.time).filter(Boolean).sort();
             const teams = Array.from(new Set(recs.map(r => String(r.team || '').trim()).filter(t => t && t !== '-')));
             const names = Array.from(new Set(recs.map(r => r.inspectorName).filter(Boolean)));
@@ -13342,7 +13395,7 @@ ${st.leader2Name}
                     <div class="text-sm text-gray-500 mt-1">เมื่อเจ้าหน้าที่บันทึกผลจากเมนู “ตรวจเช็คสภาพรถ” ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</div>
                 </div>`;
             }
-            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${(db.vehicleChecks || []).filter(r => r.date === d).length} คัน)</option>`).join('');
+            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${vcLive().filter(r => r.date === d).length} คัน)</option>`).join('');
             const list = rows.map(({ v, rec, removed }, i) => `
                 <div class="vc-row ${rec ? '' : 'opacity-70'}">
                     <div class="hidden lg:block text-xs text-gray-400 font-semibold">${i + 1}</div>
@@ -13401,18 +13454,21 @@ ${st.leader2Name}
         }
         function deleteVcRecord(id) {
             if (authRole() !== 'admin') return;
-            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            const r = vcLive().find(x => x.id === id);
             if (!r) return;
             showConfirmPopup('ลบผลการตรวจ', `ลบผลการตรวจ ${r.vehicle.brand || ''} ทะเบียน ${r.vehicle.plate || ''} วันที่ ${fmtThaiDMY(r.date)} ใช่หรือไม่?`, () => {
+                // v2.8.4: เก็บเครื่องหมายลบไว้ เพื่อไม่ให้เครื่องอื่นที่ยังมีผลเดิมส่งกลับขึ้นมาใหม่
                 db.vehicleChecks = db.vehicleChecks.filter(x => x.id !== id);
+                db.vehicleChecks.push({ id: r.id, date: r.date, vehicleId: r.vehicleId, deleted: true, updatedAt: new Date().toISOString() });
                 saveDB();
+                vcReconcile();
                 closeModal();
                 render();
                 showStatusPopup('ลบผลการตรวจแล้ว', '', 'delete', 1500);
             });
         }
         function openVcDetail(id) {
-            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            const r = vcLive().find(x => x.id === id);
             if (!r) return;
             const o = VC_OVERALL[r.overall] || VC_OVERALL.usable;
             const lvlCls = ['bg-emerald-100 text-emerald-800', 'bg-amber-100 text-amber-800', 'bg-red-100 text-red-800'];
@@ -13694,7 +13750,7 @@ ${st.leader2Name}
         }
         let vcExportDate = '';
         function openVcExport(date) {
-            if (!date || !(db.vehicleChecks || []).some(r => r.date === date)) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ยังไม่มีผลการตรวจในวันที่เลือก', 'edit', 2200); return; }
+            if (!date || !vcLive().some(r => r.date === date)) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ยังไม่มีผลการตรวจในวันที่เลือก', 'edit', 2200); return; }
             vcExportDate = date;
             xpPreviewFns.vcx = () => mountScaledPreview('vcxPreview', buildVcSheetHtml(vcExportDate), 960);
             xpTextFns.vcx = () => buildVcReportText(vcExportDate);
@@ -13729,7 +13785,7 @@ ${st.leader2Name}
         // ผลการตรวจสภาพครั้งล่าสุดของรถ (ใช้ในรายงานสถานะ)
         function vehLastCheck(v) {
             let best = null;
-            (db.vehicleChecks || []).forEach(r => {
+            vcLive().forEach(r => {
                 if (r.vehicleId !== v.id) return;
                 const key = `${r.date || ''} ${r.time || ''}`;
                 if (!best || key > best.key) best = { key, r };
@@ -13915,7 +13971,7 @@ ${st.leader2Name}
         function vcOpenHistory() { navigate('vcheck_history'); }
         function vcSetHistDate(d) { vcHistDate = d; vcRerender(); }
         function vcEditRecord(id) {
-            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            const r = vcLive().find(x => x.id === id);
             if (!r) return;
             if (!vcVehicleById(r.vehicleId)) { showStatusPopup('แก้ไขไม่ได้', 'รถคันนี้ถูกลบออกจากตารางสถานะรถแล้ว', 'edit', 2400); return; }
             const go = () => {
@@ -13934,7 +13990,7 @@ ${st.leader2Name}
             ]);
             const dates = vcCheckDates();
             const date = dates.includes(vcHistDate) ? vcHistDate : (dates[0] || '');
-            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const recs = vcLive().filter(r => r.date === date);
             const order = r => { const i = db.vehicles.findIndex(v => v.id === r.vehicleId); return i < 0 ? 9999 : i; };
             recs.sort((a, b) => order(a) - order(b));
             const cnt = k => recs.filter(r => r.overall === k).length;
@@ -13962,7 +14018,7 @@ ${st.leader2Name}
                     </div>
                 </div>`;
             }).join('');
-            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${(db.vehicleChecks || []).filter(r => r.date === d).length} คัน)</option>`).join('');
+            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${vcLive().filter(r => r.date === d).length} คัน)</option>`).join('');
             container.innerHTML = `
                 <div class="vc-hero mb-5">
                     <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
