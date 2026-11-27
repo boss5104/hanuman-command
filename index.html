@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.2.2: ทุกช่องเลือกวันที่ใช้ปฏิทินไทย (วัน เดือน พ.ศ.) แบบเดียวกันทั้งแอป — ฟอร์มตารางเวร, เวร ว.5, ภารกิจ, ตัวกรองวันที่ และนัดหมายในวิเคราะห์ภารกิจ">
-    <meta name="app-version" content="2.2.2">
+    <meta name="app-update-note" content="อัปเดต v2.3.0: จัดรายชื่อเวร ว.5 อัตโนมัติ — ดึงเฉพาะยศ พ.ต.ต. ถึง ร.ต.ท., กำหนดลำดับการรันรายชื่อเองได้ และจำลำดับไว้ให้เลือกรันต่อเดือนถัดไปหรือเลือกลำดับใหม่">
+    <meta name="app-version" content="2.3.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -2505,20 +2505,128 @@
         }
 
 
-        // ---- จัดรายชื่อเวร ว.5 อัตโนมัติทั้งเดือน (เรียงตามลำดับยศ วนซ้ำรายวัน) ----
-        function updateW5AutoCount() {
-            const n = document.querySelectorAll('input[name="w5_auto_pid"]:checked').length;
-            const el = document.getElementById('w5a_count');
-            if (el) el.innerText = n;
+        // ---- จัดรายชื่อเวร ว.5 อัตโนมัติทั้งเดือน ----
+        // - ดึงเฉพาะยศ พ.ต.ต. ถึง ร.ต.ท. (พ.ต.ต. / ร.ต.อ. / ร.ต.ท.)
+        // - กำหนดลำดับการรันรายชื่อเองได้ และระบบจำลำดับไว้ (db.appConfig.w5Rotation ซิงค์ทุกเครื่อง)
+        // - เดือนถัดไปเลือกได้ว่าจะ "รันต่อตามลำดับเดิม" หรือ "เลือกลำดับการรันใหม่"
+        const W5_ELIGIBLE_RANKS = ['พ.ต.ต.', 'ร.ต.อ.', 'ร.ต.ท.'];
+        let w5AutoState = { mode: 'new', order: [], checked: new Set(), fresh: new Set(), start: 'first' };
+
+        function isW5EligibleRank(rank) {
+            const o = getRankOrder(rank);
+            return o >= getRankOrder('พ.ต.ต.') && o < getRankOrder('ร.ต.ต.');
+        }
+        function getW5EligiblePersonnel() { return sortPersonnelByRank(db.personnel.filter(p => isW5EligibleRank(p.rank))); }
+        function w5PersonName(p) { return `${p.rank}${p.firstName} ${p.lastName}`.trim(); }
+        function getW5Rotation() {
+            const r = db.appConfig && db.appConfig.w5Rotation;
+            return r && typeof r === 'object' && Array.isArray(r.order) && r.order.length ? r : null;
         }
 
-        function setW5AutoSelection(mode) {
-            document.querySelectorAll('input[name="w5_auto_pid"]').forEach(cb => {
-                if (mode === 'all') cb.checked = true;
-                else if (mode === 'none') cb.checked = false;
-                else if (mode === 'officer') cb.checked = cb.dataset.cat === 'officer';
-            });
-            updateW5AutoCount();
+        // ลำดับเริ่มต้นของรายการ: ตามลำดับที่จำไว้ (ถ้ามี) แล้วต่อท้ายด้วยผู้ที่ยังไม่อยู่ในลำดับ (ตามยศ)
+        function buildW5AutoOrder(useSaved) {
+            const eligible = getW5EligiblePersonnel();
+            const byId = new Map(eligible.map(p => [p.id, p]));
+            const rot = useSaved ? getW5Rotation() : null;
+            const order = [], checked = new Set(), fresh = new Set();
+            if (rot) {
+                const excluded = new Set(Array.isArray(rot.excluded) ? rot.excluded : []);
+                rot.order.forEach(id => { if (byId.has(id) && !order.includes(id)) { order.push(id); checked.add(id); } });
+                excluded.forEach(id => { if (byId.has(id) && !order.includes(id)) order.push(id); });
+                eligible.forEach(p => { if (!order.includes(p.id)) { order.push(p.id); checked.add(p.id); fresh.add(p.id); } });
+            } else {
+                eligible.forEach(p => { order.push(p.id); checked.add(p.id); });
+            }
+            return { order, checked, fresh };
+        }
+
+        function w5AutoActiveOrder() { return w5AutoState.order.filter(id => w5AutoState.checked.has(id)); }
+
+        function renderW5AutoList() {
+            const box = document.getElementById('w5a_list');
+            if (!box) return;
+            const isNew = w5AutoState.mode === 'new';
+            const byId = new Map(db.personnel.map(p => [p.id, p]));
+            let n = 0;
+            box.innerHTML = w5AutoState.order.map((id, i) => {
+                const p = byId.get(id);
+                if (!p) return '';
+                const on = w5AutoState.checked.has(id);
+                const seq = on ? ++n : null;
+                const isFresh = w5AutoState.fresh.has(id);
+                return `
+                    <div class="flex items-center gap-2 p-2 rounded-xl border ${on ? 'border-gray-200 bg-white' : 'border-dashed border-gray-200 bg-gray-50 opacity-60'}">
+                        <span class="w-7 h-7 rounded-full ${on ? 'bg-navy-900 text-gold-400' : 'bg-gray-200 text-gray-400'} text-xs font-bold flex items-center justify-center shrink-0">${seq || '–'}</span>
+                        <input type="checkbox" ${on ? 'checked' : ''} ${isNew ? '' : 'disabled'} onchange="w5AutoToggle('${id}', this.checked)" class="w-4 h-4 accent-navy-900 rounded shrink-0" title="รวมในการจัดเวร">
+                        <div class="min-w-0 flex-grow">
+                            <div class="text-sm font-semibold text-navy-900 truncate">${escHtml(w5PersonName(p))}${isFresh ? ' <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 align-middle">ใหม่</span>' : ''}</div>
+                            <div class="text-[11px] text-gray-500 truncate">${escHtml(p.position || '')}${p.team ? ` • ${escHtml(teamLabelOf(p.team) || '')}` : ''}</div>
+                        </div>
+                        ${isNew ? `
+                        <div class="flex gap-1 shrink-0">
+                            <button type="button" onclick="w5AutoMove(${i}, -1)" ${i === 0 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border hover:bg-gray-100 disabled:opacity-30" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                            <button type="button" onclick="w5AutoMove(${i}, 1)" ${i === w5AutoState.order.length - 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border hover:bg-gray-100 disabled:opacity-30" title="เลื่อนลง"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+                        </div>` : ''}
+                    </div>`;
+            }).join('') || '<div class="text-center text-gray-400 py-6 text-sm">ไม่พบกำลังพลยศ พ.ต.ต. – ร.ต.ท.</div>';
+            const cnt = document.getElementById('w5a_count');
+            if (cnt) cnt.innerText = n;
+            renderW5AutoStart();
+        }
+
+        function renderW5AutoStart() {
+            const sel = document.getElementById('w5a_start');
+            if (!sel) return;
+            const byId = new Map(db.personnel.map(p => [p.id, p]));
+            const active = w5AutoActiveOrder();
+            if (w5AutoState.start !== 'auto' && w5AutoState.start !== 'first' && !active.includes(w5AutoState.start)) w5AutoState.start = 'first';
+            sel.innerHTML = `<option value="first">คนลำดับที่ 1 ของรายการ</option><option value="auto">ต่อจากเวรก่อนหน้า (คนถัดจากเวรวันสุดท้ายของเดือนก่อน)</option>` +
+                active.map((id, i) => `<option value="${id}">ลำดับ ${i + 1}: ${escHtml(w5PersonName(byId.get(id)))}</option>`).join('');
+            sel.value = w5AutoState.start;
+        }
+
+        function w5AutoToggle(id, on) {
+            if (on) w5AutoState.checked.add(id); else w5AutoState.checked.delete(id);
+            renderW5AutoList();
+        }
+        function w5AutoMove(i, dir) {
+            const j = i + dir, o = w5AutoState.order;
+            if (j < 0 || j >= o.length) return;
+            [o[i], o[j]] = [o[j], o[i]];
+            renderW5AutoList();
+        }
+        function w5AutoSelect(mode) {
+            if (mode === 'all') w5AutoState.order.forEach(id => w5AutoState.checked.add(id));
+            if (mode === 'none') w5AutoState.checked.clear();
+            if (mode === 'rank') {
+                const byId = new Map(db.personnel.map(p => [p.id, p]));
+                w5AutoState.order = sortPersonnelByRank(w5AutoState.order.map(id => byId.get(id)).filter(Boolean)).map(p => p.id);
+            }
+            if (mode === 'saved') {
+                const b = buildW5AutoOrder(true);
+                w5AutoState.order = b.order; w5AutoState.checked = b.checked; w5AutoState.fresh = b.fresh;
+            }
+            renderW5AutoList();
+        }
+        function setW5AutoMode(mode) {
+            w5AutoState.mode = mode;
+            if (mode === 'continue') {
+                const b = buildW5AutoOrder(true);
+                w5AutoState.order = b.order; w5AutoState.checked = b.checked; w5AutoState.fresh = b.fresh;
+                w5AutoState.start = 'auto';
+            } else {
+                w5AutoState.start = 'first';
+            }
+            document.querySelectorAll('input[name="w5a_mode"]').forEach(r => { r.checked = r.value === mode; });
+            const tools = document.getElementById('w5a_tools');
+            if (tools) tools.classList.toggle('hidden', mode !== 'new');
+            const startWrap = document.getElementById('w5a_start_wrap');
+            if (startWrap) startWrap.classList.toggle('hidden', mode !== 'new');
+            const hint = document.getElementById('w5a_mode_hint');
+            if (hint) hint.innerHTML = mode === 'continue'
+                ? '<i class="fa-solid fa-lock mr-1"></i>ใช้ลำดับที่จำไว้ และเริ่มจากคนถัดจากผู้เข้าเวรวันสุดท้ายของเดือนก่อน (หากมีผู้ที่มี “ใหม่” จะต่อท้ายลำดับ)'
+                : '<i class="fa-solid fa-arrow-down-1-9 mr-1"></i>ติ๊กเลือกผู้เข้าเวร และกดลูกศรเพื่อจัดลำดับการรันรายชื่อ ระบบจะจำลำดับนี้ไว้ใช้เดือนถัดไป';
+            renderW5AutoList();
         }
 
         function openW5AutoModal() {
@@ -2526,28 +2634,26 @@
             const now = new Date();
             const month = f.fMonth !== 'all' ? parseInt(f.fMonth, 10) : now.getMonth() + 1;
             const year = f.fYear !== 'all' ? parseInt(f.fYear, 10) : now.getFullYear();
-            const people = sortPersonnelByRank(db.personnel);
+            const rot = getW5Rotation();
+            const byId = new Map(db.personnel.map(p => [p.id, p]));
 
             const monthOpts = THAI_MONTHS_FULL.map((m, i) => `<option value="${i + 1}" ${i + 1 === month ? 'selected' : ''}>${m}</option>`).join('');
             const yearOpts = getW5YearOptions().map(y => `<option value="${y}" ${y === year ? 'selected' : ''}>พ.ศ. ${y + 543}</option>`).join('');
-            const startOpts = '<option value="auto">ต่อจากเวรก่อนหน้าโดยอัตโนมัติ</option>' + people.map(p => `<option value="${p.id}">${escHtml(`${p.rank}${p.firstName} ${p.lastName}`.trim())}</option>`).join('');
-            const listHtml = people.map(p => {
-                const name = `${p.rank}${p.firstName} ${p.lastName}`.trim();
-                return `
-                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:border-gold-500 hover:bg-amber-50/40 cursor-pointer transition">
-                        <input type="checkbox" name="w5_auto_pid" value="${p.id}" data-cat="${p.category}" ${p.category === 'officer' ? 'checked' : ''} onchange="updateW5AutoCount()" class="w-4 h-4 accent-navy-900 rounded shrink-0">
-                        <div class="min-w-0 flex-grow">
-                            <div class="text-sm font-semibold text-navy-900 truncate">${escHtml(name)}</div>
-                            <div class="text-[11px] text-gray-500 truncate">${escHtml(p.position || '')}</div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 shrink-0">${escHtml(teamLabelOf(p.team) || 'ไม่ระบุ')}</span>
-                    </label>`;
-            }).join('');
+
+            let savedInfo = '';
+            if (rot) {
+                const names = rot.order.map(id => byId.get(id)).filter(Boolean).map(w5PersonName);
+                const lm = /^(\d{4})-(\d{2})$/.exec(rot.lastMonth || '');
+                savedInfo = `ลำดับที่จำไว้ ${names.length} นาย${lm ? ` (ใช้ล่าสุดเดือน${THAI_MONTHS_FULL[parseInt(lm[2], 10) - 1]} ${parseInt(lm[1], 10) + 543})` : ''}: ${escHtml(names.slice(0, 4).join(' → '))}${names.length > 4 ? ' → …' : ''}`;
+            }
+
+            const b = buildW5AutoOrder(!!rot);
+            w5AutoState = { mode: rot ? 'continue' : 'new', order: b.order, checked: b.checked, fresh: b.fresh, start: rot ? 'auto' : 'first' };
 
             openModal('จัดรายชื่อเวร ว.5 อัตโนมัติ', `
                 <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-navy-900">
                     <i class="fa-solid fa-circle-info text-indigo-600 mr-1"></i>
-                    ระบบจะเรียงรายชื่อที่ติ๊กตามลำดับยศ (อาวุโสสูง → ต่ำ) แล้วจัดเข้าเวรทีละวันตลอดทั้งเดือน วนซ้ำจนครบวัน • เลือกได้ว่าผู้ที่ “ติดภารกิจ” ในวันนั้นจะให้ข้ามรายชื่อ หรือใส่ชื่อไว้แล้วมีผู้แทน
+                    ดึงรายชื่อเฉพาะยศ <b>พ.ต.ต. ถึง ร.ต.ท.</b> (พ.ต.ต. / ร.ต.อ. / ร.ต.ท.) แล้วจัดเข้าเวรทีละวันตามลำดับที่กำหนด วนซ้ำจนครบเดือน • ระบบจะจำลำดับการรันไว้ เพื่อให้เลือกรันต่อในเดือนถัดไป หรือเลือกลำดับใหม่ได้
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -2560,19 +2666,35 @@
                     </div>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium mb-1.5">ลำดับการรันรายชื่อ</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 ${rot ? 'hover:border-gold-500 cursor-pointer' : 'opacity-50 cursor-not-allowed'} has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="w5a_mode" value="continue" ${rot ? '' : 'disabled'} onchange="setW5AutoMode('continue')" class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>รันต่อจากเดือนก่อน</b><br>${rot ? 'ใช้ลำดับเดิมที่จำไว้ ต่อจากผู้เข้าเวรคนล่าสุด' : 'ยังไม่มีลำดับที่จำไว้ (จัดครั้งแรกให้เลือกลำดับใหม่)'}</span>
+                        </label>
+                        <label class="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-gold-500 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/60">
+                            <input type="radio" name="w5a_mode" value="new" onchange="setW5AutoMode('new')" class="w-4 h-4 mt-0.5 accent-navy-900">
+                            <span class="text-xs text-navy-900"><b>เลือกลำดับการรันใหม่</b><br>จัดเรียงรายชื่อเอง แล้วระบบจะจำลำดับใหม่นี้แทน</span>
+                        </label>
+                    </div>
+                    ${savedInfo ? `<p class="mt-1.5 text-[11px] text-gray-500"><i class="fa-solid fa-bookmark text-gold-600 mr-1"></i>${savedInfo}</p>` : ''}
+                </div>
+                <div id="w5a_start_wrap">
                     <label class="block text-sm font-medium mb-1">เริ่มต้นเวรวันที่ 1 ด้วย</label>
-                    <select id="w5a_start" class="w-full border rounded-xl px-3 py-2">${startOpts}</select>
+                    <select id="w5a_start" onchange="w5AutoState.start = this.value" class="w-full border rounded-xl px-3 py-2"></select>
                 </div>
                 <div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <label class="text-sm font-medium">ติ๊กเลือกรายชื่อที่ต้องการจัดเรียง (<span id="w5a_count" class="font-bold text-indigo-700">0</span> นาย)</label>
-                        <div class="flex gap-1.5 text-xs">
-                            <button type="button" onclick="setW5AutoSelection('officer')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">เฉพาะนายตำรวจ</button>
-                            <button type="button" onclick="setW5AutoSelection('all')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">ทั้งหมด</button>
-                            <button type="button" onclick="setW5AutoSelection('none')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100 text-red-600">ล้าง</button>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <label class="text-sm font-medium">รายชื่อตามลำดับการรัน (<span id="w5a_count" class="font-bold text-indigo-700">0</span> นาย)</label>
+                        <div id="w5a_tools" class="flex flex-wrap gap-1.5 text-xs">
+                            <button type="button" onclick="w5AutoSelect('rank')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">เรียงตามยศ</button>
+                            ${rot ? `<button type="button" onclick="w5AutoSelect('saved')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">ใช้ลำดับที่จำไว้</button>` : ''}
+                            <button type="button" onclick="w5AutoSelect('all')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100">เลือกทั้งหมด</button>
+                            <button type="button" onclick="w5AutoSelect('none')" class="px-2.5 py-1 rounded-lg border hover:bg-gray-100 text-red-600">ล้าง</button>
                         </div>
                     </div>
-                    <div class="space-y-1.5 max-h-64 overflow-y-auto pr-1">${listHtml || '<div class="text-center text-gray-400 py-6 text-sm">ยังไม่มีข้อมูลกำลังพล</div>'}</div>
+                    <p id="w5a_mode_hint" class="text-[11px] text-gray-500 mb-2"></p>
+                    <div id="w5a_list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">กรณีผู้ที่ถึงเวรติดภารกิจในวันนั้น</label>
@@ -2594,7 +2716,7 @@
             `, { type: 'autoW5' });
             const sb = document.getElementById('modalSaveBtn');
             sb.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> จัดรายชื่อ';
-            updateW5AutoCount();
+            setW5AutoMode(w5AutoState.mode);
         }
 
         function w5AutoBusyMode() {
@@ -2604,30 +2726,35 @@
         function runW5AutoArrange() {
             const month = parseInt(document.getElementById('w5a_month').value, 10);
             const year = parseInt(document.getElementById('w5a_year').value, 10);
-            const checked = Array.from(document.querySelectorAll('input[name="w5_auto_pid"]:checked'))
-                .map(cb => db.personnel.find(p => p.id === cb.value)).filter(Boolean);
-            if (checked.length === 0) {
+            const byId = new Map(db.personnel.map(p => [p.id, p]));
+            const people = w5AutoActiveOrder().map(id => byId.get(id)).filter(Boolean);
+            if (people.length === 0) {
                 showStatusPopup('ยังไม่ได้เลือกรายชื่อ', 'กรุณาติ๊กเลือกรายชื่ออย่างน้อย 1 นาย', 'edit', 2200);
                 return;
             }
-            const people = sortPersonnelByRank(checked);
-            const names = people.map(p => `${p.rank}${p.firstName} ${p.lastName}`.trim());
+            const names = people.map(w5PersonName);
             const overwrite = document.getElementById('w5a_overwrite').checked;
-            const startSel = document.getElementById('w5a_start').value;
+            const startSel = w5AutoState.mode === 'continue' ? 'auto' : (document.getElementById('w5a_start').value || 'first');
             const busyMode = (document.querySelector('input[name="w5a_busy_mode"]:checked') || {}).value === 'sub' ? 'sub' : 'skip';
             try { localStorage.setItem('hanuman_w5_busy_mode', busyMode); } catch (e) {}
             const mm = String(month).padStart(2, '0');
             const daysInMonth = new Date(year, month, 0).getDate();
 
             let ptr = 0;
-            if (startSel !== 'auto') {
-                const i = people.findIndex(p => p.id === startSel);
-                ptr = i >= 0 ? i : 0;
-            } else {
+            if (startSel === 'auto') {
                 const prefix = `${year}-${mm}-01`;
                 const prev = db.dutyW5.filter(w => w.date < prefix && names.includes(w.officer))
                     .sort((a, b) => a.date.localeCompare(b.date)).pop();
                 if (prev) ptr = (names.indexOf(prev.officer) + 1) % names.length;
+                else {
+                    // ไม่พบเวรเดือนก่อน: ใช้คนถัดไปที่จำไว้จากการจัดครั้งล่าสุด
+                    const rot = getW5Rotation();
+                    const i = rot && rot.nextId ? people.findIndex(p => p.id === rot.nextId) : -1;
+                    if (i >= 0) ptr = i;
+                }
+            } else if (startSel !== 'first') {
+                const i = people.findIndex(p => p.id === startSel);
+                ptr = i >= 0 ? i : 0;
             }
 
             let created = 0, updated = 0, kept = 0, skipped = 0, subbed = 0, noSub = 0;
@@ -2670,11 +2797,20 @@
                 }
             }
 
+            // จำลำดับการรันไว้ใช้เดือนถัดไป
+            db.appConfig.w5Rotation = {
+                order: people.map(p => p.id),
+                excluded: w5AutoState.order.filter(id => !w5AutoState.checked.has(id)),
+                nextId: people[ptr % people.length].id,
+                lastMonth: `${year}-${mm}`,
+                savedAt: new Date().toISOString()
+            };
+
             saveDB();
             closeModal();
             navigate('duty_w5', { fMonth: String(month), fYear: String(year) }, false);
             showStatusPopup('จัดรายชื่อเวรเรียบร้อย',
-                `${THAI_MONTHS_FULL[month - 1]} ${year + 543}: เพิ่มใหม่ ${created} วัน${updated ? ' • เขียนทับ ' + updated + ' วัน' : ''}${kept ? ' • คงข้อมูลเดิม ' + kept + ' วัน' : ''}${skipped ? ' • ข้ามผู้ติดภารกิจ ' + skipped + ' ครั้ง' : ''}${subbed ? ' • มีผู้แทน ' + subbed + ' วัน' : ''}${noSub ? ' • ไม่มีผู้ว่างเป็นผู้แทน ' + noSub + ' วัน' : ''}`,
+                `${THAI_MONTHS_FULL[month - 1]} ${year + 543}: เพิ่มใหม่ ${created} วัน${updated ? ' • เขียนทับ ' + updated + ' วัน' : ''}${kept ? ' • คงข้อมูลเดิม ' + kept + ' วัน' : ''}${skipped ? ' • ข้ามผู้ติดภารกิจ ' + skipped + ' ครั้ง' : ''}${subbed ? ' • มีผู้แทน ' + subbed + ' วัน' : ''}${noSub ? ' • ไม่มีผู้ว่างเป็นผู้แทน ' + noSub + ' วัน' : ''} • จำลำดับการรันไว้แล้ว`,
                 'success', 3600);
         }
 
@@ -9344,7 +9480,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.2.2';
+        const APP_VERSION = '2.3.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
