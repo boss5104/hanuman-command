@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.5.0: แก้รายชื่อผู้ตรวจเช็คไม่แสดงตอนค้นหา • เลือกรถแบบรายการได้ • แบบฟอร์มตรวจเช็คกระชับขึ้น • เมนูใหม่ “ตรวจสอบรถที่เช็คไปแล้ว” ดูและแก้ไขผลการตรวจได้">
-    <meta name="app-version" content="2.5.0">
+    <meta name="app-update-note" content="อัปเดต v2.5.1: รายงานผู้บังคับบัญชา — กันยอดรายวันหายเมื่อซิงค์จากหลายเครื่อง (รวมทีละวัน) • เพิ่มปุ่มกู้คืนยอดรายวันจากข้อความรายงานที่ส่ง LINE แล้ว">
+    <meta name="app-version" content="2.5.1">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -1730,12 +1730,36 @@
                 const rv = remoteData[k];
                 if (rv === undefined || rv === null || rv === '') remoteData[k] = db[k];
             });
+            // v2.5.1: ยอดรายวัน (ชป.นก) รวมทีละวัน — เก็บวันที่มีในเครื่องแต่ไม่มีใน Sheet ไว้ และใช้ฉบับที่บันทึกล่าสุด
+            //         กันยอดหายเมื่อเครื่องที่มีข้อมูลเก่าส่งขึ้นไปทับ (วันที่ลบตั้งใจมีเครื่องหมายลบ จึงไม่ฟื้นกลับ)
+            const cmdMerge = mergeCmdDailyMaps(db.cmdDaily, remoteData.cmdDaily);
+            remoteData.cmdDaily = cmdMerge.map;
             db = remoteData;
             ensureOrgHierarchy();
             ensureExtraCollections();
+            if (cmdMerge.localWins) {
+                try { cmdRechain(); } catch (e) { console.warn('cmd rechain', e); }
+                setDirty(true);
+                clearTimeout(syncTimer);
+                syncTimer = setTimeout(() => syncToGoogleSheets(false), 1500);
+            }
             syncPersonnelToOrgChart();
             try { localStorage.setItem('hanuman_db', JSON.stringify(db)); } catch (err) {}
             render();
+        }
+
+        // รวมยอดรายวันสองชุดทีละวัน: วันที่มีฝั่งเดียวเก็บไว้, มีทั้งสองฝั่งใช้ฉบับที่ savedAt ใหม่กว่า
+        function mergeCmdDailyMaps(localMap, remoteMap) {
+            const parse = (v) => { if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = {}; } } return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; };
+            const L = parse(localMap), R = parse(remoteMap);
+            const out = Object.assign({}, R);
+            let localWins = false;
+            Object.keys(L).forEach(d => {
+                const a = L[d], b = R[d];
+                if (!a || !a.date) return;
+                if (!b || (Number(a.savedAt) || 0) > (Number(b.savedAt) || 0)) { out[d] = a; localWins = true; }
+            });
+            return { map: out, localWins };
         }
 
         async function callGas(payload) {
@@ -3780,7 +3804,7 @@
                     next.base = cmdBaseAdd(rec.base, corr);
                     next.corr = null;
                 }
-                delete getCmdDaily()[iso];
+                getCmdDaily()[iso] = { date: iso, deleted: true, savedAt: Date.now() };
                 cmdRechain();
                 if (cmdReportState.sec3StartDate === iso) cmdReportState.dayDirty = true;
                 saveCmdReportState(false);
@@ -3788,6 +3812,161 @@
                 showStatusPopup('ลบยอดเรียบร้อย', `ลบยอดวันที่ ${formatThaiDate(iso)} แล้ว`, 'delete', 1800);
                 render();
             });
+        }
+
+        // ---------- v2.5.1: กู้คืนยอดรายวันจากข้อความรายงานที่ส่ง LINE แล้ว ----------
+        // วางข้อความรายงาน "เรียนผู้บังคับบัญชา ..." ได้ครั้งละหลายฉบับ ระบบอ่านยอดข้อ 3–6 แล้วสร้างยอดของวันนั้นคืน
+        let cmdRestoreParsed = [];
+        function cmdParseThaiDate(txt) {
+            const m = String(txt || '').match(/(\d{1,2})\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)\s*(\d{2,4})/);
+            if (!m) return '';
+            const mon = THAI_MONTHS_SHORT.indexOf(m[2]) + 1;
+            let y = parseInt(m[3], 10);
+            y = y < 100 ? 2500 + y - 543 : (y > 2400 ? y - 543 : y);
+            return `${y}-${String(mon).padStart(2, '0')}-${String(parseInt(m[1], 10)).padStart(2, '0')}`;
+        }
+        function cmdParseReport(chunk) {
+            const num = (v) => { const t = String(v || '').replace(/,/g, '').trim(); return t === '-' || t === '' ? 0 : (parseInt(t, 10) || 0); };
+            const DATE = '(\\d{1,2}\\s*[ก-๙.]+\\s*\\d{2,4})';
+            const TIME = '([\\d.:]+\\s*น\\.)';
+            const sec = (n) => {
+                const re = new RegExp(`(^|\\n)\\s*${n}\\s*\\.`);
+                const m = chunk.match(re);
+                if (!m) return '';
+                const start = m.index + m[0].length;
+                const rest = chunk.slice(start);
+                const nx = rest.match(new RegExp(`\\n\\s*${n + 1}\\s*\\.`));
+                return rest.slice(0, nx ? nx.index : undefined);
+            };
+            const areas = (txt) => {
+                const out = [];
+                const re = /-\s*พื้นที่\s*([^\n]+?)\s*\n\s*ตาย\s*([\d,\-]+)\s*ตัว\s*,?\s*บาดเจ็บ\s*([\d,\-]+)\s*ตัว/g;
+                let m;
+                while ((m = re.exec(txt))) out.push({ area: m[1].trim(), dead: num(m[2]), injured: num(m[3]) });
+                return out;
+            };
+            const total = (txt) => {
+                const i = txt.search(/รวมทุกพื้นที่/);
+                const m = (i >= 0 ? txt.slice(i) : txt).match(/(?:ตาย|ทันที)\s*([\d,\-]+)\s*ตัว\s*,?\s*บาดเจ็บ\s*([\d,\-]+)\s*ตัว/);
+                return m ? { dead: num(m[1]), injured: num(m[2]) } : null;
+            };
+            const s3 = sec(3), s4 = sec(4), s5 = sec(5), s6 = sec(6), s7 = sec(7) || chunk;
+            const h3 = s3.match(new RegExp(`ผลการปฏิบัติในวันที่\\s*${DATE}\\s*ตั้งแต่เวลา\\s*${TIME}\\s*ถึงวันที่\\s*${DATE}\\s*เวลา\\s*${TIME}`));
+            if (!h3) return null;
+            const h4 = s4.match(new RegExp(`ถึงวันที่\\s*${DATE}\\s*เวลา\\s*${TIME}`));
+            const h5 = s5.match(new RegExp(`ถึงวันที่\\s*${DATE}\\s*เวลา\\s*${TIME}`));
+            const h6 = s6.match(new RegExp(`ถึงวันที่\\s*${DATE}`));
+            const r = {
+                date: cmdParseThaiDate(h3[1]), s3Start: h3[2].replace(/\s+/g, ' ').trim(), s3EndDate: cmdParseThaiDate(h3[3]), s3End: h3[4].replace(/\s+/g, ' ').trim(),
+                s4EndDate: h4 ? cmdParseThaiDate(h4[1]) : '', s4End: h4 ? h4[2].trim() : '',
+                s5EndDate: h5 ? cmdParseThaiDate(h5[1]) : '', s5End: h5 ? h5[2].trim() : '',
+                s6EndDate: h6 ? cmdParseThaiDate(h6[1]) : '',
+                sec3: areas(s3), sec3Total: total(s3), sec4: areas(s4), sec4Total: total(s4),
+                sec5: total(s5), sec6: total(s6), leaders: []
+            };
+            const lre = /หัวหน้าชุดปฏิบัติประจำวันที่\s*([^\n]+?)\s*เวลา\s*[\d.:]+\s*น\.\s*\n\s*([^\n]+?)\s*\n\s*เบอร์โทรศัพท์\s*([^\n]*)/g;
+            let lm;
+            while ((lm = lre.exec(s7))) r.leaders.push({ date: lm[1].trim(), name: lm[2].trim(), phone: lm[3].trim() });
+            if (!r.date || !r.sec3.length || !r.sec4.length || !r.sec5 || !r.sec6 || !r.sec3Total || !r.sec4Total) return null;
+            return r;
+        }
+        // แปลงรายงานที่อ่านได้ เป็นยอดบันทึกรายวัน (รูปแบบเดียวกับปุ่ม "บันทึกยอดวันนี้")
+        function cmdRecordFromParsed(r) {
+            const st = cmdReportState;
+            const norm = (a) => normThaiName ? normThaiName(a) : String(a || '').replace(/\s+/g, '');
+            const pick = (list, area, i) => list.find(x => norm(x.area) === norm(area)) || list[i] || { dead: 0, injured: 0 };
+            const sec3Data = st.sec3Data.map((row, i) => { const x = pick(r.sec3, row.area, i); return { area: row.area, dead: String(x.dead), injured: String(x.injured) }; });
+            const s3RowD = sec3Data.reduce((a, x) => a + cmdN(x.dead), 0), s3RowI = sec3Data.reduce((a, x) => a + cmdN(x.injured), 0);
+            const adj3D = r.sec3Total.dead - s3RowD, adj3I = r.sec3Total.injured - s3RowI;
+            const sec4 = st.sec4BaseData.map((row, i) => { const x = pick(r.sec4, row.area, i); return { dead: x.dead - cmdN(sec3Data[i] && sec3Data[i].dead), injured: x.injured - cmdN(sec3Data[i] && sec3Data[i].injured) }; });
+            const s4RowD = st.sec4BaseData.reduce((a, row, i) => a + pick(r.sec4, row.area, i).dead, 0);
+            const s4RowI = st.sec4BaseData.reduce((a, row, i) => a + pick(r.sec4, row.area, i).injured, 0);
+            const s3D = Math.max(0, s3RowD + adj3D), s3I = Math.max(0, s3RowI + adj3I);
+            const base = {
+                sec4,
+                adjDead: r.sec4Total.dead - s4RowD - adj3D, adjInjured: r.sec4Total.injured - s4RowI - adj3I,
+                s5Dead: r.sec5.dead - s3D, s5Inj: r.sec5.injured - s3I,
+                s6Dead: r.sec6.dead - cmdN(sec3Data[0] && sec3Data[0].dead), s6Inj: r.sec6.injured - cmdN(sec3Data[0] && sec3Data[0].injured)
+            };
+            const custom = (t) => !CMD_MAIN_TIMES.includes(t);
+            const meta = {
+                sec3StartTime: r.s3Start, sec3StartCustomTime: custom(r.s3Start), sec3EndDate: r.s3EndDate || r.date, sec3EndTime: r.s3End, sec3EndCustomTime: custom(r.s3End),
+                sec4EndDate: r.s4EndDate || r.s3EndDate, sec4EndTime: r.s4End || r.s3End, sec4EndCustomTime: custom(r.s4End || r.s3End),
+                sec5EndDate: r.s5EndDate || r.s3EndDate, sec5EndTime: r.s5End || r.s3End, sec5EndCustomTime: custom(r.s5End || r.s3End),
+                sec6EndDate: r.s6EndDate || r.s3EndDate,
+                leader1StartDate: r.date, leader2StartDate: cmdIsoAddDays(r.date, 1)
+            };
+            r.leaders.slice(0, 2).forEach((l, i) => {
+                const k = 'leader' + (i + 1);
+                const p = typeof findPersonByName === 'function' ? findPersonByName(l.name) : null;
+                meta[k + 'Date'] = l.date; meta[k + 'Name'] = l.name; meta[k + 'Phone'] = l.phone; meta[k + 'Id'] = p ? p.id : '';
+            });
+            return { date: r.date, savedAt: Date.now(), restoredFrom: 'line', sec3Data, sec3TotalAdjDead: adj3D, sec3TotalAdjInjured: adj3I, base, corr: null, meta };
+        }
+        function cmdRestoreCheck(rec, r) {
+            const t = cmdRecordTotals(rec);
+            return t.s3Dead === r.sec3Total.dead && t.s3Inj === r.sec3Total.injured && t.s4Dead === r.sec4Total.dead && t.s4Inj === r.sec4Total.injured
+                && t.s5Dead === r.sec5.dead && t.s5Inj === r.sec5.injured && t.s6Dead === r.sec6.dead && t.s6Inj === r.sec6.injured;
+        }
+        function openCmdRestoreModal() {
+            cmdRestoreParsed = [];
+            openModal('กู้คืนยอดรายวันจากข้อความรายงาน LINE', `
+                <div class="rounded-2xl p-3 bg-amber-50/70 border border-amber-200 text-xs text-gray-700 leading-relaxed">
+                    <i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>คัดลอกข้อความรายงาน <b>“เรียนผู้บังคับบัญชา … จึงเรียนมาเพื่อโปรดทราบ”</b> ที่ส่งใน LINE แล้ว มาวางด้านล่าง
+                    <b>วางได้หลายวันพร้อมกัน</b> ระบบจะอ่านยอดข้อ 3–6 และหัวหน้าชุด แล้วสร้างยอดที่บันทึกไว้ของวันนั้นคืน (ยอดสะสมของวันอื่นไม่เปลี่ยน)
+                </div>
+                <textarea id="cmdRestoreText" rows="10" oninput="cmdRestorePreview()" placeholder="วางข้อความรายงานที่นี่..." class="w-full border rounded-xl px-3 py-2 text-sm leading-relaxed font-body"></textarea>
+                <div id="cmdRestorePreview" class="text-sm"></div>
+            `, { type: 'cmdRestore' });
+            setModalWide(true);
+            const sb = document.getElementById('modalSaveBtn');
+            sb.innerHTML = '<i class="fa-solid fa-clock-rotate-left mr-1.5"></i> กู้คืนยอดที่เลือก';
+            cmdRestorePreview();
+        }
+        function cmdRestorePreview() {
+            const box = document.getElementById('cmdRestorePreview');
+            if (!box) return;
+            const txt = fv('cmdRestoreText');
+            const chunks = txt.split(/เรียน\s*ผู้บังคับบัญชา/).filter(c => /ผลการปฏิบัติในวันที่/.test(c));
+            const byDate = {};
+            chunks.forEach(c => { const r = cmdParseReport(c); if (r) byDate[r.date] = r; });
+            cmdRestoreParsed = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
+            const bad = chunks.length - cmdRestoreParsed.length;
+            if (!txt.trim()) { box.innerHTML = ''; return; }
+            if (!cmdRestoreParsed.length) { box.innerHTML = `<div class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ยังอ่านรายงานไม่ได้ — ตรวจสอบว่าวางข้อความรายงานครบตั้งแต่ “เรียนผู้บังคับบัญชา” ถึงข้อ 7</div>`; return; }
+            const f = (v) => Number(v || 0).toLocaleString();
+            const rows = cmdRestoreParsed.map((r, i) => {
+                const rec = cmdRecordFromParsed(r);
+                const ok = cmdRestoreCheck(rec, r);
+                const ex = getCmdDaily()[r.date];
+                const exists = !!(ex && ex.base);
+                return `<label class="flex items-start gap-3 p-3 border-b last:border-0 cursor-pointer ${exists ? 'bg-gray-50' : ''}">
+                    <input type="checkbox" class="mt-1 w-4 h-4 accent-navy-900" data-cmdrestore="${i}" ${exists || !ok ? '' : 'checked'}>
+                    <span class="flex-grow min-w-0">
+                        <span class="font-bold text-navy-900"><i class="fa-regular fa-calendar-check text-gold-600 mr-1"></i>${formatThaiDate(r.date)}${r.s3EndDate && r.s3EndDate !== r.date ? ` → ${formatThaiDate(r.s3EndDate)}` : ''}</span>
+                        ${exists ? '<span class="ml-1 text-[11px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">มียอดของวันนี้อยู่แล้ว — ติ๊กเพื่อเขียนทับ</span>' : '<span class="ml-1 text-[11px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">ยอดที่หายไป</span>'}
+                        <span class="block text-xs text-gray-600 mt-0.5">ข้อ 3: ตาย <b>${f(r.sec3Total.dead)}</b> บาดเจ็บ <b>${f(r.sec3Total.injured)}</b> • ข้อ 4: ${f(r.sec4Total.dead)}/${f(r.sec4Total.injured)} • ข้อ 5: ${f(r.sec5.dead)}/${f(r.sec5.injured)} • ข้อ 6: ${f(r.sec6.dead)}/${f(r.sec6.injured)}</span>
+                        <span class="block text-[11px] mt-0.5 ${ok ? 'text-emerald-700' : 'text-red-600'}">${ok ? '<i class="fa-solid fa-circle-check mr-1"></i>ตรวจยอดแล้ว ตรงกับข้อความทุกข้อ' : '<i class="fa-solid fa-triangle-exclamation mr-1"></i>ยอดบางข้อคำนวณไม่ตรง (ชื่อพื้นที่อาจต่างจากในระบบ) — ตรวจสอบก่อนกู้คืน'}</span>
+                    </span>
+                </label>`;
+            }).join('');
+            box.innerHTML = `<div class="text-xs text-gray-500 mb-1.5">อ่านได้ ${cmdRestoreParsed.length} วัน${bad > 0 ? ` • อ่านไม่ได้ ${bad} ฉบับ` : ''} — ติ๊กเลือกวันที่ต้องการกู้คืน</div><div class="border rounded-xl bg-white overflow-hidden">${rows}</div>`;
+        }
+        function submitCmdRestore() {
+            const picks = Array.from(document.querySelectorAll('[data-cmdrestore]')).filter(cb => cb.checked).map(cb => cmdRestoreParsed[+cb.dataset.cmdrestore]).filter(Boolean);
+            if (!picks.length) { showStatusPopup('ยังไม่ได้เลือกวัน', 'วางข้อความรายงานแล้วติ๊กเลือกวันที่ต้องการกู้คืน', 'edit', 2200); return; }
+            const daily = getCmdDaily();
+            const first = picks[0].date;
+            picks.forEach(r => { daily[r.date] = cmdRecordFromParsed(r); });
+            // คงยอดสะสมของทุกวันตั้งแต่วันแรกที่กู้คืน (คำนวณส่วนต่างกับวันก่อนหน้าใหม่ ไม่ให้นับซ้ำ)
+            cmdDailyList().forEach(rec => { if (rec.date >= first) rec.corr = null; });
+            cmdRechain();
+            refreshCmdWorkingDayFromLedger();
+            saveCmdReportState(false);
+            saveDB();
+            closeModal();
+            render();
+            showStatusPopup('กู้คืนยอดรายวันเรียบร้อย', `กู้คืน ${picks.length} วัน: ${picks.map(r => formatThaiDate(r.date)).join(', ')} และซิงค์ขึ้น Google Sheet แล้ว`, 'success', 3200);
         }
 
         function openCmdDayRecord(iso) {
@@ -3836,7 +4015,7 @@
         function cmdSaveBadgeHtml() {
             const st = cmdReportState;
             const rec = getCmdDaily()[st.sec3StartDate];
-            if (rec && !st.dayDirty) {
+            if (rec && rec.base && !st.dayDirty) {
                 const t = new Date(rec.savedAt || Date.now());
                 const when = `${formatThaiDate(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`)} ${String(t.getHours()).padStart(2, '0')}.${String(t.getMinutes()).padStart(2, '0')} น.`;
                 return `<span class="text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i>บันทึกยอดวันนี้แล้ว (${when})</span>`;
@@ -3917,7 +4096,7 @@
             switchCmdDay(nextStr, false);
             activeThaiCalPicker = null;
             saveCmdReportState(false);
-            const hasRec = !!getCmdDaily()[nextStr];
+            const hasRec = !!(getCmdDaily()[nextStr] && getCmdDaily()[nextStr].base);
             showStatusPopup('ขึ้นวันถัดไปเรียบร้อย',
                 hasRec ? `บันทึกยอดวันที่ ${formatThaiDate(cur)} แล้ว และเปิดยอดที่บันทึกไว้ของวันที่ ${formatThaiDate(nextStr)}`
                        : `บันทึกยอดวันที่ ${formatThaiDate(cur)} แล้ว ทบยอดสะสมเข้าข้อ 4-6 รีเซ็ตข้อ 3 เป็น 0 และดึงหัวหน้าชุดจากเวร ว.5 แล้ว`, 'success');
@@ -4353,6 +4532,9 @@
                                 <h3 class="font-bold text-navy-900 text-sm sm:text-base"><i class="fa-solid fa-clock-rotate-left text-gold-600 mr-1.5"></i>ยอดที่บันทึกไว้รายวัน</h3>
                                 <span class="text-[11px] text-gray-500">กด "เปิด" เพื่อดู/แก้ไขยอดของวันนั้น</span>
                             </div>
+                            <button type="button" onclick="openCmdRestoreModal()" class="w-full py-2 rounded-xl border border-dashed border-gold-500 bg-amber-50/50 hover:bg-amber-50 text-navy-900 text-xs sm:text-sm font-semibold">
+                                <i class="fa-solid fa-clock-rotate-left text-gold-600 mr-1.5"></i>กู้คืนยอดรายวันจากข้อความรายงานที่ส่ง LINE แล้ว
+                            </button>
                             ${renderCmdHistory()}
                         </div>
                     </div>
@@ -7217,6 +7399,7 @@ ${st.leader2Name}
             if (type === 'missionAnalyze') { submitMissionAnalysis(); return; }
             if (type === 'gcalSettings') { submitGcalSettings(); return; }
             if (type === 'aiSettings') { submitAiSettings(); return; }
+            if (type === 'cmdRestore') { submitCmdRestore(); return; }
             if (String(type).startsWith('vc') && typeof vcHandleModalSubmit === 'function') { vcHandleModalSubmit(currentModalContext); return; }
             let afterSaveNav = null;
             let afterMission = null;
@@ -9915,7 +10098,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.5.0';
+        const APP_VERSION = '2.5.1';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
