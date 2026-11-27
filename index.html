@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.7.1: ช่องผู้ตรวจเช็ค (ตรวจเช็คสภาพรถ) ดึงรายชื่อกำลังพลทั้งหมดตั้งแต่ ด.ต. ถึง ส.ต.ต. เรียงตามยศ พร้อมแสดงจำนวน">
-    <meta name="app-version" content="2.7.1">
+    <meta name="app-update-note" content="อัปเดต v2.8.0: ส่งออกรายงานยานพาหนะ (ผลการตรวจสภาพ / สถานะรถ) เลือกได้ว่าจะใส่รายละเอียดใดบ้างก่อนส่งออก พร้อมดูตัวอย่างทันที • หน้าแรกผู้ดูแลระบบเพิ่มเมนูลัด รายงานผู้บังคับบัญชา และรายงาน ทม.">
+    <meta name="app-version" content="2.8.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -2291,6 +2291,37 @@
                         </button>
                     </div>
                     <div id="globalSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gold-500/40 overflow-hidden z-40"></div>
+                </div>
+
+                <!-- v2.8.0: เมนูลัด รายงานผู้บังคับบัญชา / รายงาน ทม. -->
+                <div class="mb-6 sm:mb-8">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-bolt text-gold-600"></i>
+                        <span class="text-sm font-bold text-navy-900">เมนูลัด</span>
+                        <span class="text-xs text-gray-500">จัดทำรายงานส่งทาง LINE ได้ทันที</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div onclick="navigate('report_commander')" class="nav-btn-card glass-card gold-border-top rounded-2xl p-4 sm:p-5 cursor-pointer flex items-center gap-4">
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-xl sm:text-2xl shadow-md border border-gold-500/20 shrink-0">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                            </div>
+                            <div class="min-w-0 flex-grow">
+                                <h3 class="text-base sm:text-lg font-bold text-navy-900">รายงานผู้บังคับบัญชา</h3>
+                                <p class="text-gray-500 text-xs sm:text-sm font-body">ผลการปฏิบัติ ชป.นก • ยอดสะสมรายพื้นที่และหัวหน้าชุด</p>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-gold-500 shrink-0"></i>
+                        </div>
+                        <div onclick="navigate('report_tm')" class="nav-btn-card glass-card gold-border-top rounded-2xl p-4 sm:p-5 cursor-pointer flex items-center gap-4">
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-xl sm:text-2xl shadow-md border border-gold-500/20 shrink-0">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+                            <div class="min-w-0 flex-grow">
+                                <h3 class="text-base sm:text-lg font-bold text-navy-900">รายงาน ทม.</h3>
+                                <p class="text-gray-500 text-xs sm:text-sm font-body">พื้นที่ปฏิบัติการ กำลังพล และอาวุธปืน</p>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-gold-500 shrink-0"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
@@ -10201,7 +10232,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.7.1';
+        const APP_VERSION = '2.8.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -13389,77 +13420,200 @@ ${st.leader2Name}
         }
 
         // ---------- 7) ส่งออกผลการตรวจสภาพ (ภาพ / ข้อความ) ----------
+        // v2.8.0: ผู้ดูแลระบบเลือกได้ว่าจะใส่รายละเอียดใดบ้างก่อนส่งออก (จำค่าไว้ในเครื่องสำหรับครั้งถัดไป)
+        const XP_SCOPE_LABEL = { img: 'ภาพ', txt: 'ข้อความ', both: 'ภาพ + ข้อความ' };
+        const XP_OPT_DEFS = {
+            vcx: [
+                { k: 'info', label: 'ข้อมูลรอบการตรวจ', hint: 'เวลา ทีม และรายชื่อผู้ตรวจ', scope: 'both', def: true, min: true },
+                { k: 'summary', label: 'สรุปจำนวนตามสภาพ', hint: 'กล่องสรุป ตรวจแล้ว / พร้อม / เฝ้าระวัง / งดใช้', scope: 'img', def: true },
+                { k: 'vtype', label: 'ประเภทรถ', hint: 'แสดงใต้ชื่อยานพาหนะ', scope: 'img', def: true },
+                { k: 'mileage', label: 'เลขไมล์', hint: 'เลขไมล์ขณะตรวจ (กม.)', scope: 'img', def: true },
+                { k: 'systems', label: 'ผลรายระบบ', hint: 'จุดสีแต่ละระบบ พร้อมคำอธิบายสี', scope: 'img', def: true },
+                { k: 'note', label: 'หมายเหตุ / สิ่งที่ต้องแก้ไข', hint: 'สรุปปัญหาและการดำเนินการของแต่ละคัน', scope: 'both', def: true, min: true },
+                { k: 'photo', label: 'ภาพยานพาหนะ', hint: 'ภาพถ่ายรถหน้าชื่อรถ', scope: 'img', def: false },
+                { k: 'inspector', label: 'ผู้ตรวจและเวลารายคัน', hint: 'ชื่อผู้ตรวจ และเวลาที่ตรวจแต่ละคัน', scope: 'both', def: false },
+                { k: 'flagged', label: 'รายการผิดปกติรายข้อ', hint: 'ระบุหมวด/หัวข้อที่ต้องเฝ้าระวังหรือชำรุด', scope: 'both', def: false },
+                { k: 'pending', label: 'รวมรถที่ยังไม่ได้ตรวจ', hint: 'แสดงรถที่ยังไม่มีผลการตรวจในรอบนี้', scope: 'both', def: false }
+            ],
+            vsx: [
+                { k: 'summary', label: 'สรุปจำนวนตามสถานะ', hint: 'จำนวนรถแยกตามสถานะ', scope: 'both', def: true, min: true },
+                { k: 'photo', label: 'ภาพยานพาหนะ', hint: 'ภาพถ่ายรถในตาราง', scope: 'img', def: true },
+                { k: 'vtype', label: 'ประเภทรถ', hint: 'คอลัมน์ประเภทรถ', scope: 'img', def: true },
+                { k: 'note', label: 'หมายเหตุ', hint: 'หมายเหตุของรถแต่ละคัน', scope: 'both', def: true, min: true },
+                { k: 'lastCheck', label: 'ผลการตรวจสภาพล่าสุด', hint: 'วันที่ตรวจล่าสุดและสภาพรถ', scope: 'both', def: false },
+                { k: 'mileage', label: 'เลขไมล์ล่าสุด', hint: 'จากผลการตรวจสภาพครั้งล่าสุด', scope: 'both', def: false }
+            ]
+        };
+        const XP_OPT_STORE = 'hanuman_xp_opts';
+        let xpTextFns = {};
+        function xpOpts(prefix) {
+            let all = {};
+            try { all = JSON.parse(localStorage.getItem(XP_OPT_STORE) || '{}') || {}; } catch (e) {}
+            const saved = all[prefix] || {};
+            const o = {};
+            (XP_OPT_DEFS[prefix] || []).forEach(d => { o[d.k] = typeof saved[d.k] === 'boolean' ? saved[d.k] : d.def; });
+            return o;
+        }
+        function xpSetOpts(prefix, o) {
+            try {
+                const all = JSON.parse(localStorage.getItem(XP_OPT_STORE) || '{}') || {};
+                all[prefix] = o;
+                localStorage.setItem(XP_OPT_STORE, JSON.stringify(all));
+            } catch (e) {}
+        }
+        function xpOptsItemsHtml(prefix) {
+            const o = xpOpts(prefix);
+            return (XP_OPT_DEFS[prefix] || []).map(d => `
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border-2 cursor-pointer bg-white ${o[d.k] ? 'border-gold-500' : 'border-gray-200'}">
+                    <input type="checkbox" ${o[d.k] ? 'checked' : ''} onchange="xpToggleOpt('${prefix}', '${d.k}', this.checked)" class="w-4 h-4 mt-0.5 accent-navy-900 shrink-0">
+                    <span class="min-w-0 leading-snug">
+                        <span class="block text-xs sm:text-sm font-bold text-navy-900">${d.label}</span>
+                        <span class="hidden sm:block text-[11px] text-gray-500">${d.hint}</span>
+                        <span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-gray-100 text-[10px] text-gray-600 font-semibold">${XP_SCOPE_LABEL[d.scope]}</span>
+                    </span>
+                </label>`).join('');
+        }
+        function xpOptsHtml(prefix) {
+            const btn = 'px-2.5 py-1 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-xs font-semibold text-navy-900';
+            return `
+                <div class="rounded-2xl border border-gold-500/40 bg-amber-50/50 p-3 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="text-sm font-bold text-navy-900"><i class="fa-solid fa-list-check text-gold-600 mr-1.5"></i>เลือกรายละเอียดที่จะใส่ในรายงาน</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="xpOptsPreset('${prefix}', 'all')" class="${btn}">เลือกทั้งหมด</button>
+                            <button type="button" onclick="xpOptsPreset('${prefix}', 'min')" class="${btn}">แบบย่อ</button>
+                            <button type="button" onclick="xpOptsPreset('${prefix}', 'def')" class="${btn}">ค่าเริ่มต้น</button>
+                        </div>
+                    </div>
+                    <div id="${prefix}Opts" class="grid grid-cols-2 lg:grid-cols-3 gap-2">${xpOptsItemsHtml(prefix)}</div>
+                    <div class="text-[11px] text-gray-500"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>ระบบจำตัวเลือกไว้สำหรับการส่งออกครั้งถัดไป • เปลี่ยนตัวเลือกแล้วข้อความจะสร้างใหม่ (ข้อความที่แก้ไขเองจะถูกแทนที่)</div>
+                </div>`;
+        }
+        function xpToggleOpt(prefix, k, on) {
+            const o = xpOpts(prefix);
+            o[k] = !!on;
+            xpSetOpts(prefix, o);
+            xpOptsChanged(prefix);
+        }
+        function xpOptsPreset(prefix, mode) {
+            const o = {};
+            (XP_OPT_DEFS[prefix] || []).forEach(d => { o[d.k] = mode === 'all' ? true : mode === 'min' ? !!d.min : d.def; });
+            xpSetOpts(prefix, o);
+            xpOptsChanged(prefix);
+        }
+        function xpOptsChanged(prefix) {
+            const box = document.getElementById(prefix + 'Opts');
+            if (box) box.innerHTML = xpOptsItemsHtml(prefix);
+            const ta = document.getElementById(prefix + 'Text');
+            if (ta && xpTextFns[prefix]) ta.value = xpTextFns[prefix]();
+            const pane = document.getElementById(prefix + 'PaneImg');
+            if (pane && !pane.classList.contains('hidden') && xpPreviewFns[prefix]) xpPreviewFns[prefix]();
+        }
+        function xpPhotoCell(v, dim) {
+            return `<td class="ctr" style="width:78px"><img src="${escHtml(vcPhoto(v))}" crossorigin="anonymous" style="width:66px;height:44px;object-fit:cover;border-radius:6px;display:block;margin:auto;background:#0a1128${dim ? ';filter:grayscale(1)' : ''}"></td>`;
+        }
+        // รายการผิดปกติรายข้อ: [{ head: 'ยาง/ล้อ • ลมยาง', lv: 'ควรเฝ้าระวัง / เติมลมเพิ่ม', n, s }]
+        function vcFlaggedDetail(rec) {
+            return vcFlagged(rec, 1).map(f => ({ head: `${f.sec.short} • ${f.it.s || f.it.t}`, lv: (f.sec.levels && f.sec.levels[f.s]) || (f.s === 2 ? 'ชำรุด/ต้องซ่อม' : 'ควรเฝ้าระวัง'), n: f.n, s: f.s }));
+        }
+
         function vcExportName(v) { return vcVehLabel(v); }
+        function vcExportRows(date, o) { return vcRoundRows(date).filter(x => x.rec || o.pending); }
         function buildVcReportText(date) {
+            const o = xpOpts('vcx');
             const meta = vcRoundMeta(date);
-            const rows = vcRoundRows(date).filter(x => x.rec);
+            const rows = vcExportRows(date, o);
             const isToday = date === todayIso();
-            const teamTxt = meta.teams.length ? `กำลังพล${meta.teams.map(teamLabelOf).join(', ')}` : 'กำลังพล';
+            const teamTxt = o.info && meta.teams.length ? `กำลังพล${meta.teams.map(teamLabelOf).join(', ')}` : 'กำลังพล';
             const L = [];
             L.push('เรียน ผู้บังคับบัญชา', '');
-            L.push(`       ${isToday ? 'วันนี้' : 'เมื่อวันที่'} (${fmtThaiDMY(date)})${meta.time ? ` เวลา ${fmtTime(meta.time)}` : ''}`);
+            L.push(`       ${isToday ? 'วันนี้' : 'เมื่อวันที่'} (${fmtThaiDMY(date)})${o.info && meta.time ? ` เวลา ${fmtTime(meta.time)}` : ''}`);
             L.push(`${teamTxt} ทำการตรวจสภาพรถฯ ประจำสัปดาห์`);
             L.push('ผลการตรวจฯ ', '');
             rows.forEach(({ v, rec }, i) => {
-                const note = vcRecNote(rec);
                 L.push(`  (${i + 1}.)${vcExportName(v)}`);
                 L.push(`         :: ทะเบียน ${v.plate || '-'}`);
+                if (!rec) {
+                    L.push(`        ⏳ สภาพ : ยังไม่ได้ตรวจ`);
+                    L.push('');
+                    return;
+                }
+                if (o.inspector && rec.inspectorName) L.push(`         :: ผู้ตรวจ ${rec.inspectorName}${rec.time ? ` เวลา ${fmtTime(rec.time)}` : ''}`);
+                const note = o.note ? vcRecNote(rec) : '';
                 if (rec.overall === 'grounded') {
                     L.push(`        ❌ สภาพ : ไม่พร้อมใช้งาน${note ? ' ' + note : ''}`);
                 } else {
                     L.push(`        ✅ สภาพ : พร้อมใช้งาน`);
                     if (note) L.push(`*${note}`);
                 }
+                if (o.flagged) vcFlaggedDetail(rec).forEach(f => L.push(`        ${f.s === 2 ? '🔴' : '🟡'} ${f.head} : ${f.lv}${f.n ? ` (${f.n})` : ''}`));
                 L.push('');
             });
             L.push('', '        จึงเรียนมาเพื่อโปรดทราบ');
             return L.join('\n');
         }
         function buildVcSheetHtml(date) {
+            const o = xpOpts('vcx');
             const meta = vcRoundMeta(date);
-            const rows = vcRoundRows(date).filter(x => x.rec);
-            const cnt = k => rows.filter(r => r.rec.overall === k).length;
+            const rows = vcExportRows(date, o);
+            const checked = rows.filter(r => r.rec);
+            const cnt = k => checked.filter(r => r.rec.overall === k).length;
             const dotC = ['#10b981', '#f59e0b', '#ef4444'];
             const st = {
                 ready: ['#d1fae5', '#065f46', '✔ พร้อมใช้งาน'],
                 usable: ['#fef3c7', '#92400e', '⚠ ใช้งานได้ (เฝ้าระวัง)'],
-                grounded: ['#fee2e2', '#991b1b', '✖ งดใช้งานชั่วคราว']
+                grounded: ['#fee2e2', '#991b1b', '✖ งดใช้งานชั่วคราว'],
+                pending: ['#f1f5f9', '#475569', '⏳ ยังไม่ได้ตรวจ']
             };
+            const showNoteCol = o.note || o.flagged;
             const tile = (l, n, c, bg) => `<div style="flex:1;border-radius:12px;padding:10px 12px;background:${bg};border:1px solid ${c}33"><div style="font-size:12px;color:#475569;font-weight:600">${l}</div><div style="font:700 22px 'Prompt',sans-serif;color:${c}">${n} <span style="font-size:12px;color:#64748b;font-weight:500">คัน</span></div></div>`;
             const body = rows.map(({ v, rec }, i) => {
-                const s = st[rec.overall] || st.usable;
-                const note = vcRecNote(rec);
-                const dots = vcSections().map(sec => { const w = vcSecWorst(rec, sec); return `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${w < 0 ? '#cbd5e1' : dotC[w]}"></span>`; }).join('');
+                const s = rec ? (st[rec.overall] || st.usable) : st.pending;
+                const dots = rec ? vcSections().map(sec => { const w = vcSecWorst(rec, sec); return `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${w < 0 ? '#cbd5e1' : dotC[w]}"></span>`; }).join('') : '<span style="color:#94a3b8">-</span>';
+                let noteHtml = '';
+                if (rec && o.note) { const note = vcRecNote(rec); noteHtml += `<div style="color:${rec.overall === 'grounded' ? '#991b1b' : '#334155'}">${escHtml(note || '-')}</div>`; }
+                if (rec && o.flagged) {
+                    const fl = vcFlaggedDetail(rec);
+                    if (fl.length) noteHtml += `<div style="margin-top:${o.note ? 4 : 0}px;font-size:11.5px;line-height:1.45">${fl.map(f => `<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotC[f.s]};margin-right:4px"></span><b>${escHtml(f.head)}</b> : ${escHtml(f.lv)}${f.n ? ` <span style="color:#64748b">(${escHtml(f.n)})</span>` : ''}</div>`).join('')}</div>`;
+                    else if (!o.note) noteHtml = '<div style="color:#94a3b8">-</div>';
+                }
+                if (!rec) noteHtml = '<div style="color:#94a3b8">-</div>';
+                const sub = [o.vtype ? escHtml(v.type || '') : '', o.inspector && rec && rec.inspectorName ? `ผู้ตรวจ: ${escHtml(rec.inspectorName)}${rec.time ? ` (${escHtml(fmtTime(rec.time))})` : ''}` : ''].filter(Boolean);
                 return `<tr>
                     <td class="ctr">${i + 1}</td>
-                    <td><div style="font-weight:700">${escHtml(vcExportName(v))}</div><div style="font-size:11.5px;color:#64748b">${escHtml(v.type || '')}</div></td>
+                    ${o.photo ? xpPhotoCell(v, rec && rec.overall === 'grounded') : ''}
+                    <td><div style="font-weight:700">${escHtml(vcExportName(v))}</div>${sub.map(x => `<div style="font-size:11.5px;color:#64748b">${x}</div>`).join('')}</td>
                     <td class="ctr" style="white-space:nowrap;font-weight:700">${escHtml(v.plate || '-')}</td>
-                    <td class="ctr" style="white-space:nowrap">${escHtml(rec.mileage || '-')}</td>
-                    <td class="ctr"><div style="display:flex;gap:5px;justify-content:center">${dots}</div></td>
+                    ${o.mileage ? `<td class="ctr" style="white-space:nowrap">${escHtml((rec && rec.mileage) || '-')}</td>` : ''}
+                    ${o.systems ? `<td class="ctr"><div style="display:flex;gap:5px;justify-content:center">${dots}</div></td>` : ''}
                     <td class="ctr"><span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${s[0]};color:${s[1]};font-weight:700;font-size:12.5px;white-space:nowrap">${s[2]}</span></td>
-                    <td style="font-size:12.5px;color:${rec.overall === 'grounded' ? '#991b1b' : '#334155'}">${escHtml(note || '-')}</td>
+                    ${showNoteCol ? `<td style="font-size:12.5px">${noteHtml}</td>` : ''}
                 </tr>`;
             }).join('');
-            const sub = `${escHtml(formatThaiDateFullYear(date))}${meta.time ? ` เวลา ${escHtml(fmtTime(meta.time))}` : ''}${meta.teams.length ? ` • ${escHtml(meta.teams.map(teamLabelOf).join(', '))}` : ''}${meta.names.length ? ` • ผู้ตรวจ: ${escHtml(meta.names.join(', '))}` : ''}`;
+            const subParts = [escHtml(formatThaiDateFullYear(date)) + (o.info && meta.time ? ` เวลา ${escHtml(fmtTime(meta.time))}` : '')];
+            if (o.info && meta.teams.length) subParts.push(escHtml(meta.teams.map(teamLabelOf).join(', ')));
+            if (o.info && meta.names.length) subParts.push(`ผู้ตรวจ: ${escHtml(meta.names.join(', '))}`);
+            const head = `<th class="ctr" style="width:34px">#</th>${o.photo ? '<th class="ctr">ภาพ</th>' : ''}<th style="width:${o.photo || o.flagged ? 190 : 230}px;min-width:170px">ยานพาหนะ</th><th class="ctr">ทะเบียน</th>${o.mileage ? '<th class="ctr" style="white-space:nowrap">เลขไมล์ (กม.)</th>' : ''}${o.systems ? '<th class="ctr" style="width:120px">ผลรายระบบ</th>' : ''}<th class="ctr">สภาพ</th>${showNoteCol ? `<th style="min-width:${o.flagged ? 230 : 140}px">${o.note ? 'หมายเหตุ' : 'รายการผิดปกติ'}</th>` : ''}`;
             return `<div class="xp-sheet">
-                ${xpHeadHtml('VEHICLE INSPECTION REPORT', 'ผลการตรวจสภาพยานพาหนะ ประจำสัปดาห์', sub)}
-                <div style="display:flex;gap:10px;margin-bottom:14px">
-                    ${tile('ตรวจแล้ว', rows.length, '#0a1128', '#f8fafc')}
+                ${xpHeadHtml('VEHICLE INSPECTION REPORT', 'ผลการตรวจสภาพยานพาหนะ ประจำสัปดาห์', subParts.join(' • '))}
+                ${o.summary ? `<div style="display:flex;gap:10px;margin-bottom:14px">
+                    ${tile('ตรวจแล้ว', checked.length, '#0a1128', '#f8fafc')}
                     ${tile('พร้อมใช้งาน', cnt('ready'), '#059669', '#ecfdf5')}
                     ${tile('ใช้งานได้ (เฝ้าระวัง)', cnt('usable'), '#d97706', '#fffbeb')}
                     ${tile('งดใช้งานชั่วคราว', cnt('grounded'), '#dc2626', '#fef2f2')}
-                </div>
+                    ${o.pending ? tile('ยังไม่ได้ตรวจ', rows.length - checked.length, '#475569', '#f1f5f9') : ''}
+                </div>` : ''}
                 <table class="xp-table">
-                    <thead><tr><th class="ctr" style="width:34px">#</th><th style="width:230px">ยานพาหนะ</th><th class="ctr">ทะเบียน</th><th class="ctr">เลขไมล์ (กม.)</th><th class="ctr" style="width:150px">ผลรายระบบ</th><th class="ctr">สภาพ</th><th>หมายเหตุ</th></tr></thead>
+                    <thead><tr>${head}</tr></thead>
                     <tbody>${body}</tbody>
                 </table>
-                <div style="font-size:11.5px;color:#64748b;margin-top:8px">ผลรายระบบ (เรียงจากซ้ายไปขวา): ${escHtml(vcSections().map(x => x.short).join(' • '))}</div>
+                ${o.systems ? `<div style="font-size:11.5px;color:#64748b;margin-top:8px">ผลรายระบบ (เรียงจากซ้ายไปขวา): ${escHtml(vcSections().map(x => x.short).join(' • '))}</div>
                 <div style="display:flex;gap:14px;font-size:11.5px;color:#64748b;margin-top:4px">
                     <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981"></span> ปกติ</span>
                     <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b"></span> ควรเฝ้าระวัง</span>
                     <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span> ชำรุด / ต้องซ่อม</span>
                     <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cbd5e1"></span> ไม่ได้ตรวจ</span>
-                </div>
+                </div>` : ''}
                 ${xpFootHtml()}
             </div>`;
         }
@@ -13506,8 +13660,9 @@ ${st.leader2Name}
             if (!date || !(db.vehicleChecks || []).some(r => r.date === date)) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ยังไม่มีผลการตรวจในวันที่เลือก', 'edit', 2200); return; }
             vcExportDate = date;
             xpPreviewFns.vcx = () => mountScaledPreview('vcxPreview', buildVcSheetHtml(vcExportDate), 960);
+            xpTextFns.vcx = () => buildVcReportText(vcExportDate);
             openModal('ส่งออกผลการตรวจสภาพยานพาหนะ — ดูตัวอย่างก่อนส่ง',
-                xpTabsHtml('vcx', 'ข้อความรายงานผู้บังคับบัญชา สรุปสภาพรถแต่ละคัน', buildVcReportText(date), 'exportVcImage'), { type: 'vcExport' });
+                xpOptsHtml('vcx') + xpTabsHtml('vcx', 'ข้อความรายงานผู้บังคับบัญชา สรุปสภาพรถแต่ละคัน', buildVcReportText(date), 'exportVcImage'), { type: 'vcExport' });
             setModalWide(true);
             document.getElementById('modalSaveBtn').classList.add('hidden');
             xpSwitchTab('vcx', 'img');
@@ -13534,46 +13689,71 @@ ${st.leader2Name}
             if (ui.status !== 'all') parts.push('สถานะ ' + ui.status);
             return parts.join(' • ');
         }
+        // ผลการตรวจสภาพครั้งล่าสุดของรถ (ใช้ในรายงานสถานะ)
+        function vehLastCheck(v) {
+            let best = null;
+            (db.vehicleChecks || []).forEach(r => {
+                if (r.vehicleId !== v.id) return;
+                const key = `${r.date || ''} ${r.time || ''}`;
+                if (!best || key > best.key) best = { key, r };
+            });
+            return best ? best.r : null;
+        }
         function buildVehStatusText() {
+            const o = xpOpts('vsx');
             const { ui, list } = vehExportList();
             const n = new Date();
             const L = ['เรียน ผู้บังคับบัญชา', '', '       รายงานสถานะยานพาหนะ'];
             L.push(`ข้อมูล ณ วันที่ ${fmtThaiDMY(todayIso())} เวลา ${pad2(n.getHours())}.${pad2(n.getMinutes())} น.`);
             L.push(`ประเภท : ${vehExportScope(ui)}`);
-            L.push(`รวม ${list.length} คัน | ` + VEH_STATUS_KEYS.map(k => `${VEH_EMOJI[k]} ${k} ${list.filter(v => vehStatusOf(v) === k).length}`).join(' | '), '');
+            if (o.summary) L.push(`รวม ${list.length} คัน | ` + VEH_STATUS_KEYS.map(k => `${VEH_EMOJI[k]} ${k} ${list.filter(v => vehStatusOf(v) === k).length}`).join(' | '));
+            else L.push(`รวม ${list.length} คัน`);
+            L.push('');
             list.forEach((v, i) => {
                 const k = vehStatusOf(v);
                 L.push(`  (${i + 1}.)${vcVehLabel(v)}`);
                 L.push(`         :: ทะเบียน ${v.plate || '-'}`);
                 L.push(`        ${VEH_EMOJI[k]} สถานะ : ${k}`);
-                if (v.note && String(v.note).trim()) L.push(`*${String(v.note).trim()}`);
+                if (o.lastCheck || o.mileage) {
+                    const r = vehLastCheck(v);
+                    if (o.lastCheck) L.push(`         :: ตรวจสภาพล่าสุด ${r ? `${fmtThaiDMY(r.date)} — ${(VC_OVERALL[r.overall] || VC_OVERALL.usable).short}` : 'ยังไม่มีผลการตรวจ'}`);
+                    if (o.mileage && r && r.mileage) L.push(`         :: เลขไมล์ ${r.mileage} กม.`);
+                }
+                if (o.note && v.note && String(v.note).trim()) L.push(`*${String(v.note).trim()}`);
                 L.push('');
             });
             L.push('', '        จึงเรียนมาเพื่อโปรดทราบ');
             return L.join('\n');
         }
         function buildVehStatusSheetHtml() {
+            const o = xpOpts('vsx');
             const { ui, list } = vehExportList();
             const col = { 'พร้อมใช้งาน': ['#d1fae5', '#065f46'], 'ปฏิบัติภารกิจ': ['#dbeafe', '#1e40af'], 'ซ่อมบำรุง': ['#fef3c7', '#92400e'], 'ไม่พร้อมใช้งาน': ['#fee2e2', '#991b1b'] };
+            const vcCol = { ready: '#059669', usable: '#d97706', grounded: '#dc2626' };
             const tile = (l, n, c) => `<div style="flex:1;border-radius:12px;padding:9px 12px;background:${c[0]};border:1px solid ${c[1]}22"><div style="font-size:12px;color:#475569;font-weight:600">${l}</div><div style="font:700 21px 'Prompt',sans-serif;color:${c[1]}">${n} <span style="font-size:12px;color:#64748b;font-weight:500">คัน</span></div></div>`;
             const rows = list.map((v, i) => {
                 const k = vehStatusOf(v), c = col[k];
+                const r = (o.lastCheck || o.mileage) ? vehLastCheck(v) : null;
                 return `<tr>
                     <td class="ctr">${i + 1}</td>
-                    <td class="ctr" style="width:78px"><img src="${escHtml(vcPhoto(v))}" crossorigin="anonymous" style="width:66px;height:44px;object-fit:cover;border-radius:6px;display:block;margin:auto;background:#0a1128"></td>
-                    <td>${escHtml(v.type || '-')}</td>
+                    ${o.photo ? xpPhotoCell(v, false) : ''}
+                    ${o.vtype ? `<td>${escHtml(v.type || '-')}</td>` : ''}
                     <td style="font-weight:700">${escHtml(v.brand || '-')}</td>
                     <td class="ctr" style="white-space:nowrap;font-weight:700">${escHtml(v.plate || '-')}</td>
                     <td class="ctr"><span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${c[0]};color:${c[1]};font-weight:700;font-size:12.5px;white-space:nowrap">${VEH_EMOJI[k]} ${k}</span></td>
-                    <td style="font-size:12.5px;color:#334155">${escHtml(v.note || '-')}</td>
+                    ${o.lastCheck ? `<td class="ctr" style="font-size:12px;white-space:nowrap">${r ? `<div>${escHtml(fmtThaiDMY(r.date))}</div><div style="font-weight:700;color:${vcCol[r.overall] || vcCol.usable}">${escHtml((VC_OVERALL[r.overall] || VC_OVERALL.usable).short)}</div>` : '<span style="color:#94a3b8">ยังไม่มีผล</span>'}</td>` : ''}
+                    ${o.mileage ? `<td class="ctr" style="white-space:nowrap">${escHtml((r && r.mileage) || '-')}</td>` : ''}
+                    ${o.note ? `<td style="font-size:12.5px;color:#334155">${escHtml(v.note || '-')}</td>` : ''}
                 </tr>`;
             }).join('');
+            const nCols = 4 + [o.photo, o.vtype, o.lastCheck, o.mileage, o.note].filter(Boolean).length;
+            const head = `<th class="ctr" style="width:34px">#</th>${o.photo ? '<th class="ctr">ภาพ</th>' : ''}${o.vtype ? '<th>ประเภท</th>' : ''}<th>ยี่ห้อ / รุ่น</th><th class="ctr">ทะเบียน</th><th class="ctr">สถานะ</th>${o.lastCheck ? '<th class="ctr">ตรวจสภาพล่าสุด</th>' : ''}${o.mileage ? '<th class="ctr">เลขไมล์ (กม.)</th>' : ''}${o.note ? '<th>หมายเหตุ</th>' : ''}`;
             return `<div class="xp-sheet">
                 ${xpHeadHtml('VEHICLE STATUS REPORT', 'รายงานสถานะยานพาหนะ', `${escHtml(vehExportScope(ui))} • รวม ${list.length} คัน`)}
-                <div style="display:flex;gap:10px;margin-bottom:14px">${VEH_STATUS_KEYS.map(k => tile(k, list.filter(v => vehStatusOf(v) === k).length, col[k])).join('')}</div>
+                ${o.summary ? `<div style="display:flex;gap:10px;margin-bottom:14px">${VEH_STATUS_KEYS.map(k => tile(k, list.filter(v => vehStatusOf(v) === k).length, col[k])).join('')}</div>` : ''}
                 <table class="xp-table">
-                    <thead><tr><th class="ctr" style="width:34px">#</th><th class="ctr">ภาพ</th><th>ประเภท</th><th>ยี่ห้อ / รุ่น</th><th class="ctr">ทะเบียน</th><th class="ctr">สถานะ</th><th>หมายเหตุ</th></tr></thead>
-                    <tbody>${rows || '<tr><td colspan="7" class="ctr" style="color:#94a3b8">ไม่มีข้อมูล</td></tr>'}</tbody>
+                    <thead><tr>${head}</tr></thead>
+                    <tbody>${rows || `<tr><td colspan="${nCols}" class="ctr" style="color:#94a3b8">ไม่มีข้อมูล</td></tr>`}</tbody>
                 </table>
                 ${xpFootHtml()}
             </div>`;
@@ -13582,8 +13762,9 @@ ${st.leader2Name}
             const { ui, list } = vehExportList();
             if (!list.length) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ไม่มีรถในประเภท/สถานะที่เลือก', 'edit', 2200); return; }
             xpPreviewFns.vsx = () => mountScaledPreview('vsxPreview', buildVehStatusSheetHtml(), 920);
-            openModal(`ส่งออกรายงานสถานะยานพาหนะ — ${escHtml(vehExportScope(ui))}`,
-                xpTabsHtml('vsx', 'ข้อความรายงานสถานะยานพาหนะตามประเภท/สถานะที่เลือก', buildVehStatusText(), 'exportVehStatusImage'), { type: 'vcExport' });
+            xpTextFns.vsx = () => buildVehStatusText();
+            openModal(`ส่งออกรายงานสถานะยานพาหนะ — ${vehExportScope(ui)}`,
+                xpOptsHtml('vsx') + xpTabsHtml('vsx', 'ข้อความรายงานสถานะยานพาหนะตามประเภท/สถานะที่เลือก', buildVehStatusText(), 'exportVehStatusImage'), { type: 'vcExport' });
             setModalWide(true);
             document.getElementById('modalSaveBtn').classList.add('hidden');
             xpSwitchTab('vsx', 'img');
