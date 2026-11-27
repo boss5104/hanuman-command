@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.7.0: ปรับสีปุ่มทั้งระบบเป็นโทนเรียบ เป็นทางการ — ปุ่มหลักสีกรมท่า ปุ่มรองสีขาวขอบเทา (สีที่บอกสถานะยังคงเดิม)">
-    <meta name="app-version" content="2.7.0">
+    <meta name="app-update-note" content="อัปเดต v2.7.1: ช่องผู้ตรวจเช็ค (ตรวจเช็คสภาพรถ) ดึงรายชื่อกำลังพลทั้งหมดตั้งแต่ ด.ต. ถึง ส.ต.ต. เรียงตามยศ พร้อมแสดงจำนวน">
+    <meta name="app-version" content="2.7.1">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -10201,7 +10201,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.7.0';
+        const APP_VERSION = '2.7.1';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -12520,24 +12520,33 @@ ${st.leader2Name}
             return `<div class="flex gap-2">
                 <div class="relative flex-grow">
                     <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gold-600 text-sm"></i>
-                    <input type="text" id="vc_insp_q" autocomplete="off" oninput="vcSearchPerson(this.value)" onfocus="vcSearchPerson(this.value)" placeholder="ค้นหาชื่อ / ชื่อเล่น / ยศ / ทีม" class="vc-inp" style="padding-left:2.4rem">
+                    <input type="text" id="vc_insp_q" autocomplete="off" oninput="vcSearchPerson(this.value)" onfocus="vcSearchPerson(this.value)" placeholder="แตะเพื่อดูรายชื่อ ด.ต. – ส.ต.ต. หรือพิมพ์ค้นหา ชื่อ / ชื่อเล่น / ยศ / ทีม" class="vc-inp" style="padding-left:2.4rem">
                     <div id="vc_insp_dd" class="vc-dd hidden"></div>
                 </div>
                 <button type="button" onclick="vcAddPersonModal()" class="px-3.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold shrink-0 shadow" title="เพิ่มชื่อหากไม่มีในข้อมูล"><i class="fa-solid fa-user-plus sm:mr-1.5"></i><span class="hidden sm:inline">เพิ่มชื่อ</span></button>
             </div>`;
         }
+        // v2.7.1: ผู้ตรวจเช็ค = กำลังพลชั้นประทวนทั้งหมด ด.ต. → จ.ส.ต. → ส.ต.อ. → ส.ต.ท. → ส.ต.ต.
+        function vcIsTrooperRank(p) {
+            const o = getRankOrder(p && p.rank);
+            if (o >= 9 && o < 14) return true;                       // ด.ต. (9) ... ส.ต.ต. (13) รวมยศที่มีวงเล็บต่อท้าย
+            return o === 999 && (p && p.category) === 'trooper';     // ไม่มียศ/ยศไม่รู้จัก แต่อยู่หมวดกำลังพลประทวน
+        }
+        function vcInspectorPool() { return sortPersonnelByRank((db.personnel || []).filter(vcIsTrooperRank)); }
         function vcSearchPerson(q) {
             const dd = document.getElementById('vc_insp_dd');
             if (!dd) return;
             const t = String(q || '').trim().toLowerCase();
-            const list = sortPersonnelByRank(db.personnel).filter(p => {
+            const pool = vcInspectorPool();
+            const list = pool.filter(p => {
                 if (!t) return true;
                 const hay = `${personFullName(p)} ${p.firstName || ''} ${p.lastName || ''} ${p.nickname || ''} ${teamLabelOf(p.team)} ${p.position || ''}`.toLowerCase();
                 return t.split(/\s+/).every(w => hay.includes(w));
-            }).slice(0, 30);
-            dd.innerHTML = list.length ? list.map(p => `
+            });
+            const head = `<div class="px-3 py-2 text-[11px] font-semibold text-gray-500 bg-gray-50 border-b sticky top-0 z-10">กำลังพล ด.ต. – ส.ต.ต. ${t ? `พบ ${list.length} จาก ${pool.length}` : `ทั้งหมด ${pool.length}`} นาย</div>`;
+            dd.innerHTML = list.length ? head + list.map(p => `
                 <button type="button" onmousedown="event.preventDefault()" onclick="vcPickPerson('${escHtml(p.id)}')">
-                    <img src="${escHtml(vcPersonPhoto(p))}" alt="">
+                    <img src="${escHtml(vcPersonPhoto(p))}" alt="" loading="lazy">
                     <span class="min-w-0 flex-grow">
                         <span class="block text-sm font-semibold text-navy-900 truncate">${escHtml(personFullName(p))}${p.nickname ? ` <span class="text-gray-500 font-normal">(${escHtml(p.nickname)})</span>` : ''}</span>
                         <span class="block text-[11px] text-gray-500 truncate">${escHtml(p.position || '-')}</span>
@@ -12661,7 +12670,7 @@ ${st.leader2Name}
                             </div>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-user-check text-gold-600 mr-1.5"></i>ผู้ตรวจเช็ค <span class="text-xs font-normal text-gray-500">(ดึงจากข้อมูลกำลังพล)</span></label>
+                            <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-user-check text-gold-600 mr-1.5"></i>ผู้ตรวจเช็ค <span class="text-xs font-normal text-gray-500">(ดึงจากข้อมูลกำลังพล ด.ต. – ส.ต.ต. ทั้งหมด)</span></label>
                             ${vcInspectorHtml()}
                         </div>
                     </div>
@@ -13064,7 +13073,7 @@ ${st.leader2Name}
                 <div class="grid grid-cols-3 gap-3">
                     <div><label class="block text-sm font-medium mb-1">ยศ</label>
                         <input type="text" id="vcp_rank" list="vcp_ranks" value="${escHtml(rank)}" class="vc-inp" placeholder="เช่น ส.ต.อ.">
-                        <datalist id="vcp_ranks">${ranks.map(x => `<option value="${x}">`).join('')}</datalist></div>
+                        <datalist id="vcp_ranks">${TROOPER_RANKS.map(x => `<option value="${x}">`).join('')}</datalist></div>
                     <div><label class="block text-sm font-medium mb-1">ชื่อ <span class="text-red-500">*</span></label><input type="text" id="vcp_first" value="${escHtml(first)}" class="vc-inp"></div>
                     <div><label class="block text-sm font-medium mb-1">นามสกุล</label><input type="text" id="vcp_last" value="${escHtml(last)}" class="vc-inp"></div>
                 </div>
