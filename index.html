@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.5.2: แก้ปัญหา iPhone กดรหัสผ่านเร็วๆ (เช่น 99) แล้วจอซูม • ปุ่มทั่วทั้งระบบไม่ซูมเมื่อแตะซ้ำเร็วๆ">
-    <meta name="app-version" content="2.5.2">
+    <meta name="app-update-note" content="อัปเดต v2.6.0: จัดหน้าจอมือถือใหม่ให้เรียบร้อยทุกหน้า — หัวแอปกระชับ ปุ่มเรียงเท่ากัน ตัวกรองจัดเป็นช่อง ตารางเวร/กำลังพลแสดงเป็นการ์ดไม่ล้นจอ ปฏิทินเวรหนุมานพอดีจอ • แก้ไอคอนที่ไม่แสดง">
+    <meta name="app-version" content="2.6.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -900,54 +900,123 @@
         .vc-vtog button.on { background: #0a1128; color: #f3d98b; box-shadow: 0 4px 10px -4px rgba(10,17,40,.6); }
         body.theme-dark .vc-vrow { border-color: #334155; } body.theme-dark .vc-vrow:hover { background: #273449; }
         body.theme-dark .vc-vtog { background: #0f172a; border-color: #334155; } body.theme-dark .vc-vtog button { color: #e2e8f0; }
+        /* ===== v2.6.0: จัดรูปแบบหน้าจอมือถือให้เรียบร้อย (ทุกหน้า) ===== */
+        @media (max-width: 639px) {
+            /* หัวแอป: ปุ่มขนาดเท่ากัน + ชื่อสั้น + ปุ่มโหมดจอเหลือปุ่มเดียว (แตะเพื่อสลับ) */
+            .app-head-row { padding-left: 12px !important; padding-right: 12px !important; height: 60px !important; }
+            .app-head-row .app-logo { width: 38px !important; height: 38px !important; }
+            .app-head-row .app-logo i { font-size: 16px; }
+            .app-head-actions { gap: 6px; }
+            .app-head-actions > * { margin-left: 0 !important; margin-right: 0 !important; }
+            .hdr-btn:not(.hidden) { width: 38px; height: 38px; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px !important; flex-shrink: 0; }
+            #authChip #authChipIcon { display: none; }
+            .theme-seg { padding: 0 !important; border-radius: 12px !important; height: 38px; }
+            .theme-seg button { width: 38px; height: 36px; justify-content: center; border-radius: 11px !important; }
+            .theme-seg button:not(.is-on) { display: none !important; }
+            .theme-seg button.is-on { background: transparent !important; box-shadow: none !important; }
+            #breadcrumbBar { top: 60px !important; }
+            #breadcrumbBar > div { padding-left: 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px; }
+            #breadcrumbs { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; min-width: 0; }
+            #breadcrumbs > * { flex-shrink: 0; }
+            #breadcrumbs > *:last-child { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+            main#appMain { padding-left: 14px; padding-right: 14px; padding-top: 18px; }
+
+            /* แถวปุ่มคำสั่ง: เรียงเป็นตาราง 2 คอลัมน์ ปุ่มกว้าง/สูงเท่ากัน */
+            .m-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; width: 100%; align-self: stretch !important; }
+            .m-actions > *:not(.hidden) { width: 100%; min-height: 42px; display: inline-flex !important; align-items: center; justify-content: center; text-align: center;
+                margin: 0 !important; padding: 8px 10px !important; line-height: 1.25; border-radius: 12px !important; font-size: 13px !important; }
+            .m-actions > *:last-child:nth-child(odd), .m-actions > .m-full, .m-actions > div { grid-column: 1 / -1; }
+            .m-actions > div { flex-wrap: wrap; gap: 6px; min-height: 0; }
+            .m-actions > div > button { padding: 6px 10px; }
+
+            /* แถบตัวกรอง: 2 คอลัมน์ ช่องกว้างเท่ากัน */
+            .m-filter { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px !important; align-items: end; padding: 14px !important; }
+            .m-filter > * { min-width: 0; width: 100%; margin-left: 0 !important; }
+            .m-filter select, .m-filter input, .m-filter .w-40 { width: 100% !important; min-width: 0 !important; }
+            .m-filter select { height: 40px; }
+            .m-filter .tdp-btn { height: 40px; width: 100%; font-size: 14px; }
+            .m-filter > button { height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+            .m-filter > .m-full { grid-column: 1 / -1; }
+            .m-seg { display: grid !important; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); width: 100%; }
+            .m-seg > button { height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+
+            /* ตารางข้อมูล → การ์ดทีละรายการ (ไม่ล้นจอ ไม่ต้องเลื่อนข้าง) */
+            table.m-cards, table.m-cards > tbody { display: block; width: 100%; }
+            table.m-cards > thead { display: none; }
+            table.m-cards > tbody > tr:not(.hidden) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; position: relative; padding: 12px 14px; }
+            table.m-cards > tbody > tr > td { padding: 0 !important; white-space: normal !important; }
+            table.m-cards > tbody > tr > td[colspan] { flex: 1 1 100%; padding: 14px 4px !important; }
+            table.m-cards > tbody > tr:has(> td.m-act) { padding-right: var(--m-act-w, 84px); min-height: 58px; }
+            table.m-cards td.m-act { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); display: flex; align-items: center; gap: 0; }
+            table.m-cards td.m-act > button { padding: 8px !important; margin: 0 !important; }
+            table.m-cards td.m-line { flex: 1 1 100%; min-width: 0; }
+            table.m-cards td[data-m]::before { content: attr(data-m); color: #64748b; font-size: 11px; font-weight: 500; margin-right: 6px; }
+            table.m-cards > tbody > tr:has(> td.m-media) { padding-left: 76px; min-height: 76px; }
+            table.m-cards td.m-media { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+            table.m-cards > tbody > tr:has(> td.m-cb) { padding-left: 44px; }
+            table.m-cards > tbody > tr:has(> td.m-cb):has(> td.m-media) { padding-left: 104px; }
+            table.m-cards td.m-cb { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: auto !important; }
+            table.m-cards > tbody > tr:has(> td.m-cb) > td.m-media { left: 42px; }
+            .m-hide { display: none !important; }
+
+            /* หัวการ์ด (ชื่อหัวข้อ + ปุ่มจัดการ) ให้ปุ่มชิดขวาเสมอ */
+            .m-cardhead { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+            .m-cardhead > :first-child { flex: 1 1 180px; min-width: 0; }
+
+            .vtab { font-size: 13px; padding: 10px 8px; gap: 7px; }
+            .vtab-bar { margin-bottom: 16px; }
+            footer.app-foot { padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); font-size: 11px; line-height: 1.7; }
+        }
+        body.theme-dark table.m-cards td[data-m]::before { color: #94a3b8; }
+        body.theme-dark .m-cardhead.bg-rose-50\/70 { background: rgba(159, 18, 57, .28); border-color: rgba(244, 63, 94, .3); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
     <!-- Top Luxury Header -->
     <header class="luxury-header text-white border-b-2 border-gold-500 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
+        <div class="app-head-row max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
             <div class="flex items-center space-x-3 sm:space-x-4 cursor-pointer min-w-0" onclick="navigate('home')">
-                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-navy-800 border-2 border-gold-500 flex items-center justify-center text-gold-400 gold-glow shrink-0">
+                <div class="app-logo w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-navy-800 border-2 border-gold-500 flex items-center justify-center text-gold-400 gold-glow shrink-0">
                     <i class="fa-solid fa-shield-halved text-lg sm:text-2xl"></i>
                 </div>
                 <div class="truncate">
-                    <h1 class="text-sm sm:text-xl font-bold tracking-wider text-white truncate">HANUMAN TACTICAL COMMAND</h1>
-                    <p class="text-[11px] sm:text-xs text-gold-400 font-light truncate">ระบบบริหารจัดการภารกิจ ตารางเวร และสถานะกำลังพล</p>
+                    <h1 class="text-[15px] sm:text-xl font-bold tracking-wider text-white truncate"><span class="sm:hidden">HANUMAN</span><span class="hidden sm:inline">HANUMAN TACTICAL COMMAND</span></h1>
+                    <p class="text-[10px] sm:text-xs text-gold-400 font-light truncate"><span class="sm:hidden">ศูนย์บัญชาการ</span><span class="hidden sm:inline">ระบบบริหารจัดการภารกิจ ตารางเวร และสถานะกำลังพล</span></p>
                 </div>
             </div>
             
-            <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+            <div class="app-head-actions flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
                 <span id="syncStatus" class="hidden xl:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-navy-800/90 text-gold-300 border border-gold-500/30">
-                    <i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> เชื่อมต่อฐานข้อมูลแล้ว
+                    <i class="fa-solid fa-cloud-arrow-up mr-1.5 text-emerald-400"></i> เชื่อมต่อฐานข้อมูลแล้ว
                 </span>
 
                 <!-- ปุ่มเลือกโหมดแสดงผล: ปกติ / Dark Mode / โหมดถนอมสายตา -->
-                <div class="flex items-center bg-navy-800/90 border border-white/15 rounded-xl p-0.5" title="เปลี่ยนโหมดหน้าจอ">
-                    <button type="button" id="themeBtn-light" onclick="setAppTheme('light')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="โหมดสว่างปกติ">
+                <div class="theme-seg flex items-center bg-navy-800/90 border border-white/15 rounded-xl p-0.5" title="เปลี่ยนโหมดหน้าจอ">
+                    <button type="button" id="themeBtn-light" onclick="themeTap('light')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="โหมดสว่างปกติ">
                         <i class="fa-solid fa-sun text-amber-300"></i>
                     </button>
-                    <button type="button" id="themeBtn-dark" onclick="setAppTheme('dark')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="Dark Mode (โหมดมืด)">
+                    <button type="button" id="themeBtn-dark" onclick="themeTap('dark')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="Dark Mode (โหมดมืด)">
                         <i class="fa-solid fa-moon text-indigo-300"></i>
                     </button>
-                    <button type="button" id="themeBtn-eyecare" onclick="setAppTheme('eyecare')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="โหมดถนอมสายตา">
+                    <button type="button" id="themeBtn-eyecare" onclick="themeTap('eyecare')" class="px-2 py-1.5 rounded-lg text-xs transition flex items-center gap-1" title="โหมดถนอมสายตา">
                         <i class="fa-solid fa-eye text-emerald-300"></i>
                     </button>
                 </div>
 
-                <button onclick="loadFromGoogleSheets(true)" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="รีเฟรชข้อมูลล่าสุดจาก Google Sheet">
+                <button onclick="loadFromGoogleSheets(true)" class="hdr-btn p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="รีเฟรชข้อมูลล่าสุดจาก Google Sheet">
                     <i class="fa-solid fa-rotate text-sm"></i>
                 </button>
-                <button onclick="openSettingsModal()" class="admin-only p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="ตั้งค่าการเชื่อมต่อ Google Sheet">
+                <button onclick="openSettingsModal()" class="hdr-btn admin-only p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="ตั้งค่าการเชื่อมต่อ Google Sheet">
                     <i class="fa-solid fa-gear text-sm"></i>
                 </button>
                 <!-- v2.4: ผู้ใช้ที่เข้าสู่ระบบ + ออกจากระบบ -->
-                <button type="button" id="authChip" onclick="authLogoutAsk()" class="hidden items-center gap-1.5 px-2.5 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 border border-white/10 text-xs text-gray-200 transition" title="ออกจากระบบ">
+                <button type="button" id="authChip" onclick="authLogoutAsk()" class="hdr-btn hidden items-center gap-1.5 px-2.5 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 border border-white/10 text-xs text-gray-200 transition" title="ออกจากระบบ">
                     <i id="authChipIcon" class="fa-solid fa-user-shield text-gold-400"></i>
                     <span id="authChipLabel" class="hidden md:inline font-semibold"></span>
                     <i class="fa-solid fa-right-from-bracket text-gray-400"></i>
                 </button>
-                <button onclick="navigate('home')" class="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm transition shadow-md">
+                <button onclick="navigate('home')" class="hdr-btn px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm transition shadow-md">
                     <i class="fa-solid fa-house sm:mr-1"></i> <span class="hidden sm:inline">หน้าหลัก</span>
                 </button>
             </div>
@@ -965,13 +1034,13 @@
     </div>
 
     <!-- Main Content Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <main id="appMain" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div id="appContent"></div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-navy-950 text-gray-400 py-4 text-center text-xs border-t border-gold-500/30">
-        <p>© 2026 HANUMAN SPECIAL OPERATIONS UNIT | ระบบฐานข้อมูลปฏิบัติการภายใน <span class="app-version-chip ml-1 app-version-label" title="เวอร์ชันโปรแกรม">v-</span></p>
+    <footer class="app-foot bg-navy-950 text-gray-400 py-4 text-center text-xs border-t border-gold-500/30">
+        <p>© 2026 HANUMAN SPECIAL OPERATIONS UNIT<span class="hidden sm:inline"> | </span><br class="sm:hidden">ระบบฐานข้อมูลปฏิบัติการภายใน <span class="app-version-chip ml-1 app-version-label" title="เวอร์ชันโปรแกรม">v-</span></p>
     </footer>
 
     <!-- Universal Modal for Add / Edit / Export Preview -->
@@ -1289,6 +1358,15 @@
         // ==========================================
         // 0.2 THEME MANAGEMENT (LIGHT / DARK / EYECARE)
         // ==========================================
+        // v2.6.0: บนมือถือแสดงเฉพาะปุ่มโหมดปัจจุบัน — แตะซ้ำเพื่อสลับ สว่าง → มืด → ถนอมสายตา
+        function themeTap(theme) {
+            const order = ['light', 'dark', 'eyecare'];
+            const cur = localStorage.getItem('hanuman_theme') || 'light';
+            if (theme === cur && window.matchMedia && window.matchMedia('(max-width: 639px)').matches) {
+                theme = order[(order.indexOf(cur) + 1) % order.length];
+            }
+            setAppTheme(theme);
+        }
         function setAppTheme(theme) {
             document.body.classList.remove('theme-dark', 'theme-eyecare');
             if (theme === 'dark') document.body.classList.add('theme-dark');
@@ -1298,6 +1376,7 @@
             ['light', 'dark', 'eyecare'].forEach(t => {
                 const btn = document.getElementById(`themeBtn-${t}`);
                 if (!btn) return;
+                btn.classList.toggle('is-on', t === theme);
                 if (t === theme) {
                     btn.classList.add('bg-gold-500/30', 'ring-1', 'ring-gold-400', 'font-bold');
                 } else {
@@ -1687,8 +1766,8 @@
                 loading: '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังโหลดข้อมูล...',
                 saving: '<i class="fa-solid fa-spinner fa-spin mr-1.5 text-gold-400"></i> กำลังบันทึกขึ้น Sheet...',
                 pending: '<i class="fa-solid fa-clock mr-1.5 text-amber-400"></i> รอบันทึกขึ้น Sheet',
-                saved: `<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> ซิงค์แล้ว ${time}`,
-                loaded: `<i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400"></i> อัปเดตจาก Sheet แล้ว ${time}`,
+                saved: `<i class="fa-solid fa-cloud-arrow-up mr-1.5 text-emerald-400"></i> ซิงค์แล้ว ${time}`,
+                loaded: `<i class="fa-solid fa-cloud-arrow-up mr-1.5 text-emerald-400"></i> อัปเดตจาก Sheet แล้ว ${time}`,
                 error: '<i class="fa-solid fa-triangle-exclamation mr-1.5 text-red-400"></i> ซิงค์ไม่สำเร็จ (ข้อมูลยังอยู่ในเครื่อง)',
                 offline: '<i class="fa-solid fa-database mr-1.5 text-amber-400"></i> ข้อมูลในเครื่อง (Offline)',
                 legacy: '<i class="fa-solid fa-circle-info mr-1.5 text-amber-400"></i> ส่งแล้ว (Apps Script เวอร์ชันเก่า ยืนยันผลไม่ได้)'
@@ -2240,7 +2319,7 @@
                     <div onclick="navigate('vehicles')" class="nav-btn-card glass-card gold-border-top rounded-2xl p-6 cursor-pointer flex flex-col justify-between">
                         <div>
                             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-2xl mb-5 shadow-md border border-gold-500/20 relative">
-                                <i class="fa-solid fa-truck-shield"></i>
+                                <i class="fa-solid fa-truck-field"></i>
                                 <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gold-500 text-navy-950 text-[10px] flex items-center justify-center font-bold shadow">
                                     <i class="fa-solid fa-car-side"></i>
                                 </span>
@@ -2323,7 +2402,7 @@
                     if (d.status === 'High') colorClass = 'bg-red-600 text-white';
                     if (d.status === 'Low') colorClass = 'bg-amber-500 text-navy-900 font-semibold';
                     if (d.status === 'Rest') colorClass = 'bg-emerald-600 text-white';
-                    return `<div class="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.5 rounded mb-1 truncate ${colorClass}">ทีม ${d.team} : ${d.status}</div>`;
+                    return `<div class="text-[10px] sm:text-[11px] px-1 sm:px-1.5 py-0.5 rounded mb-1 truncate text-center sm:text-left ${colorClass}" title="ทีม ${d.team} : ${d.status}"><span class="sm:hidden font-bold">${d.team}</span><span class="hidden sm:inline">ทีม ${d.team} : ${d.status}</span></div>`;
                 }).join('');
 
                 calendarCells += `
@@ -2342,13 +2421,13 @@
 
                 return `
                     <tr id="dh-row-${item.id}" class="hover:bg-gray-50 border-b transition">
-                        ${isBulk('dutyHanuman') ? `<td class="pl-4 py-3 w-8">${bulkCbHtml('dutyHanuman', item.id)}</td>` : ''}
+                        ${isBulk('dutyHanuman') ? `<td class="m-cb pl-4 py-3 w-8">${bulkCbHtml('dutyHanuman', item.id)}</td>` : ''}
                         <td class="px-4 py-3 font-bold text-navy-900 whitespace-nowrap">ทีม ${item.team}</td>
                         <td class="px-4 py-3 whitespace-nowrap">${statusBadge}</td>
-                        <td class="px-4 py-3 text-sm whitespace-nowrap">${formatThaiDateFullYear(item.startDate)}</td>
-                        <td class="px-4 py-3 text-sm whitespace-nowrap">${formatThaiDateFullYear(item.endDate)}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600">${item.note || '-'}</td>
-                        <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                        <td class="m-line px-4 py-3 text-sm whitespace-nowrap" data-m="ตั้งแต่">${formatThaiDateFullYear(item.startDate)}</td>
+                        <td class="m-line px-4 py-3 text-sm whitespace-nowrap" data-m="ถึง">${formatThaiDateFullYear(item.endDate)}</td>
+                        <td class="m-line px-4 py-3 text-sm text-gray-600 ${item.note ? '' : 'm-hide'}">${item.note || '-'}</td>
+                        <td class="m-act px-4 py-3 text-right space-x-2 whitespace-nowrap">
                             <button onclick="openDutyHanumanModal('${item.id}')" class="text-amber-600 hover:text-amber-800"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="deleteItem('dutyHanuman', '${item.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -2362,7 +2441,7 @@
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวรหนุมาน (ทีม A / B / C / D)</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">แสดงช่วงเวลาเข้าเวร High, Low และ Rest แบบปฏิทินและตารางสรุป • กด "จัดตารางเวรอัตโนมัติ" เพื่อจัดวนรอบหลายเดือนในครั้งเดียว</p>
                     </div>
-                    <div class="flex flex-wrap gap-2 self-start">
+                    <div class="m-actions flex flex-wrap gap-2 self-start">
                         <button onclick="openDutyHanumanAutoModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-navy-950 font-bold text-sm shadow flex items-center">
                             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> จัดตารางเวรอัตโนมัติ
                         </button>
@@ -2387,9 +2466,9 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <div class="min-w-[600px]">
+                        <div class="sm:min-w-[600px]">
                             <div class="grid grid-cols-7 bg-navy-900 text-white text-xs font-semibold text-center py-2.5 rounded-t-lg">
-                                <div class="text-red-300">อาทิตย์</div><div>จันทร์</div><div>อังคาร</div><div>พุธ</div><div>พฤหัสบดี</div><div>ศุกร์</div><div class="text-blue-300">เสาร์</div>
+                                <div class="text-red-300"><span class="sm:hidden">อา</span><span class="hidden sm:inline">อาทิตย์</span></div><div><span class="sm:hidden">จ</span><span class="hidden sm:inline">จันทร์</span></div><div><span class="sm:hidden">อ</span><span class="hidden sm:inline">อังคาร</span></div><div><span class="sm:hidden">พ</span><span class="hidden sm:inline">พุธ</span></div><div><span class="sm:hidden">พฤ</span><span class="hidden sm:inline">พฤหัสบดี</span></div><div><span class="sm:hidden">ศ</span><span class="hidden sm:inline">ศุกร์</span></div><div class="text-blue-300"><span class="sm:hidden">ส</span><span class="hidden sm:inline">เสาร์</span></div>
                             </div>
                             <div class="grid grid-cols-7 border-l border-t border-gray-200">
                                 ${calendarCells}
@@ -2404,7 +2483,7 @@
                         ${bulkBarHtml('dutyHanuman', 'รายการ')}
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="m-cards w-full text-left border-collapse" style="--m-act-w:80px">
                             <thead class="bg-gray-100 text-gray-700 text-xs uppercase">
                                 <tr>
                                     ${isBulk('dutyHanuman') ? '<th class="pl-4 py-3 w-8"></th>' : ''}
@@ -3364,7 +3443,7 @@
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ระบบจัดทำรายงาน ทม.</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">เลือกวันที่จากปฏิทินภาษาไทย จัดพื้นที่ กำลังพล และอาวุธปืน เพื่อส่งรายงานทาง LINE</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="m-actions flex flex-wrap gap-2">
                         <button type="button" onclick="copyTextToClipboard(buildTmReportText())" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow">
                             <i class="fa-regular fa-copy mr-1.5"></i> คัดลอกข้อความ
                         </button>
@@ -4182,11 +4261,11 @@
                     const on = periodKind === kind;
                     return `
                         <button type="button" onclick="setCmdPeriodPreset('${kind}')"
-                            class="relative w-full p-3 sm:p-3.5 rounded-xl border-2 text-left transition ${on ? 'bg-navy-900 border-gold-500 text-white shadow-lg ring-2 ring-gold-500/40' : 'bg-white border-navy-900/15 text-navy-900 hover:border-gold-500 hover:shadow'}">
+                            class="relative w-full p-3 pr-7 sm:p-3.5 sm:pr-8 rounded-xl border-2 text-left transition ${on ? 'bg-navy-900 border-gold-500 text-white shadow-lg ring-2 ring-gold-500/40' : 'bg-white border-navy-900/15 text-navy-900 hover:border-gold-500 hover:shadow'}">
                             ${on ? '<i class="fa-solid fa-circle-check absolute top-2 right-2 text-gold-400"></i>' : ''}
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid ${icon} text-lg ${on ? 'text-gold-400' : 'text-gold-600'}"></i>
-                                <span class="font-extrabold text-sm sm:text-base">${title}</span>
+                                <span class="font-extrabold text-[13px] sm:text-base whitespace-nowrap">${title}</span>
                             </div>
                             <div class="text-[11px] sm:text-xs mt-1 ${on ? 'text-gray-300' : 'text-gray-500'}">${sub}</div>
                         </button>`;
@@ -4414,7 +4493,7 @@
                         <p class="text-gray-500 text-xs sm:text-sm">หัวรายงานใช้ "ในวันที่" ของข้อ 3 • เลือก "ในวันที่" แล้ว "ถึงวันที่" เป็นวันถัดไป 07.00 น. อัตโนมัติ (แก้ไขได้) • ระบบบันทึกยอดให้อัตโนมัติทุกครั้งที่คัดลอก/ส่ง LINE (กด "บันทึกยอดวันนี้" ได้ตลอด) เลือกวันย้อนหลังเพื่อดูยอดที่บันทึก • แก้ยอดวันใด ยอดสะสมข้อ 4-6 ของวันถัดไปคำนวณใหม่ให้อัตโนมัติ</p>
                         <p id="cmdSaveBadge" class="text-xs font-semibold mt-1">${cmdSaveBadgeHtml()}</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="m-actions flex flex-wrap gap-2">
                         <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดวันนี้ แล้วขึ้นวันถัดไป (ยอดข้อ 3 สะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0)">
                             <i class="fa-solid fa-forward-step mr-1.5"></i> บันทึก & ขึ้นวันถัดไป
                         </button>
@@ -4905,11 +4984,11 @@ ${st.leader2Name}
                 const imgSrc = p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.firstName || 'P')}&background=0a1128&color=c5a059`;
                 return `
                     <tr id="person-row-${p.id}" class="border-b hover:bg-gray-50/90 transition">
-                        ${isBulk('personnel') ? `<td class="pl-4 py-3 w-8">${bulkCbHtml('personnel', p.id)}</td>` : ''}
-                        <td class="px-4 py-3">
+                        ${isBulk('personnel') ? `<td class="m-cb pl-4 py-3 w-8">${bulkCbHtml('personnel', p.id)}</td>` : ''}
+                        <td class="m-media px-4 py-3">
                             <img src="${imgSrc}" onerror="this.src='https://ui-avatars.com/api/?name=Officer&background=0a1128&color=c5a059'" class="w-12 h-12 rounded-full object-cover border-2 border-gold-500 shadow-sm">
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
+                        <td class="m-line px-4 py-3 whitespace-nowrap">
                             <div class="font-bold text-navy-900 text-sm sm:text-base">${p.rank} ${p.firstName} ${p.lastName}</div>
                             <div class="text-[11px] text-gray-500 sm:hidden">${p.position}</div>
                         </td>
@@ -4924,7 +5003,7 @@ ${st.leader2Name}
                             ${teamLabelOf(p.team) ? `<span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-navy-900">${teamLabelOf(p.team)}</span>` : '<span class="text-gray-400">-</span>'}
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">${p.note || '-'}</td>
-                        <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                        <td class="m-act px-4 py-3 text-right space-x-1 whitespace-nowrap">
                             <button onclick="openPersonnelModal('${p.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
                             ${isTeamView ? `
                                 <button onclick="removeFromTeam('${p.id}')" class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg" title="นำออกจากทีม"><i class="fa-solid fa-user-minus"></i></button>
@@ -4999,7 +5078,7 @@ ${st.leader2Name}
                         </p>
                         <p class="text-[11px] text-gold-600 font-medium mt-0.5"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i>${rankOrderHint}</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2.5">
+                    <div class="m-actions flex flex-wrap items-center gap-2.5">
                         ${isTeamView ? `
                             <button onclick="openPullPersonnelToTeamModal('${filter}')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm shadow-md flex items-center transition">
                                 <i class="fa-solid fa-download mr-2"></i> ดึงข้อมูลจากฐานข้อมูลกำลังพล
@@ -5030,7 +5109,7 @@ ${st.leader2Name}
 
                 <div class="glass-card rounded-2xl overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="m-cards w-full text-left border-collapse" style="--m-act-w:84px">
                             <thead class="bg-navy-900 text-white text-xs uppercase">
                                 <tr>
                                     ${isBulk('personnel') ? '<th class="pl-4 py-3.5 w-8"></th>' : ''}
@@ -6427,7 +6506,7 @@ ${st.leader2Name}
         // ==========================================
         function getVehicleTypeIcon(typeStr = '') {
             const t = typeStr.toLowerCase();
-            if (t.includes('เกราะ') || t.includes('armor')) return 'fa-truck-shield';
+            if (t.includes('เกราะ') || t.includes('armor')) return 'fa-truck-field';
             if (t.includes('กระบะ') || t.includes('4x4') || t.includes('pickup')) return 'fa-truck-pickup';
             if (t.includes('ตู้') || t.includes('van') || t.includes('ลำเลียง')) return 'fa-van-shuttle';
             if (t.includes('จักรยานยนต์') || t.includes('มอเตอร์ไซค์')) return 'fa-motorcycle';
@@ -6641,14 +6720,14 @@ ${st.leader2Name}
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3.5">
                         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-2xl shadow-md border border-gold-500/30 shrink-0">
-                            <i class="fa-solid fa-truck-shield"></i>
+                            <i class="fa-solid fa-truck-field"></i>
                         </div>
                         <div>
                             <h2 class="text-xl sm:text-2xl font-bold text-navy-900">แผนภาพและตารางสถานะยานพาหนะ</h2>
                             <p class="text-gray-500 text-xs sm:text-sm">แสดงภาพถ่ายยานพาหนะ แยกตามประเภทรถ ยี่ห้อ และหมายเลขทะเบียน • สลับเป็นแบบรายการเพื่อจัดเรียงและเปลี่ยนสถานะได้เร็ว</p>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2 self-start">
+                    <div class="m-actions flex flex-wrap items-center gap-2 self-start">
                         ${bulkBarHtml('vehicles', 'คัน')}
                         <button onclick="openVehStatusExport()" class="px-4 py-2.5 rounded-xl border border-gold-500 bg-white hover:bg-amber-50 text-navy-900 font-semibold text-sm shadow-sm flex items-center">
                             <i class="fa-solid fa-file-export text-gold-600 mr-2"></i> ส่งออกรายงาน
@@ -6662,7 +6741,7 @@ ${st.leader2Name}
                 ${vehTypeChipsHtml(ui.type, 'setVehType', db.vehicles)}
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-                    ${sumCard('all', 'ยานพาหนะทั้งหมด', totalVehicles, 'fa-cars', 'border-navy-900', 'text-navy-900', 'bg-navy-900/10 text-navy-900')}
+                    ${sumCard('all', 'ยานพาหนะทั้งหมด', totalVehicles, 'fa-car-side', 'border-navy-900', 'text-navy-900', 'bg-navy-900/10 text-navy-900')}
                     ${VEH_STATUS_KEYS.map(k => sumCard(k, k, countOf(k), VEH_STATUS[k].icon, VEH_STATUS[k].border, VEH_STATUS[k].text, VEH_STATUS[k].iconBg)).join('')}
                 </div>
 
@@ -8110,13 +8189,13 @@ ${st.leader2Name}
                     + (busy.length > 3 ? `<span class="text-[11px] text-rose-700 font-semibold">+${busy.length - 3}</span>` : '');
                 return `
                     <tr id="w5-row-${item.id}" onclick="toggleW5Detail('${item.id}')" class="border-b hover:bg-amber-50/50 transition cursor-pointer ${isToday ? 'bg-amber-50/70' : ''}">
-                        ${bulkW5 ? `<td class="pl-3 pr-1 py-2 w-8">${bulkCbHtml('dutyW5', item.id)}</td>` : ''}
-                        <td class="px-3 py-2 whitespace-nowrap text-sm">
+                        ${bulkW5 ? `<td class="m-cb pl-3 pr-1 py-2 w-8">${bulkCbHtml('dutyW5', item.id)}</td>` : ''}
+                        <td class="m-line px-3 py-2 whitespace-nowrap text-sm">
                             <span class="font-semibold text-navy-900">${fmtThaiDMY(item.date)}</span>
                             <span class="text-[11px] text-gray-400 ml-0.5">${weekdayShort(item.date)}</span>
                             ${isToday ? '<span class="ml-1 px-1.5 py-0.5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-bold">วันนี้</span>' : ''}
                         </td>
-                        <td class="px-3 py-2 text-sm">
+                        <td class="m-line px-3 py-2 text-sm">
                             <div class="flex items-center flex-wrap gap-1.5">
                                 <span class="font-semibold text-navy-900">${escHtml(item.officer)}</span>
                                 ${nick && nick !== item.officer ? `<span class="px-2 py-0.5 rounded-full bg-navy-900 text-gold-400 text-[11px] font-medium">${escHtml(nick)}</span>` : ''}
@@ -8126,7 +8205,7 @@ ${st.leader2Name}
                             ${busy.length ? `<div class="md:hidden mt-1">${busyChips}</div>` : ''}
                         </td>
                         <td class="px-3 py-2 hidden md:table-cell">${busy.length ? busyChips : '<span class="text-gray-300 text-xs">—</span>'}</td>
-                        <td class="px-2 py-2 text-right whitespace-nowrap">
+                        <td class="m-act px-2 py-2 text-right whitespace-nowrap">
                             <button type="button" onclick="event.stopPropagation(); openW5Modal('${item.id}')" class="p-1.5 text-amber-600 hover:text-amber-800" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button type="button" onclick="event.stopPropagation(); deleteItem('dutyW5', '${item.id}')" class="p-1.5 text-red-600 hover:text-red-800" title="ลบ"><i class="fa-solid fa-trash"></i></button>
                             <i id="w5-chev-${item.id}" class="fa-solid fa-chevron-down text-[10px] text-gray-400 ml-1 transition-transform"></i>
@@ -8176,12 +8255,12 @@ ${st.leader2Name}
                 const nick = p ? personNick(p) : '';
                 return `
                     <tr id="busy-row-${b.id}" class="border-b hover:bg-rose-50/40">
-                        ${bulkBusy ? `<td class="pl-3 pr-1 py-2 w-8">${bulkCbHtml('dutyBusy', b.id)}</td>` : ''}
-                        <td class="px-3 py-2 text-sm whitespace-nowrap font-semibold text-navy-900">${fmtThaiRange(b.startDate, b.endDate)}</td>
-                        <td class="px-3 py-2 text-sm"><span class="font-medium text-navy-900">${escHtml(name)}</span> ${nick ? `<span class="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px]">${escHtml(nick)}</span>` : ''}</td>
+                        ${bulkBusy ? `<td class="m-cb pl-3 pr-1 py-2 w-8">${bulkCbHtml('dutyBusy', b.id)}</td>` : ''}
+                        <td class="m-line px-3 py-2 text-sm whitespace-nowrap font-semibold text-navy-900"><i class="fa-regular fa-calendar text-rose-500 mr-1.5 sm:hidden"></i>${fmtThaiRange(b.startDate, b.endDate)}</td>
+                        <td class="m-line px-3 py-2 text-sm"><span class="font-medium text-navy-900">${escHtml(name)}</span> ${nick ? `<span class="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px]">${escHtml(nick)}</span>` : ''}</td>
                         <td class="px-3 py-2 text-sm"><span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-xs font-semibold">${escHtml(b.task)}</span></td>
                         <td class="px-3 py-2 text-xs text-gray-500 hidden sm:table-cell">${escHtml(b.note || '-')}</td>
-                        <td class="px-2 py-2 text-right whitespace-nowrap">
+                        <td class="m-act px-2 py-2 text-right whitespace-nowrap">
                             <button type="button" onclick="openBusyModal('${b.id}')" class="p-1.5 text-amber-600 hover:text-amber-800" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button type="button" onclick="deleteItem('dutyBusy', '${b.id}')" class="p-1.5 text-red-600 hover:text-red-800" title="ลบ"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -8193,12 +8272,12 @@ ${st.leader2Name}
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวร ว.5</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">คลิกแถวเพื่อดูลูกทีม / หมายเหตุ • แสดงผู้ติดภารกิจของแต่ละวัน</p>
-                        <div class="flex flex-wrap gap-1.5 mt-2">
+                        <div class="m-actions flex flex-wrap gap-1.5 mt-2">
                             <button type="button" onclick="navigate('report_tm')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>รายงาน ทม.</button>
                             <button type="button" onclick="navigate('report_commander')" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 text-xs font-semibold"><i class="fa-solid fa-clipboard-check mr-1"></i>รายงานผู้บังคับบัญชา</button>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="m-actions flex flex-wrap items-center gap-2">
                         <button type="button" onclick="openW5Modal()" class="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-plus mr-1.5"></i>เพิ่มเวร</button>
                         <button type="button" onclick="openW5AutoModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>จัดอัตโนมัติ</button>
                         <button type="button" onclick="openBusyModal()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-user-clock mr-1.5"></i>บันทึกผู้ติดภารกิจ</button>
@@ -8207,7 +8286,7 @@ ${st.leader2Name}
                     </div>
                 </div>
 
-                <div class="glass-card rounded-2xl p-3 mb-4 flex flex-wrap items-end gap-2.5">
+                <div class="m-filter glass-card rounded-2xl p-3 mb-4 flex flex-wrap items-end gap-2.5">
                     <div>
                         <label class="block text-[11px] font-medium text-gray-600 mb-0.5">เดือน</label>
                         <select onchange="setW5Filter({ fMonth: this.value, filterDate: '' })" class="px-2.5 py-1.5 border rounded-lg text-sm bg-white min-w-[120px]">${monthOpts}</select>
@@ -8221,21 +8300,21 @@ ${st.leader2Name}
                         <div class="w-40">${thaiDateBtnHtml('w5_filter_date', f.filterDate, 'w5FilterDatePicked', 'ทุกวัน', { btnClass: 'tdp-sm' })}</div>
                     </div>
                     <button type="button" onclick="navigate('duty_w5', { view: '${f.view}' }, false)" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-navy-900"><i class="fa-solid fa-calendar-day mr-1 text-gold-600"></i>เดือนนี้</button>
-                    ${filterActive ? `<button type="button" onclick="navigate('duty_w5', { view: '${f.view}' }, false)" class="px-2 py-1.5 text-xs text-red-600 hover:underline">ล้างตัวกรอง</button>` : ''}
-                    <div class="ml-auto inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs font-semibold">
+                    ${filterActive ? `<button type="button" onclick="navigate('duty_w5', { view: '${f.view}' }, false)" class="m-full px-2 py-1.5 text-xs text-red-600 hover:underline">ล้างตัวกรอง</button>` : ''}
+                    <div class="m-full m-seg ml-auto inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs font-semibold">
                         <button type="button" onclick="setW5Filter({ view: 'list' })" class="px-3 py-1.5 ${view === 'list' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-list mr-1"></i>รายการ</button>
                         <button type="button" onclick="setW5Filter({ view: 'cal' })" class="px-3 py-1.5 ${view === 'cal' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-calendar mr-1"></i>ปฏิทิน</button>
                     </div>
                 </div>
 
                 <div class="glass-card rounded-2xl overflow-hidden mb-5">
-                    <div class="px-4 py-2.5 bg-navy-900/5 border-b text-xs sm:text-sm text-navy-900 flex flex-wrap items-center justify-between gap-2">
+                    <div class="m-cardhead px-4 py-2.5 bg-navy-900/5 border-b text-xs sm:text-sm text-navy-900 flex flex-wrap items-center justify-between gap-2">
                         <span class="font-semibold"><i class="fa-solid fa-filter text-gold-600 mr-1.5"></i>${summaryText} <span class="text-gray-500 font-normal">• ${viewCount} รายการ</span></span>
                         ${view === 'list' ? bulkBarHtml('dutyW5', 'วัน') : ''}
                     </div>
                     ${view === 'cal' ? buildW5CalendarHtml(ctx.month, ctx.year) : `
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="m-cards w-full text-left border-collapse" style="--m-act-w:108px">
                             <thead class="bg-navy-900 text-white text-[11px] uppercase">
                                 <tr>
                                     ${bulkW5 ? '<th class="pl-3 pr-1 py-2 w-8"></th>' : ''}
@@ -8251,7 +8330,7 @@ ${st.leader2Name}
                 </div>
 
                 <div class="glass-card rounded-2xl overflow-hidden">
-                    <div class="px-4 py-2.5 bg-rose-50/70 border-b border-rose-100 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                    <div class="m-cardhead px-4 py-2.5 bg-rose-50/70 border-b border-rose-100 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
                         <span class="font-semibold text-navy-900"><i class="fa-solid fa-user-clock text-rose-600 mr-1.5"></i>กำลังพลติดภารกิจ / ราชการ <span class="text-gray-500 font-normal">• ${busyList.length} รายการ</span></span>
                         <div class="flex flex-wrap items-center gap-2">
                             <button type="button" onclick="openBusyModal()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่ม</button>
@@ -8259,7 +8338,7 @@ ${st.leader2Name}
                         </div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="m-cards w-full text-left border-collapse" style="--m-act-w:80px">
                             <thead class="bg-gray-100 text-gray-700 text-[11px]">
                                 <tr>
                                     ${bulkBusy ? '<th class="pl-3 pr-1 py-2 w-8"></th>' : ''}
@@ -8793,7 +8872,7 @@ ${st.leader2Name}
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางภารกิจปฏิบัติการ</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">กดเข้าไปในภารกิจเพื่อกรอกแผนการปฏิบัติ กำลังพล ยานพาหนะ อุปกรณ์ และค่าใช้จ่าย</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="m-actions flex flex-wrap items-center gap-2">
                         ${bulkBarHtml('missions', 'ภารกิจ')}
                         <button type="button" onclick="openMissionAnalyzeModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-bold text-sm shadow flex items-center" title="อัปโหลดหนังสือสั่งการ/คำสั่ง แล้วให้ระบบสรุปเป็นภารกิจ"><i class="fa-solid fa-file-circle-plus mr-2"></i> อัปโหลดไฟล์ / วิเคราะห์ภารกิจ</button>
                         <button type="button" onclick="openMissionModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center"><i class="fa-solid fa-plus mr-2"></i> เพิ่มภารกิจใหม่</button>
@@ -8802,7 +8881,7 @@ ${st.leader2Name}
 
                 ${typeof gcalStatusBarHtml === 'function' ? gcalStatusBarHtml() : ''}
 
-                <div class="glass-card rounded-2xl p-3 mb-4 flex flex-wrap items-end gap-2.5">
+                <div class="m-filter glass-card rounded-2xl p-3 mb-4 flex flex-wrap items-end gap-2.5">
                     <div>
                         <label class="block text-[11px] font-medium text-gray-600 mb-0.5">เดือน</label>
                         <select onchange="setMissionFilter({ fMonth: this.value })" class="px-2.5 py-1.5 border rounded-lg text-sm bg-white min-w-[120px]">${monthOpts}</select>
@@ -8813,7 +8892,7 @@ ${st.leader2Name}
                     </div>
                     <button type="button" onclick="setMissionFilter({ fMonth: '${now.getMonth() + 1}', fYear: '${now.getFullYear()}' })" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-navy-900 bg-white"><i class="fa-solid fa-calendar-day mr-1 text-gold-600"></i>เดือนนี้</button>
                     <button type="button" onclick="setMissionFilter({ fMonth: 'all', fYear: 'all' })" class="px-3 py-1.5 text-sm rounded-lg border ${filterActive ? 'border-gray-300 hover:bg-gray-100 bg-white text-navy-900' : 'border-navy-900 bg-navy-900 text-gold-400'}"><i class="fa-solid fa-layer-group mr-1"></i>แสดงทั้งหมด</button>
-                    <div class="ml-auto inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs font-semibold">
+                    <div class="m-full m-seg ml-auto inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs font-semibold">
                         <button type="button" onclick="setMissionFilter({ view: 'card' })" class="px-3 py-1.5 ${view === 'card' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-table-cells-large mr-1"></i>การ์ด</button>
                         <button type="button" onclick="setMissionFilter({ view: 'list' })" class="px-3 py-1.5 ${view === 'list' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-solid fa-list mr-1"></i>รายการ</button>
                         <button type="button" onclick="setMissionFilter({ view: 'calendar' })" class="px-3 py-1.5 ${view === 'calendar' ? 'bg-navy-900 text-gold-400' : 'bg-white text-navy-900 hover:bg-gray-50'}"><i class="fa-regular fa-calendar-days mr-1"></i>ปฏิทิน</button>
@@ -10102,7 +10181,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.5.2';
+        const APP_VERSION = '2.6.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -13053,8 +13132,8 @@ ${st.leader2Name}
             const dates = vcCheckDates();
             const lastN = dates.length ? (db.vehicleChecks || []).filter(r => r.date === dates[0]).length : 0;
             return `<div class="vtab-bar">
-                <button type="button" class="vtab ${ui.tab !== 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'status' })"><i class="fa-solid fa-table-cells-large"></i><span>แผนภาพและตารางสถานะยานพาหนะ</span><span class="bd">${db.vehicles.length}</span></button>
-                <button type="button" class="vtab ${ui.tab === 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'checks' })"><i class="fa-solid fa-clipboard-check"></i><span>ผลการตรวจสภาพยานพาหนะ</span>${lastN ? `<span class="bd">${lastN}</span>` : ''}</button>
+                <button type="button" class="vtab ${ui.tab !== 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'status' })"><i class="fa-solid fa-table-cells-large"></i><span class="hidden sm:inline">แผนภาพและตารางสถานะยานพาหนะ</span><span class="sm:hidden">สถานะยานพาหนะ</span><span class="bd">${db.vehicles.length}</span></button>
+                <button type="button" class="vtab ${ui.tab === 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'checks' })"><i class="fa-solid fa-clipboard-check"></i><span class="hidden sm:inline">ผลการตรวจสภาพยานพาหนะ</span><span class="sm:hidden">ผลตรวจสภาพรถ</span>${lastN ? `<span class="bd">${lastN}</span>` : ''}</button>
             </div>`;
         }
         function vcCheckDates() {
