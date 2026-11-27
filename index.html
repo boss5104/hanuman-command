@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.7.1: ช่องผู้ตรวจเช็ค (ตรวจเช็คสภาพรถ) ดึงรายชื่อกำลังพลทั้งหมดตั้งแต่ ด.ต. ถึง ส.ต.ต. เรียงตามยศ พร้อมแสดงจำนวน">
-    <meta name="app-version" content="2.7.1">
+    <meta name="app-update-note" content="อัปเดต v2.8.0: ปุ่มทั้งระบบเป็นแบบนูนมีมิติ มีแสงเงา โทนทางการ — กดแล้วปุ่มยุบลงเหมือนปุ่มจริง">
+    <meta name="app-version" content="2.8.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -989,6 +989,78 @@
         .vc-bb.pri { background: #f8fafc; color: #0a1128; box-shadow: none; }
 
         body.theme-dark .m-cardhead.bg-rose-50\/70 { background: rgba(159, 18, 57, .28); border-color: rgba(244, 63, 94, .3); }
+        /* =====================================================================
+           v2.8.0: ปุ่มนูนมีมิติ (Raised / Bevel) โทนทางการ
+           - ไล่แสงจากด้านบน + เส้นไฮไลต์ด้านใน + ขอบล่างเข้ม + เงาตกกระทบ
+           - วางเมาส์: ยกขึ้นเล็กน้อย / กด: ยุบลง (เงาด้านใน)
+           - ใช้ overlay แบบโปร่ง จึงคงสีเดิมของปุ่มทุกสี และสี hover เดิมยังทำงาน
+           ===================================================================== */
+        :root { --rb-face: #ffffff; --rb-hi: rgba(255,255,255,.95); --rb-top: rgba(255,255,255,.85); --rb-bot: rgba(15,23,42,.07);
+                --rb-edge: rgba(15,23,42,.11); --rb-drop: rgba(15,23,42,.12); --rb-cast: rgba(15,23,42,.30); }
+        body.theme-dark { --rb-face: #1e293b; --rb-hi: rgba(255,255,255,.10); --rb-top: rgba(255,255,255,.07); --rb-bot: rgba(0,0,0,.18);
+                --rb-edge: rgba(0,0,0,.35); --rb-drop: rgba(0,0,0,.35); --rb-cast: rgba(0,0,0,.55); }
+        body.theme-eyecare { --rb-face: #fcf7ed; --rb-hi: rgba(255,253,247,.9); --rb-top: rgba(255,253,247,.7); --rb-bot: rgba(92,70,40,.08);
+                --rb-edge: rgba(92,70,40,.14); --rb-drop: rgba(92,70,40,.12); --rb-cast: rgba(92,70,40,.25); }
+
+        /* ปุ่มรอง (พื้นขาว / มีขอบ) */
+        :is(.btn-formal, .btn-ghost, button.border, a.border.rounded-xl, button.bg-white, button.bg-gray-100)
+            :not(.vc-opt):not(.vt-chip):not(.vtab):not(.vc-bb):not(.vc-vrow):not(.vc-veh):not(.border-dashed):not(.rb-flat)
+            :not([class*="bg-navy"]):not([class*="bg-red-6"]):not([class*="bg-red-7"]):not([class*="bg-white/"]):not([class*="border-white"]):not(:disabled),
+        .rb-raise {
+            background-image: linear-gradient(180deg, var(--rb-top) 0%, rgba(255,255,255,0) 58%, var(--rb-bot) 100%);
+            box-shadow: inset 0 1px 0 var(--rb-hi), inset 0 -2px 0 var(--rb-edge), 0 1px 1px var(--rb-drop), 0 3px 8px -3px var(--rb-cast);
+            transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease, border-color .15s ease;
+        }
+        /* ปุ่มมีขอบแต่ไม่มีสีพื้น -> ให้พื้นขาวเพื่อให้เห็นความนูน */
+        button.border:not([class^="bg-"]):not([class*=" bg-"]):not(.vc-opt):not(.vt-chip):not(.vtab):not(.border-dashed):not(.rb-flat):not([class*="border-white"]) { background-color: var(--rb-face); }
+
+        /* ปุ่มหลัก (พื้นกรมท่า / แดง) */
+        :is(.btn-formal-primary, .btn-gold, .btn-navy, button.bg-navy-900, button.bg-navy-800, button.bg-navy-700, a.bg-navy-900, a.bg-navy-800,
+            button.bg-red-600, button.bg-red-700, button.bg-red-800):not(.rb-flat):not(.vt-chip):not(.vc-opt):not(:disabled) {
+            background-image: linear-gradient(180deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,.04) 48%, rgba(0,0,0,.16) 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.30), 0 1px 1px rgba(5,9,20,.30), 0 4px 10px -3px rgba(5,9,20,.45);
+            text-shadow: 0 -1px 0 rgba(0,0,0,.30);
+            transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease, border-color .15s ease;
+        }
+        body.theme-dark :is(.btn-formal-primary, .btn-gold, .btn-navy, button.bg-navy-900, button.bg-navy-800, a.bg-navy-900):not(.rb-flat):not(:disabled) {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -2px 0 rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.45), 0 4px 10px -3px rgba(0,0,0,.65);
+        }
+
+        /* วางเมาส์ = ยกขึ้น / กด = ยุบลง (เฉพาะอุปกรณ์ที่มีเมาส์จึงยก เพื่อไม่ให้มือถือค้างสถานะ hover) */
+        @media (hover: hover) {
+            :is(.btn-formal, .btn-ghost, .btn-formal-primary, .btn-gold, .btn-navy, button.border, button.bg-white, button.bg-navy-900, button.bg-navy-800, a.bg-navy-900, button.bg-red-600, button.bg-red-700, .rb-raise)
+                :not(.vc-opt):not(.vt-chip):not(.vtab):not(.vc-bb):not(.vc-vrow):not(.vc-veh):not(.border-dashed):not(.rb-flat):not(.hdr-btn):not(:disabled):hover {
+                transform: translateY(-1px);
+                filter: brightness(1.02);
+            }
+        }
+        :is(.btn-formal, .btn-ghost, button.border, button.bg-white, button.bg-gray-100, .rb-raise)
+            :not(.vc-opt):not(.vt-chip):not(.vtab):not(.vc-bb):not(.vc-vrow):not(.vc-veh):not(.border-dashed):not(.rb-flat)
+            :not([class*="bg-navy"]):not([class*="bg-red-6"]):not([class*="bg-red-7"]):not([class*="bg-white/"]):not([class*="border-white"]):not(:disabled):active {
+            transform: translateY(1px);
+            background-image: linear-gradient(180deg, var(--rb-bot) 0%, rgba(255,255,255,0) 60%);
+            box-shadow: inset 0 2px 4px var(--rb-cast), 0 0 0 transparent;
+        }
+        :is(.btn-formal-primary, .btn-gold, .btn-navy, button.bg-navy-900, button.bg-navy-800, button.bg-navy-700, a.bg-navy-900, a.bg-navy-800,
+            button.bg-red-600, button.bg-red-700, button.bg-red-800):not(.rb-flat):not(.vt-chip):not(.vc-opt):not(:disabled):active {
+            transform: translateY(1px);
+            background-image: linear-gradient(180deg, rgba(0,0,0,.22) 0%, rgba(0,0,0,.04) 55%, rgba(255,255,255,.06) 100%);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,.45), 0 0 0 transparent;
+        }
+
+        /* ปุ่มเลือกในชุด (แท็บ / ชิป / ตัวเลือกผลตรวจ) — เมื่อถูกเลือกให้ดูนูนเช่นกัน */
+        .vt-chip { box-shadow: inset 0 1px 0 var(--rb-hi), 0 1px 1px var(--rb-drop), 0 2px 5px -2px var(--rb-cast); background-image: linear-gradient(180deg, var(--rb-top), rgba(255,255,255,0) 60%, var(--rb-bot)); }
+        .vt-chip.on { background-image: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 50%, rgba(0,0,0,.16)), linear-gradient(135deg, #0a1128, #1c335e); }
+        .vc-vtog button.on { background-image: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 50%, rgba(0,0,0,.16)); }
+        body.theme-dark .vt-chip.on, body.theme-eyecare .vt-chip.on { background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 50%, rgba(0,0,0,.16)), linear-gradient(135deg, #0a1128, #1c335e); color: #f3d98b; border-color: #c5a059; }
+        .vt-chip.on, .vc-vtog button.on { box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.28), 0 3px 8px -3px rgba(5,9,20,.45); }
+        .vc-opt { box-shadow: inset 0 1px 0 var(--rb-hi), inset 0 -2px 0 var(--rb-edge), 0 1px 2px var(--rb-drop); }
+        .vc-opt.on { box-shadow: inset 0 1px 0 rgba(255,255,255,.30), inset 0 -2px 0 rgba(0,0,0,.22), 0 4px 10px -4px rgba(15,23,42,.45) !important; }
+        .vc-opt:active { box-shadow: inset 0 2px 4px rgba(0,0,0,.25) !important; }
+        .vtab.on, .vc-bb.pri { box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(15,23,42,.12), 0 3px 8px -3px rgba(0,0,0,.45); background-image: linear-gradient(180deg, #ffffff, #eef2f7); }
+        .hdr-btn { background-image: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(0,0,0,.18)); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 0 rgba(0,0,0,.35), 0 2px 6px -2px rgba(0,0,0,.6); transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease; }
+        .hdr-btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.55); }
+        @media (prefers-reduced-motion: reduce) { button, a { transition: none !important; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -10201,7 +10273,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.7.1';
+        const APP_VERSION = '2.8.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
