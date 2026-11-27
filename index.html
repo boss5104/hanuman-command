@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.4.0: หน้าเข้าสู่ระบบ (เจ้าหน้าที่ / ผู้ดูแลระบบ) • เมนูตรวจเช็คสภาพรถสำหรับเจ้าหน้าที่ • ผลการตรวจสภาพยานพาหนะ พร้อมส่งออกภาพและข้อความ • กรองประเภทรถและส่งออกรายงานสถานะยานพาหนะ • ผู้ดูแลแก้ไขหัวข้อการตรวจได้">
-    <meta name="app-version" content="2.4.0">
+    <meta name="app-update-note" content="อัปเดต v2.5.0: แก้รายชื่อผู้ตรวจเช็คไม่แสดงตอนค้นหา • เลือกรถแบบรายการได้ • แบบฟอร์มตรวจเช็คกระชับขึ้น • เมนูใหม่ “ตรวจสอบรถที่เช็คไปแล้ว” ดูและแก้ไขผลการตรวจได้">
+    <meta name="app-version" content="2.5.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -852,6 +852,50 @@
         body.theme-dark .vc-row { border-color: #334155; } body.theme-dark .vc-row.hd { background: #172033; }
         body.theme-dark .vc-dd button { border-color: #334155; } body.theme-dark .vc-dd button:hover { background: #273449; }
         body.theme-eyecare .vc-card, body.theme-eyecare .vc-veh, body.theme-eyecare .vc-tile, body.theme-eyecare .vc-ov { background: #fffdf8; border-color: #dfd1b8; }
+
+        /* ===== v2.5: รายการค้นหาไม่ถูกตัด / ช่องเลือกสวยเท่ากัน / แบบฟอร์มกระชับ / มุมมองรายการ ===== */
+        .vc-card.ov { overflow: visible; }
+        .vc-card.ov > .vc-card-h { border-radius: 22px 22px 0 0; }
+        select.vc-inp { -webkit-appearance: none; appearance: none; padding-right: 2.3rem; line-height: 1.4; min-height: 46px;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a3803b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
+        input.vc-inp[type="time"] { min-height: 46px; }
+        body.theme-dark select.vc-inp { background-color: #0f172a; }
+        .vc-dd { max-height: 340px; }
+        .vcx .vc-card { border-radius: 18px; }
+        .vcx .vc-card-h { padding: 9px 14px; gap: 10px; }
+        .vcx .vc-ic { width: 34px; height: 34px; border-radius: 11px; font-size: 15px; }
+        .vcx .vc-tt { font-size: 14.5px; }
+        .vcx .vc-no { font-size: 10.5px; }
+        .vcx .vc-legend { padding: 8px 14px 2px; gap: 5px; }
+        .vcx .vc-lg { font-size: 10.5px; padding: 2px 8px; }
+        .vcx .vc-item { padding: 8px 14px; display: grid; grid-template-columns: 1fr; gap: 6px 14px; align-items: center; }
+        @media (min-width: 820px) { .vcx .vc-item { grid-template-columns: minmax(0, 1fr) 330px; } .vcx .vc-item .vc-note { grid-column: 1 / -1; } }
+        .vcx .vc-q { margin: 0; font-size: 13.5px; font-weight: 600; }
+        .vcx .vc-seg { gap: 5px; }
+        .vcx .vc-opt { min-height: 34px; padding: 4px 6px; border-radius: 10px; font-size: 12px; gap: 5px; border-width: 1.5px; }
+        .vcx .vc-opt i { font-size: 12px; }
+        .vcx .vc-note { margin-top: 0; padding: 6px 10px; font-size: 12.5px; }
+        .vcx .vc-meas { margin: 2px 14px 12px; padding: 8px 10px; gap: 7px; border-radius: 14px; }
+        .vcx .vc-mv { min-width: 56px; padding: 3px 8px; border-radius: 10px; }
+        .vcx .vc-mv b { font-size: 14px; }
+        .vcx .vc-mv span { font-size: 10px; }
+        .vcx .vc-ov { padding: 10px 8px; border-radius: 14px; }
+        .vcx .vc-ov .oi { width: 34px; height: 34px; font-size: 15px; margin-bottom: 4px; }
+        .vcx .vc-ov .ot { font-size: 13px; }
+        .vcx .vc-all0 { padding: 5px 10px; font-size: 11px; }
+        .vc-sp { font: 700 11px 'Prompt', sans-serif; padding: 3px 9px; border-radius: 999px; background: #f1f5f9; color: #64748b; white-space: nowrap; }
+        .vc-sp.s0 { background: #d1fae5; color: #065f46; } .vc-sp.s1 { background: #fef3c7; color: #92400e; } .vc-sp.s2 { background: #fee2e2; color: #991b1b; }
+        .vc-mile { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 14px; }
+        .vc-mile .vc-inp { width: 220px; max-width: 100%; font: 700 20px 'Prompt', sans-serif; text-align: right; padding: 7px 46px 7px 12px; letter-spacing: .03em; }
+        .vc-vrow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 14px; border-bottom: 1px solid #f1ead8; transition: background .15s; }
+        .vc-vrow:last-child { border-bottom: 0; }
+        .vc-vrow:hover { background: #fdf8ea; }
+        .vc-vrow img { width: 64px; height: 44px; border-radius: 10px; object-fit: cover; background: #0a1128; border: 1px solid rgba(197,160,89,.45); flex-shrink: 0; }
+        .vc-vtog { display: inline-flex; padding: 3px; border-radius: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+        .vc-vtog button { padding: 6px 11px; border-radius: 9px; font-size: 12px; font-weight: 600; color: #0a1128; }
+        .vc-vtog button.on { background: #0a1128; color: #f3d98b; box-shadow: 0 4px 10px -4px rgba(10,17,40,.6); }
+        body.theme-dark .vc-vrow { border-color: #334155; } body.theme-dark .vc-vrow:hover { background: #273449; }
+        body.theme-dark .vc-vtog { background: #0f172a; border-color: #334155; } body.theme-dark .vc-vtog button { color: #e2e8f0; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -1911,6 +1955,7 @@
                 case 'personnel_chart': renderPersonnelChart(app); break;
                 case 'vehicles': renderVehicles(app); break;
                 case 'vcheck': renderVehicleCheck(app); break;
+                case 'vcheck_history': renderVcHistory(app); break;
                 default: renderHome(app);
             }
         }
@@ -9740,7 +9785,7 @@ ${st.leader2Name}
             box.id = 'appUpdateNotice';
             const safeNote = escHtml(note || '');
             if (required) {
-                box.className = 'fixed inset-0 z-[90] bg-navy-950/80 backdrop-blur-sm flex items-center justify-center p-4';
+                box.className = 'fixed inset-0 z-[100] bg-navy-950/80 backdrop-blur-sm flex items-center justify-center p-4';
                 box.innerHTML = `
                     <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-gold-500/60">
                         <div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-amber-100 text-amber-600">
@@ -9870,7 +9915,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.4.0';
+        const APP_VERSION = '2.5.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -11827,7 +11872,7 @@ ${st.leader2Name}
         // ---------- 1) เข้าสู่ระบบ ----------
         const AUTH_PINS = { staff: '1234', admin: '9999' };
         const AUTH_LABEL = { staff: 'เจ้าหน้าที่', admin: 'ผู้ดูแลระบบ' };
-        const STAFF_PAGES = ['home', 'vcheck'];
+        const STAFF_PAGES = ['home', 'vcheck', 'vcheck_history'];
         let authState = { role: null, pick: 'staff', pin: '', busy: false };
 
         function authRole() { return authState.role; }
@@ -12089,7 +12134,8 @@ ${st.leader2Name}
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <div onclick="vcStart()" class="nav-btn-card glass-card gold-border-top rounded-2xl p-6 cursor-pointer lg:col-span-2 flex flex-col sm:flex-row sm:items-center gap-5">
+                    <div class="lg:col-span-2 grid grid-cols-1 gap-5">
+                    <div onclick="vcStart()" class="nav-btn-card glass-card gold-border-top rounded-2xl p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-5">
                         <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-4xl shadow-lg border border-gold-500/30 shrink-0 relative">
                             <i class="fa-solid fa-car-on"></i>
                             <span class="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-gradient-to-br from-gold-300 to-gold-500 text-navy-950 text-sm flex items-center justify-center shadow"><i class="fa-solid fa-clipboard-check"></i></span>
@@ -12102,6 +12148,21 @@ ${st.leader2Name}
                         <div class="shrink-0 px-5 py-3 rounded-2xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 font-bold text-sm shadow-md text-center">
                             เริ่มตรวจเช็ค <i class="fa-solid fa-arrow-right ml-1"></i>
                         </div>
+                    </div>
+                    <div onclick="vcOpenHistory()" class="nav-btn-card glass-card gold-border-top rounded-2xl p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-5">
+                        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-4xl shadow-lg border border-gold-500/30 shrink-0 relative">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span class="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-gradient-to-br from-gold-300 to-gold-500 text-navy-950 text-sm flex items-center justify-center shadow"><i class="fa-solid fa-pen"></i></span>
+                        </div>
+                        <div class="flex-grow">
+                            <span class="text-xs font-semibold text-gold-600 uppercase tracking-wider">ประวัติ / แก้ไข</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-navy-900 mt-0.5">ตรวจสอบรถที่เช็คไปแล้ว</h3>
+                            <p class="text-gray-500 text-sm font-body mt-1 leading-relaxed">ดูผลการตรวจที่บันทึกไว้ แยกตามวันที่ และกดแก้ไขผลการตรวจของรถแต่ละคันได้</p>
+                        </div>
+                        <div class="shrink-0 px-5 py-3 rounded-2xl border-2 border-gold-500 text-navy-900 font-bold text-sm text-center bg-white/70">
+                            ${(db.vehicleChecks || []).length} รายการ <i class="fa-solid fa-arrow-right ml-1 text-gold-600"></i>
+                        </div>
+                    </div>
                     </div>
                     <div class="glass-card rounded-2xl p-5">
                         <div class="text-sm font-bold text-navy-900 mb-3"><i class="fa-solid fa-chart-pie text-gold-600 mr-1.5"></i>สรุปผลวันนี้</div>
@@ -12197,6 +12258,7 @@ ${st.leader2Name}
         function vcDatePicked(d) { vcDraft.date = d || todayIso(); vcPersist(); vcRerender(); }
         function vcSetField(k, v) { vcDraft[k] = v; vcPersist(); }
         function vcSetVType(t) { vcDraft.vtype = t; vcPersist(); vcRerender(); }
+        function vcSetVView(v) { vcDraft.vview = v; vcPersist(); vcRerender(); }
         function vcTeamOptions(sel) {
             const opts = [['', '— ไม่ระบุ —'], ...ORG_TEAMS.map(t => [t, 'ทีม ' + t]), ['กองบัญชาการ', 'กองบัญชาการ']];
             if (sel && !opts.some(o => o[0] === sel)) opts.push([sel, teamLabelOf(sel) || sel]);
@@ -12228,6 +12290,20 @@ ${st.leader2Name}
             const pct = total ? Math.round(doneN / total * 100) : 0;
             const vt = vcDraft.vtype && db.vehicles.some(v => (v.type || 'ไม่ระบุประเภท') === vcDraft.vtype) ? vcDraft.vtype : 'all';
             const list = vt === 'all' ? db.vehicles : db.vehicles.filter(v => (v.type || 'ไม่ระบุประเภท') === vt);
+            const vview = vcDraft.vview === 'list' ? 'list' : 'card';
+            const vehRows = list.map(v => {
+                const r = recs.find(x => x.vehicleId === v.id);
+                return `<button type="button" onclick="vcSelectVehicle('${escHtml(v.id)}')" class="vc-vrow">
+                    <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'">
+                    <div class="min-w-0 flex-grow">
+                        <div class="font-bold text-navy-900 truncate">${escHtml(vcVehLabel(v))}</div>
+                        <div class="text-xs text-gray-500 truncate"><i class="fa-solid ${getVehicleTypeIcon(v.type)} text-gold-600 mr-1"></i>${escHtml(v.type || '-')}${r ? ` • <i class="fa-solid fa-user-check text-gold-600"></i> ${escHtml(r.inspectorName)}` : ''}</div>
+                    </div>
+                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-md bg-navy-900 text-gold-400 font-bold text-xs whitespace-nowrap">${escHtml(v.plate || '-')}</span>
+                    ${vcPillHtml(r)}
+                    <i class="fa-solid fa-chevron-right text-gold-600 text-xs"></i>
+                </button>`;
+            }).join('');
             const vehCards = list.map(v => {
                 const r = recs.find(x => x.vehicleId === v.id);
                 const o = r && VC_OVERALL[r.overall];
@@ -12260,7 +12336,7 @@ ${st.leader2Name}
                     </div>
                 </div>
 
-                <div class="vc-card mb-6">
+                <div class="vc-card ov mb-6 relative z-20">
                     <div class="vc-card-h"><span class="vc-step">1</span><div class="vc-tt">ข้อมูลการตรวจเช็ค</div></div>
                     <div class="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -12291,8 +12367,15 @@ ${st.leader2Name}
                         <button type="button" onclick="vcAddVehicleModal()" class="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow shrink-0"><i class="fa-solid fa-plus sm:mr-1.5"></i><span class="hidden sm:inline">เพิ่มข้อมูลรถ</span></button>
                     </div>
                     <div class="p-4 sm:p-5">
-                        ${vehTypeChipsHtml(vt, 'vcSetVType', db.vehicles)}
-                        ${vehCards ? `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">${vehCards}</div>`
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div class="min-w-0 flex-grow">${vehTypeChipsHtml(vt, 'vcSetVType', db.vehicles)}</div>
+                            <div class="vc-vtog shrink-0 mb-3" role="group" aria-label="มุมมอง">
+                                <button type="button" class="${vview === 'card' ? 'on' : ''}" onclick="vcSetVView('card')"><i class="fa-solid fa-table-cells-large mr-1"></i>การ์ด</button>
+                                <button type="button" class="${vview === 'list' ? 'on' : ''}" onclick="vcSetVView('list')"><i class="fa-solid fa-list mr-1"></i>รายการ</button>
+                            </div>
+                        </div>
+                        ${vehCards && vview === 'list' ? `<div class="rounded-2xl border border-[#efe7d4] overflow-hidden">${vehRows}</div>`
+                        : vehCards ? `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">${vehCards}</div>`
                             : `<div class="text-center py-10 text-gray-400"><i class="fa-solid fa-car-side text-3xl mb-2 block"></i>ยังไม่มีข้อมูลรถ — กด “เพิ่มข้อมูลรถ”</div>`}
                     </div>
                 </div>`;
@@ -12311,7 +12394,7 @@ ${st.leader2Name}
                 const c = JSON.parse(JSON.stringify(rec));
                 Object.assign(vcDraft, {
                     recId: c.id, mileage: c.mileage || '', items: c.items || {}, psi: Object.assign({ fl: '', fr: '', rl: '', rr: '' }, c.psi || {}),
-                    dot: Object.assign({ w: '', y: '' }, c.dot || {}), volt: c.volt || '', cca: c.cca || '', overall: c.overall || '', overallManual: true,
+                    dot: Object.assign({ w: '', y: '' }, c.dot || {}), volt: c.volt || '', cca: c.cca || '', overall: c.overall || '', overallManual: (c.overall || '') !== vcSuggest({ items: c.items || {} }),
                     watch: c.watch || '', action: c.action || ''
                 });
             }
@@ -12328,7 +12411,7 @@ ${st.leader2Name}
             return `<div class="vc-item ${s === null ? '' : 's' + s}" id="vcrow_${key.replace('.', '_')}">
                 <div class="vc-q"><span class="n">${sec.no}.${idx + 1}</span><span>${escHtml(it.t)}</span></div>
                 <div class="vc-seg">
-                    ${sec.levels.map((l, i) => `<button type="button" class="vc-opt l${i} ${s === i ? 'on' : ''}" onclick="vcSetItem('${key}', ${i})"><i class="fa-solid ${VC_LEVEL_ICON[i]}"></i><span>${escHtml(l)}</span></button>`).join('')}
+                    ${sec.levels.map((l, i) => `<button type="button" class="vc-opt l${i} ${s === i ? 'on' : ''}" title="${escHtml(l)}" onclick="vcSetItem('${key}', ${i})"><i class="fa-solid ${VC_LEVEL_ICON[i]}"></i><span>${escHtml(vcShortLevel(l))}</span></button>`).join('')}
                 </div>
                 <input type="text" class="vc-note ${s ? '' : 'hidden'}" value="${escHtml(cur.n || '')}" oninput="vcSetNote('${key}', this.value)" placeholder="ระบุอาการ / รายละเอียด (ไม่บังคับ) เช่น ยางปี 2020 ควรเปลี่ยน">
             </div>`;
@@ -12360,21 +12443,29 @@ ${st.leader2Name}
                 ${low ? `<span class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"><i class="fa-solid fa-bolt mr-1"></i>แรงดันต่ำกว่า 12.4V แบตเตอรี่อาจอ่อน</span>` : ''}
             </div>`;
         }
+        // ข้อความสั้นบนปุ่มสถานะ (ข้อความเต็มแสดงในแถบคำอธิบายของหมวด)
+        function vcShortLevel(l) { return String(l || '').split('/')[0].trim() || l; }
+        function vcSecProgHtml(sec) {
+            let n = 0, w = -1;
+            sec.items.forEach(it => { const x = vcDraft.items[vcItemKey(sec, it)]; if (x && typeof x.s === 'number') { n++; w = Math.max(w, x.s); } });
+            return `<span class="vc-sp ${n ? 's' + w : ''}" id="vcsp_${sec.key}">${n === sec.items.length && n ? '<i class="fa-solid fa-check mr-1"></i>' : ''}${n}/${sec.items.length}</span>`;
+        }
         function vcSectionHtml(sec) {
-            return `<div class="vc-card mb-5" id="vcsec_${sec.key}">
+            return `<div class="vc-card mb-3" id="vcsec_${sec.key}">
                 <div class="vc-card-h">
                     <div class="vc-ic"><i class="fa-solid ${sec.icon}"></i></div>
                     <div class="flex-grow min-w-0"><div class="vc-no">${sec.no}</div><div class="vc-tt">${escHtml(sec.title)}</div></div>
+                    ${vcSecProgHtml(sec)}
                     <button type="button" class="vc-all0" onclick="vcAllNormal('${sec.key}')" title="ตั้งทุกหัวข้อในหมวดนี้เป็นปกติ"><i class="fa-solid fa-check-double mr-1"></i>ปกติทั้งหมด</button>
                 </div>
                 <div class="vc-legend">${sec.levels.map((l, i) => `<span class="vc-lg l${i}">${escHtml(l)}</span>`).join('')}</div>
-                <div class="mt-2">${sec.items.map((it, i) => vcItemRowHtml(sec, it, i)).join('')}</div>
+                <div class="mt-1">${sec.items.map((it, i) => vcItemRowHtml(sec, it, i)).join('')}</div>
                 ${sec.key === 'tire' ? vcMeasHtml('tire') : sec.key === 'elec' ? vcMeasHtml('batt') : ''}
             </div>`;
         }
         function vcOverallHtml() {
             const sug = vcSuggest(vcDraft);
-            return `<div class="vc-card mb-5" id="vcsec_overall">
+            return `<div class="vc-card mb-3" id="vcsec_overall">
                 <div class="vc-card-h">
                     <div class="vc-ic"><i class="fa-solid fa-flag-checkered"></i></div>
                     <div class="flex-grow"><div class="vc-no">2.1.${vcSections().length + 2}</div><div class="vc-tt">สรุปสภาพรถโดยรวม</div></div>
@@ -12411,15 +12502,17 @@ ${st.leader2Name}
             const v = vcVehicleById(vcDraft.vehicleId);
             vcBreadcrumbs(`${vcVehLabel(v)} ${v.plate || ''}`);
             const n = vcCheckedCount(vcDraft.items);
-            container.innerHTML = `
-                <div class="vc-hero mb-5">
-                    <div class="relative z-10 flex flex-col sm:flex-row gap-4 sm:items-center">
-                        <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'" class="w-full sm:w-40 h-32 sm:h-28 object-cover rounded-2xl border-2 border-gold-500/60 shadow-lg">
+            container.innerHTML = `<div class="vcx">
+                <div class="vc-hero mb-3" style="padding:16px 18px">
+                    <div class="relative z-10 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+                        <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'" class="hidden sm:block w-32 h-20 object-cover rounded-xl border-2 border-gold-500/60 shadow-lg">
                         <div class="flex-grow min-w-0">
                             <div class="text-xs text-gold-300 font-semibold tracking-wider"><i class="fa-solid ${getVehicleTypeIcon(v.type)} mr-1"></i>${escHtml(v.type || '-')}</div>
-                            <h2 class="text-xl sm:text-2xl font-bold truncate">${escHtml(vcVehLabel(v))}</h2>
-                            <span class="inline-block mt-1 px-3 py-1 rounded-lg bg-gold-400 text-navy-950 font-bold text-sm">ทะเบียน ${escHtml(v.plate || '-')}</span>
-                            <div class="text-xs text-gray-300 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <h2 class="text-lg sm:text-xl font-bold truncate">${escHtml(vcVehLabel(v))}</h2>
+                                <span class="inline-block px-2.5 py-0.5 rounded-lg bg-gold-400 text-navy-950 font-bold text-xs sm:text-sm">ทะเบียน ${escHtml(v.plate || '-')}</span>
+                            </div>
+                            <div class="text-xs text-gray-300 mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                                 <span><i class="fa-regular fa-calendar text-gold-400 mr-1"></i>${escHtml(fmtThaiDMY(vcDraft.date))}${vcDraft.time ? ' • ' + escHtml(fmtTime(vcDraft.time)) : ''}</span>
                                 <span><i class="fa-solid fa-user-check text-gold-400 mr-1"></i>${escHtml(vcDraft.inspectorName)}${vcDraft.team ? ' • ' + escHtml(teamLabelOf(vcDraft.team)) : ''}</span>
                                 ${vcDraft.recId ? '<span class="text-amber-300 font-semibold"><i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไขผลการตรวจเดิม</span>' : ''}
@@ -12428,20 +12521,18 @@ ${st.leader2Name}
                         <div class="sm:w-44 shrink-0">
                             <div class="flex justify-between text-xs text-gray-300 mb-1"><span>ความครบถ้วน</span><b id="vcProgTxt" class="text-gold-300">${n}/${vcItemCount()}</b></div>
                             <div class="vc-prog"><div id="vcProgBar" style="width:${Math.round(n / vcItemCount() * 100)}%"></div></div>
-                            <button type="button" onclick="vcGoSetup()" class="mt-3 w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i>เปลี่ยนรถ / ผู้ตรวจ</button>
+                            <button type="button" onclick="vcGoSetup()" class="mt-2 w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i>เปลี่ยนรถ / ผู้ตรวจ</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="vc-card mb-5">
-                    <div class="vc-card-h">
+                <div class="vc-card mb-3">
+                    <div class="vc-mile">
                         <div class="vc-ic"><i class="fa-solid fa-gauge-high"></i></div>
-                        <div class="flex-grow"><div class="vc-no">2.1.1</div><div class="vc-tt">เลขไมล์ปัจจุบัน (กม.)</div></div>
-                    </div>
-                    <div class="p-4 sm:p-5">
-                        <div class="relative max-w-sm">
-                            <input type="text" inputmode="numeric" class="vc-inp vc-big" value="${escHtml(vcDraft.mileage)}" oninput="vcMileage(this)" placeholder="0">
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">กม.</span>
+                        <div class="flex-grow min-w-0"><div class="vc-no">2.1.1</div><div class="vc-tt">เลขไมล์ปัจจุบัน (กม.)</div></div>
+                        <div class="relative">
+                            <input type="text" inputmode="numeric" class="vc-inp" value="${escHtml(vcDraft.mileage)}" oninput="vcMileage(this)" placeholder="0">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400">กม.</span>
                         </div>
                     </div>
                 </div>
@@ -12455,7 +12546,7 @@ ${st.leader2Name}
                     <button type="button" class="vc-bb" onclick="vcRefresh()"><i class="fa-solid fa-rotate"></i>รีเฟรช</button>
                     <button type="button" class="vc-bb dng" onclick="vcClearForm()"><i class="fa-solid fa-eraser"></i>ล้างข้อมูลที่กรอก</button>
                     <button type="button" class="vc-bb pri" onclick="vcSave()"><i class="fa-solid fa-floppy-disk"></i>บันทึกข้อมูล</button>
-                </div>`;
+                </div></div>`;
         }
 
         // ---- การกรอกข้อมูล (อัปเดตเฉพาะส่วนที่เปลี่ยน ไม่วาดหน้าใหม่) ----
@@ -12478,6 +12569,7 @@ ${st.leader2Name}
             if (note) note.classList.toggle('hidden', !s);
         }
         function vcAfterItemsChanged() {
+            vcSections().forEach(sec => { const el = document.getElementById('vcsp_' + sec.key); if (el) el.outerHTML = vcSecProgHtml(sec); });
             const n = vcCheckedCount(vcDraft.items);
             const pt = document.getElementById('vcProgTxt'), pb = document.getElementById('vcProgBar');
             if (pt) pt.textContent = `${n}/${vcItemCount()}`;
@@ -12889,6 +12981,7 @@ ${st.leader2Name}
                     </div>
                     <div class="flex lg:justify-end gap-2">
                         ${rec ? `<button type="button" onclick="openVcDetail('${escHtml(rec.id)}')" class="px-3 py-1.5 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold"><i class="fa-solid fa-eye mr-1"></i>ดู</button>
+                        <button type="button" onclick="vcEditRecord('${escHtml(rec.id)}')" class="px-2.5 py-1.5 rounded-xl border border-gold-500/60 text-navy-900 hover:bg-amber-50 text-xs" title="แก้ไขผลการตรวจ"><i class="fa-solid fa-pen-to-square text-gold-600"></i></button>
                         <button type="button" onclick="deleteVcRecord('${escHtml(rec.id)}')" class="px-2.5 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs" title="ลบผลการตรวจ"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </div>`).join('');
@@ -12923,6 +13016,7 @@ ${st.leader2Name}
                 </div>`;
         }
         function deleteVcRecord(id) {
+            if (authRole() !== 'admin') return;
             const r = (db.vehicleChecks || []).find(x => x.id === id);
             if (!r) return;
             showConfirmPopup('ลบผลการตรวจ', `ลบผลการตรวจ ${r.vehicle.brand || ''} ทะเบียน ${r.vehicle.plate || ''} วันที่ ${fmtThaiDMY(r.date)} ใช่หรือไม่?`, () => {
@@ -12969,7 +13063,10 @@ ${st.leader2Name}
                     </div>`).join('')}
                 ${r.watch ? `<div class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm"><b class="text-amber-800">รายการที่ต้องเฝ้าระวัง:</b> ${escHtml(r.watch)}</div>` : ''}
                 ${r.action ? `<div class="rounded-xl bg-gray-50 border p-3 text-sm"><b class="text-navy-900">ต้องดำเนินการแก้ไข / หมายเหตุ:</b> ${escHtml(r.action)}</div>` : ''}
-                <div class="flex justify-end"><button type="button" onclick="deleteVcRecord('${escHtml(r.id)}')" class="text-xs text-red-600 hover:underline"><i class="fa-solid fa-trash mr-1"></i>ลบผลการตรวจนี้</button></div>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <button type="button" onclick="vcEditRecord('${escHtml(r.id)}')" class="px-4 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold shadow"><i class="fa-solid fa-pen-to-square mr-1.5"></i>แก้ไขผลการตรวจ</button>
+                    ${authRole() === 'admin' ? `<button type="button" onclick="deleteVcRecord('${escHtml(r.id)}')" class="text-xs text-red-600 hover:underline"><i class="fa-solid fa-trash mr-1"></i>ลบผลการตรวจนี้</button>` : ''}
+                </div>
             `, { type: 'vcExport' });
             setModalWide(true);
             document.getElementById('modalSaveBtn').classList.add('hidden');
@@ -13277,6 +13374,90 @@ ${st.leader2Name}
             closeModal();
             render();
             showStatusPopup('บันทึกหัวข้อการตรวจแล้ว', `${clean.length} หมวด • ${clean.reduce((a, s) => a + s.items.length, 0)} หัวข้อ — แบบฟอร์มของเจ้าหน้าที่อัปเดตตามนี้`, 'success', 2400);
+        }
+
+        // ---------- 10) ตรวจสอบรถที่เช็คไปแล้ว (ดู / แก้ไข) ----------
+        let vcHistDate = '';
+        function vcOpenHistory() { navigate('vcheck_history'); }
+        function vcSetHistDate(d) { vcHistDate = d; vcRerender(); }
+        function vcEditRecord(id) {
+            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            if (!r) return;
+            if (!vcVehicleById(r.vehicleId)) { showStatusPopup('แก้ไขไม่ได้', 'รถคันนี้ถูกลบออกจากตารางสถานะรถแล้ว', 'edit', 2400); return; }
+            const go = () => {
+                closeModal();
+                Object.assign(vcDraft, { date: r.date, time: r.time || vcDraft.time, inspectorId: r.inspectorId || '', inspectorName: r.inspectorName || '', team: r.team || '' });
+                vcSelectVehicle(r.vehicleId, true);
+                showStatusPopup('เปิดผลการตรวจเพื่อแก้ไข', `${vcVehLabel(vcVehicleById(r.vehicleId))} • ${fmtThaiDMY(r.date)} — แก้ไขแล้วกด “บันทึกข้อมูล”`, 'edit', 2200);
+            };
+            if (vcDraft.dirty && vcDraft.step === 'form' && vcDraft.recId !== r.id) vcConfirm('ทิ้งข้อมูลที่ยังไม่บันทึก?', 'แบบฟอร์มที่เปิดค้างไว้มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปิดผลการตรวจนี้แทนหรือไม่?', 'เปิดเพื่อแก้ไข', go, 'fa-pen-to-square');
+            else go();
+        }
+        function renderVcHistory(container) {
+            updateBreadcrumbs([
+                { label: authRole() === 'staff' ? 'หน้าหลักเจ้าหน้าที่' : 'หน้าหลัก', action: "navigate('home')" },
+                { label: 'ตรวจสอบรถที่เช็คไปแล้ว' }
+            ]);
+            const dates = vcCheckDates();
+            const date = dates.includes(vcHistDate) ? vcHistDate : (dates[0] || '');
+            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const order = r => { const i = db.vehicles.findIndex(v => v.id === r.vehicleId); return i < 0 ? 9999 : i; };
+            recs.sort((a, b) => order(a) - order(b));
+            const cnt = k => recs.filter(r => r.overall === k).length;
+            const mini = (l, n, c) => `<div class="vc-tile" style="--vc-accent:${c};padding:11px 14px"><div class="tl">${l}</div><div class="tv" style="color:${c};font-size:22px">${n}</div></div>`;
+            const rows = recs.map(r => {
+                const v = vcVehicleById(r.vehicleId) || { type: r.vehicle.type, brand: r.vehicle.brand, plate: r.vehicle.plate };
+                const note = vcRecNote(r);
+                return `<div class="vc-vrow" style="cursor:default">
+                    <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'">
+                    <div class="min-w-0 flex-grow">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span class="font-bold text-navy-900 truncate">${escHtml(vcVehLabel(v))}</span>
+                            <span class="px-2 py-0.5 rounded-md bg-navy-900 text-gold-400 font-bold text-[11px] whitespace-nowrap">${escHtml(v.plate || '-')}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5 truncate"><i class="fa-solid fa-user-check text-gold-600 mr-1"></i>${escHtml(r.inspectorName || '-')}${r.time ? ' • ' + escHtml(fmtTime(r.time)) : ''}${r.mileage ? ' • ' + escHtml(r.mileage) + ' กม.' : ''}</div>
+                        ${note ? `<div class="text-xs mt-0.5 font-body truncate ${r.overall === 'grounded' ? 'text-red-700' : 'text-amber-800'}"><i class="fa-solid fa-note-sticky mr-1"></i>${escHtml(note)}</div>` : ''}
+                    </div>
+                    <div class="hidden md:block">${vcPillHtml(r)}</div>
+                    <div class="flex flex-col sm:flex-row gap-1.5 shrink-0 items-end">
+                        <span class="md:hidden">${vcPillHtml(r)}</span>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="openVcDetail('${escHtml(r.id)}')" class="px-3 py-1.5 rounded-xl border border-gray-300 hover:bg-gray-50 text-navy-900 text-xs font-semibold"><i class="fa-solid fa-eye mr-1 text-gold-600"></i>ดู</button>
+                            <button type="button" onclick="vcEditRecord('${escHtml(r.id)}')" class="px-3 py-1.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs font-semibold shadow"><i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไข</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${(db.vehicleChecks || []).filter(r => r.date === d).length} คัน)</option>`).join('');
+            container.innerHTML = `
+                <div class="vc-hero mb-5">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-white/10 border border-gold-500/40 text-gold-300 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-list-check"></i></div>
+                            <div>
+                                <h2 class="text-xl sm:text-2xl font-bold">ตรวจสอบรถที่เช็คไปแล้ว</h2>
+                                <p class="text-xs sm:text-sm text-gray-300">เลือกวันที่เพื่อดูผลการตรวจ • กด “แก้ไข” เพื่อเปิดแบบฟอร์มของรถคันนั้นและบันทึกทับ</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="vcStart()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 font-bold text-sm shadow shrink-0"><i class="fa-solid fa-plus mr-1.5"></i>ตรวจเช็ครถเพิ่ม</button>
+                    </div>
+                </div>
+                ${!date ? `<div class="vc-card p-10 text-center">
+                    <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-50 text-gold-600 flex items-center justify-center text-3xl mb-3"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <div class="font-bold text-navy-900">ยังไม่มีรถที่ตรวจเช็คแล้ว</div>
+                    <div class="text-sm text-gray-500 mt-1">เริ่มจากเมนู “ตรวจเช็คสภาพรถ”</div></div>` : `
+                <div class="vc-card p-3 sm:p-4 mb-4 flex flex-col md:flex-row md:items-center gap-3">
+                    <div class="flex items-center gap-2 flex-grow min-w-0">
+                        <i class="fa-regular fa-calendar-check text-gold-600 text-lg"></i>
+                        <select onchange="vcSetHistDate(this.value)" class="vc-inp font-semibold" style="max-width:380px">${dateOpts}</select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 md:w-[420px]">
+                        ${mini('พร้อมใช้งาน', cnt('ready'), '#059669')}
+                        ${mini('เฝ้าระวัง', cnt('usable'), '#d97706')}
+                        ${mini('งดใช้งาน', cnt('grounded'), '#dc2626')}
+                    </div>
+                </div>
+                <div class="vc-card">${rows}</div>`}`;
         }
     </script>
 </body>
