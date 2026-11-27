@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.5.1: รายงานผู้บังคับบัญชา — กันยอดรายวันหายเมื่อซิงค์จากหลายเครื่อง (รวมทีละวัน) • เพิ่มปุ่มกู้คืนยอดรายวันจากข้อความรายงานที่ส่ง LINE แล้ว">
-    <meta name="app-version" content="2.5.1">
+    <meta name="app-update-note" content="อัปเดต v2.5.2: แก้ปัญหา iPhone กดรหัสผ่านเร็วๆ (เช่น 99) แล้วจอซูม • ปุ่มทั่วทั้งระบบไม่ซูมเมื่อแตะซ้ำเร็วๆ">
+    <meta name="app-version" content="2.5.2">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -722,6 +722,10 @@
         .auth-key:hover { background: rgba(255,255,255,.11); border-color: rgba(230,194,91,.4); }
         .auth-key:active { transform: scale(.93); background: rgba(230,194,91,.25); }
         .auth-key.fn { font-size: 17px; color: #e6c25b; background: transparent; border-color: transparent; }
+        /* v2.5.2: กัน iPhone ซูมจอเมื่อกดปุ่มรหัสเร็วๆ (แตะสองครั้ง = double-tap zoom) */
+        .auth-gate, .auth-gate * { touch-action: manipulation; }
+        .auth-pad, .auth-key { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        button, a, label, select, input, textarea, [role="button"], [onclick] { touch-action: manipulation; }
         .auth-remember { display: flex; align-items: center; gap: 12px; margin: 18px auto 0; max-width: 300px; padding: 11px 13px; border-radius: 16px; cursor: pointer;
             background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
         .auth-switch { position: relative; width: 44px; height: 25px; border-radius: 999px; background: rgba(255,255,255,.18); flex-shrink: 0; transition: background .2s; }
@@ -1147,18 +1151,18 @@
             <div id="authHint" class="auth-hint">กรอกรหัสผ่าน 4 หลัก</div>
             <div id="authDots" class="auth-dots"><span class="auth-dot"></span><span class="auth-dot"></span><span class="auth-dot"></span><span class="auth-dot"></span></div>
             <div class="auth-pad">
-                <button type="button" class="auth-key" onclick="authKey('1')">1</button>
-                <button type="button" class="auth-key" onclick="authKey('2')">2</button>
-                <button type="button" class="auth-key" onclick="authKey('3')">3</button>
-                <button type="button" class="auth-key" onclick="authKey('4')">4</button>
-                <button type="button" class="auth-key" onclick="authKey('5')">5</button>
-                <button type="button" class="auth-key" onclick="authKey('6')">6</button>
-                <button type="button" class="auth-key" onclick="authKey('7')">7</button>
-                <button type="button" class="auth-key" onclick="authKey('8')">8</button>
-                <button type="button" class="auth-key" onclick="authKey('9')">9</button>
-                <button type="button" class="auth-key fn" onclick="authKey('clear')" title="ล้าง"><i class="fa-solid fa-eraser"></i></button>
-                <button type="button" class="auth-key" onclick="authKey('0')">0</button>
-                <button type="button" class="auth-key fn" onclick="authKey('back')" title="ลบ"><i class="fa-solid fa-delete-left"></i></button>
+                <button type="button" class="auth-key" data-k="1" onclick="authKey('1')">1</button>
+                <button type="button" class="auth-key" data-k="2" onclick="authKey('2')">2</button>
+                <button type="button" class="auth-key" data-k="3" onclick="authKey('3')">3</button>
+                <button type="button" class="auth-key" data-k="4" onclick="authKey('4')">4</button>
+                <button type="button" class="auth-key" data-k="5" onclick="authKey('5')">5</button>
+                <button type="button" class="auth-key" data-k="6" onclick="authKey('6')">6</button>
+                <button type="button" class="auth-key" data-k="7" onclick="authKey('7')">7</button>
+                <button type="button" class="auth-key" data-k="8" onclick="authKey('8')">8</button>
+                <button type="button" class="auth-key" data-k="9" onclick="authKey('9')">9</button>
+                <button type="button" class="auth-key fn" data-k="clear" onclick="authKey('clear')" title="ล้าง"><i class="fa-solid fa-eraser"></i></button>
+                <button type="button" class="auth-key" data-k="0" onclick="authKey('0')">0</button>
+                <button type="button" class="auth-key fn" data-k="back" onclick="authKey('back')" title="ลบ"><i class="fa-solid fa-delete-left"></i></button>
             </div>
             <label class="auth-remember">
                 <input type="checkbox" id="authRemember" class="sr-only">
@@ -10098,7 +10102,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.5.1';
+        const APP_VERSION = '2.5.2';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -12111,6 +12115,27 @@ ${st.leader2Name}
             authDraw();
             if (authState.pin.length === 4) authTry();
         }
+        // v2.5.2: iPhone — กดเลขซ้ำเร็วๆ (เช่น 99) Safari ตีความเป็นแตะสองครั้งแล้วซูมจอ
+        // รับการแตะเองใน touchend แล้ว preventDefault เพื่อตัดการซูม (และกัน click ซ้ำ)
+        (function authPadNoZoom() {
+            const pad = document.querySelector('#authGate .auth-pad');
+            if (!pad) return;
+            let key = null, sx = 0, sy = 0;
+            pad.addEventListener('touchstart', (e) => {
+                const b = e.target.closest('.auth-key');
+                key = (b && e.touches.length === 1) ? b : null;
+                if (key) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }
+            }, { passive: true });
+            pad.addEventListener('touchend', (e) => {
+                const b = key; key = null;
+                if (!b || !b.dataset.k) return;
+                const t = e.changedTouches && e.changedTouches[0];
+                if (!t || Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) return;
+                e.preventDefault();
+                authKey(b.dataset.k);
+            }, { passive: false });
+            pad.addEventListener('touchcancel', () => { key = null; }, { passive: true });
+        })();
         function authTry() {
             const role = authState.pick;
             const dots = document.getElementById('authDots');
