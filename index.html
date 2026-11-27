@@ -3,13 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes, viewport-fit=cover">
+    <script>
+        // v2.8.3: iPhone/iPad — ไม่ให้หน้าจอขยายเองเมื่อแตะช่องกรอก/ช่องค้นหาชื่อ (iOS ยังซูมด้วยสองนิ้วได้ตามปกติ)
+        (function () {
+            var ua = navigator.userAgent || '';
+            var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+            if (!isIOS) return;
+            var m = document.querySelector('meta[name="viewport"]');
+            if (m) m.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover');
+        })();
+    </script>
     <meta name="theme-color" content="#0a1128">
     <!-- ===== แจ้งเตือนอัปเดตอัตโนมัติ: ระบบตรวจว่าไฟล์บนเซิร์ฟเวอร์ถูกแก้ไขโค้ดหรือไม่ (ไม่ต้องแก้เลขเวอร์ชันเอง)
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.8.2: หน้าเลือกรถของเจ้าหน้าที่ (มุมมองรายการ) แสดงหมายเลขทะเบียนรถทุกคัน รวมถึงบนมือถือ">
-    <meta name="app-version" content="2.8.2">
+    <meta name="app-update-note" content="อัปเดต v2.8.3: แตะช่องค้นหา/เลือกชื่อผู้ตรวจ (และช่องกรอกอื่น ๆ) บน iPhone/iPad หน้าจอจะไม่ขยายเองอีกต่อไป">
+    <meta name="app-version" content="2.8.3">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -10234,7 +10244,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.8.2';
+        const APP_VERSION = '2.8.3';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
