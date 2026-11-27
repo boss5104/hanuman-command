@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.8.1: เจ้าหน้าที่ตรวจเช็คสภาพรถ เก็บข้อมูลแยกเป็นรายวัน — เมื่อขึ้นวันใหม่ระบบรีเซ็ตเป็นการตรวจครั้งใหม่เสมอ (วันที่ เวลา ผู้ตรวจ ทีม และแบบฟอร์มค้าง) ผลการตรวจวันก่อนยังดูได้ในประวัติ">
-    <meta name="app-version" content="2.8.1">
+    <meta name="app-update-note" content="อัปเดต v2.8.2: หน้าเลือกรถของเจ้าหน้าที่ (มุมมองรายการ) แสดงหมายเลขทะเบียนรถทุกคัน รวมถึงบนมือถือ">
+    <meta name="app-version" content="2.8.2">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -894,6 +894,8 @@
         .vc-vrow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 14px; border-bottom: 1px solid #f1ead8; transition: background .15s; }
         .vc-vrow:last-child { border-bottom: 0; }
         .vc-vrow:hover { background: #fdf8ea; }
+        .vc-vpl { max-width: 100%; margin: 3px 0 2px; padding: 2px 9px; border-radius: 8px; background: #0a1128; color: #f3d98b; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        @media (min-width: 640px) { .vc-vpl { margin: 0; flex-shrink: 0; font-size: 13px; padding: 3px 10px; } }
         .vc-vrow img { width: 64px; height: 44px; border-radius: 10px; object-fit: cover; background: #0a1128; border: 1px solid rgba(197,160,89,.45); flex-shrink: 0; }
         .vc-vtog { display: inline-flex; padding: 3px; border-radius: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; }
         .vc-vtog button { padding: 6px 11px; border-radius: 9px; font-size: 12px; font-weight: 600; color: #0a1128; }
@@ -10232,7 +10234,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.8.1';
+        const APP_VERSION = '2.8.2';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -12668,9 +12670,10 @@ ${st.leader2Name}
                     <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'">
                     <div class="min-w-0 flex-grow">
                         <div class="font-bold text-navy-900 truncate">${escHtml(vcVehLabel(v))}</div>
+                        <span class="vc-vpl inline-block sm:hidden"><i class="fa-solid fa-id-card mr-1 opacity-70"></i>${escHtml(v.plate || '-')}</span>
                         <div class="text-xs text-gray-500 truncate"><i class="fa-solid ${getVehicleTypeIcon(v.type)} text-gold-600 mr-1"></i>${escHtml(v.type || '-')}${r ? ` • <i class="fa-solid fa-user-check text-gold-600"></i> ${escHtml(r.inspectorName)}` : ''}</div>
                     </div>
-                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-md bg-navy-900 text-gold-400 font-bold text-xs whitespace-nowrap">${escHtml(v.plate || '-')}</span>
+                    <span class="vc-vpl hidden sm:inline-block"><i class="fa-solid fa-id-card mr-1 opacity-70"></i>${escHtml(v.plate || '-')}</span>
                     ${vcPillHtml(r)}
                     <i class="fa-solid fa-chevron-right text-gold-600 text-xs"></i>
                 </button>`;
