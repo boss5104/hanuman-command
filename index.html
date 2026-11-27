@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.6.0: จัดหน้าจอมือถือใหม่ให้เรียบร้อยทุกหน้า — หัวแอปกระชับ ปุ่มเรียงเท่ากัน ตัวกรองจัดเป็นช่อง ตารางเวร/กำลังพลแสดงเป็นการ์ดไม่ล้นจอ ปฏิทินเวรหนุมานพอดีจอ • แก้ไอคอนที่ไม่แสดง">
-    <meta name="app-version" content="2.6.0">
+    <meta name="app-update-note" content="อัปเดต v2.7.0: ปรับสีปุ่มทั้งระบบเป็นโทนเรียบ เป็นทางการ — ปุ่มหลักสีกรมท่า ปุ่มรองสีขาวขอบเทา (สีที่บอกสถานะยังคงเดิม)">
+    <meta name="app-version" content="2.7.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -968,6 +968,26 @@
             footer.app-foot { padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); font-size: 11px; line-height: 1.7; }
         }
         body.theme-dark table.m-cards td[data-m]::before { color: #94a3b8; }
+        /* v2.7.0: ปุ่มโทนทางการ — ปุ่มหลักพื้นกรมท่า / ปุ่มรองพื้นขาวขอบเทา (สีสถานะคงเดิม) */
+        .btn-formal { background-color: #ffffff; color: #0a1128; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.05); }
+        .btn-formal:hover { background-color: #f1f5f9; border-color: #94a3b8; }
+        .btn-formal-primary { background-color: #0a1128; color: #f3d98b; border: 1px solid #0a1128; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.18); }
+        .btn-formal-primary:hover { background-color: #1c335e; border-color: #1c335e; }
+        .btn-formal .fa-line, .btn-formal-primary .fa-line { color: #06C755; }
+        .btn-formal i[class*="text-"], .btn-formal-primary i[class*="text-"] { opacity: .95; }
+        body.theme-dark .btn-formal { background-color: #1e293b; color: #f1f5f9; border-color: #475569; }
+        body.theme-dark .btn-formal:hover { background-color: #273449; border-color: #64748b; }
+        body.theme-dark .btn-formal-primary, body.theme-dark button.bg-navy-900, body.theme-dark a.bg-navy-900 { background-color: #334155; color: #f3d98b; border-color: #475569; }
+        body.theme-dark .btn-formal-primary:hover { background-color: #3e4c63; }
+        body.theme-eyecare .btn-formal { background-color: #fcf7ed; color: #3b3126; border-color: #cbb894; }
+        body.theme-eyecare .btn-formal:hover { background-color: #f3ead8; }
+        .btn-gold { background: #0a1128; color: #f3d98b; border: 1px solid #0a1128; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.18); }
+        .btn-gold:hover { background: #1c335e; }
+        .btn-navy { background: #0a1128; box-shadow: 0 1px 2px rgba(10, 17, 40, 0.18); }
+        .btn-navy:hover { background: #1c335e; }
+        .vtab.on { background: #f8fafc; color: #0a1128; box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .35); }
+        .vc-bb.pri { background: #f8fafc; color: #0a1128; box-shadow: none; }
+
         body.theme-dark .m-cardhead.bg-rose-50\/70 { background: rgba(159, 18, 57, .28); border-color: rgba(244, 63, 94, .3); }
     </style>
 </head>
@@ -1016,7 +1036,7 @@
                     <span id="authChipLabel" class="hidden md:inline font-semibold"></span>
                     <i class="fa-solid fa-right-from-bracket text-gray-400"></i>
                 </button>
-                <button onclick="navigate('home')" class="hdr-btn px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm transition shadow-md">
+                <button onclick="navigate('home')" class="hdr-btn px-3 sm:px-4 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-300 border border-gold-500/50 font-semibold text-xs sm:text-sm transition">
                     <i class="fa-solid fa-house sm:mr-1"></i> <span class="hidden sm:inline">หน้าหลัก</span>
                 </button>
             </div>
@@ -1068,7 +1088,7 @@
                     <i class="fa-solid fa-image text-gold-400 mr-2"></i>ภาพประกอบภารกิจ
                 </h4>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" id="quickImageDownloadBtn" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow flex items-center transition">
+                    <button type="button" id="quickImageDownloadBtn" class="btn-formal px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center transition">
                         <i class="fa-solid fa-download mr-1.5"></i> โหลดเก็บไว้ที่เครื่อง
                     </button>
                     <button type="button" onclick="closeQuickImageModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
@@ -1100,7 +1120,7 @@
                 </button>
                 <div id="gasTestResult" class="text-xs hidden"></div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="loadFromGoogleSheets(true); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-sm">
+                    <button type="button" onclick="loadFromGoogleSheets(true); closeSettingsModal();" class="btn-formal-primary flex-1 py-2.5 px-3 rounded-xl text-xs font-medium">
                         <i class="fa-solid fa-cloud-arrow-down mr-1"></i> ดึงข้อมูลจาก Sheet
                     </button>
                     <button type="button" onclick="syncToGoogleSheets(true); closeSettingsModal();" class="flex-1 py-2.5 px-3 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 text-xs font-medium shadow-sm">
@@ -2442,7 +2462,7 @@
                         <p class="text-gray-500 text-xs sm:text-sm">แสดงช่วงเวลาเข้าเวร High, Low และ Rest แบบปฏิทินและตารางสรุป • กด "จัดตารางเวรอัตโนมัติ" เพื่อจัดวนรอบหลายเดือนในครั้งเดียว</p>
                     </div>
                     <div class="m-actions flex flex-wrap gap-2 self-start">
-                        <button onclick="openDutyHanumanAutoModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-navy-950 font-bold text-sm shadow flex items-center">
+                        <button onclick="openDutyHanumanAutoModal()" class="btn-formal px-4 py-2.5 rounded-xl font-bold text-sm flex items-center">
                             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> จัดตารางเวรอัตโนมัติ
                         </button>
                         <button onclick="openDutyHanumanModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center">
@@ -3447,7 +3467,7 @@
                         <button type="button" onclick="copyTextToClipboard(buildTmReportText())" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow">
                             <i class="fa-regular fa-copy mr-1.5"></i> คัดลอกข้อความ
                         </button>
-                        <button type="button" onclick="shareTextToLine(buildTmReportText())" class="px-4 py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold shadow flex items-center">
+                        <button type="button" onclick="shareTextToLine(buildTmReportText())" class="btn-formal px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center">
                             <i class="fa-brands fa-line text-lg mr-1.5"></i> ส่งออกข้อความทาง LINE
                         </button>
                     </div>
@@ -3493,7 +3513,7 @@
                         <div class="glass-card rounded-2xl overflow-hidden border-2 border-[#06C755]/40 sticky top-28">
                             <div class="bg-navy-900 px-4 py-3 text-white flex items-center justify-between gap-2">
                                 <span class="text-xs sm:text-sm font-semibold"><i class="fa-brands fa-line text-[#06C755] mr-1.5"></i>ตัวอย่างข้อความรายงาน ทม. ก่อนส่งทาง LINE</span>
-                                <button type="button" onclick="shareTextToLine(buildTmReportText())" class="px-3 py-1 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white text-xs font-bold shrink-0">แชร์ส่ง LINE</button>
+                                <button type="button" onclick="shareTextToLine(buildTmReportText())" class="btn-formal px-3 py-1 rounded-lg text-xs font-bold shrink-0">แชร์ส่ง LINE</button>
                             </div>
                             <div class="p-4 bg-gray-50">
                                 <textarea id="tmPreviewTextarea" rows="24" readonly class="w-full p-3.5 rounded-xl border bg-white font-body text-xs sm:text-sm text-gray-800 leading-relaxed focus:outline-none">${generatedText}</textarea>
@@ -4214,7 +4234,7 @@
                                         <option value="19.00 น." ${timeVal === '19.00 น.' ? 'selected' : ''}>19.00 น.</option>
                                     </select>
                                     <button type="button" onclick="cmdReportState['${customFlagKey}']=true; saveCmdReportState(); render();"
-                                        class="px-2.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold shrink-0 border border-amber-300" title="แก้ไขเป็นเวลาอื่นๆ">
+                                        class="btn-formal px-2.5 py-2 rounded-xl text-xs font-semibold shrink-0" title="แก้ไขเป็นเวลาอื่นๆ">
                                         <i class="fa-solid fa-clock-rotate-left mr-1"></i>เวลาอื่นๆ
                                     </button>
                                 ` : `
@@ -4265,7 +4285,7 @@
                             ${on ? '<i class="fa-solid fa-circle-check absolute top-2 right-2 text-gold-400"></i>' : ''}
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid ${icon} text-lg ${on ? 'text-gold-400' : 'text-gold-600'}"></i>
-                                <span class="font-extrabold text-[13px] sm:text-base whitespace-nowrap">${title}</span>
+                                <span class="font-extrabold text-[13px] sm:text-base leading-tight">${title}</span>
                             </div>
                             <div class="text-[11px] sm:text-xs mt-1 ${on ? 'text-gray-300' : 'text-gray-500'}">${sub}</div>
                         </button>`;
@@ -4494,16 +4514,16 @@
                         <p id="cmdSaveBadge" class="text-xs font-semibold mt-1">${cmdSaveBadgeHtml()}</p>
                     </div>
                     <div class="m-actions flex flex-wrap gap-2">
-                        <button type="button" onclick="advanceToNextDayCmdReport()" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดวันนี้ แล้วขึ้นวันถัดไป (ยอดข้อ 3 สะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0)">
+                        <button type="button" onclick="advanceToNextDayCmdReport()" class="btn-formal px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center" title="บันทึกยอดวันนี้ แล้วขึ้นวันถัดไป (ยอดข้อ 3 สะสมเข้าข้อ 4-6 และรีเซ็ตข้อ 3 เป็น 0)">
                             <i class="fa-solid fa-forward-step mr-1.5"></i> บันทึก & ขึ้นวันถัดไป
                         </button>
-                        <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดของวันที่นี้ไว้ใช้ครั้งถัดไป">
+                        <button type="button" onclick="saveCmdDayRecordAndRender()" class="btn-formal-primary px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center" title="บันทึกยอดของวันที่นี้ไว้ใช้ครั้งถัดไป">
                             <i class="fa-solid fa-floppy-disk mr-1.5"></i> บันทึกยอดวันนี้
                         </button>
                         <button type="button" onclick="shareCmdReport('copy')" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow" title="บันทึกยอดวันนี้ แล้วคัดลอกข้อความ">
                             <i class="fa-regular fa-copy mr-1.5"></i> บันทึก & คัดลอก
                         </button>
-                        <button type="button" onclick="shareCmdReport('line')" class="px-4 py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold shadow flex items-center" title="บันทึกยอดวันนี้ แล้วส่ง LINE">
+                        <button type="button" onclick="shareCmdReport('line')" class="btn-formal px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center" title="บันทึกยอดวันนี้ แล้วส่ง LINE">
                             <i class="fa-brands fa-line text-lg mr-1.5"></i> บันทึก & ส่ง LINE
                         </button>
                     </div>
@@ -4615,7 +4635,7 @@
                                 <h3 class="font-bold text-navy-900 text-sm sm:text-base"><i class="fa-solid fa-clock-rotate-left text-gold-600 mr-1.5"></i>ยอดที่บันทึกไว้รายวัน</h3>
                                 <span class="text-[11px] text-gray-500">กด "เปิด" เพื่อดู/แก้ไขยอดของวันนั้น</span>
                             </div>
-                            <button type="button" onclick="openCmdRestoreModal()" class="w-full py-2 rounded-xl border border-dashed border-gold-500 bg-amber-50/50 hover:bg-amber-50 text-navy-900 text-xs sm:text-sm font-semibold">
+                            <button type="button" onclick="openCmdRestoreModal()" class="w-full py-2 rounded-xl border border-dashed border-slate-400 bg-white hover:bg-slate-50 text-navy-900 text-xs sm:text-sm font-semibold">
                                 <i class="fa-solid fa-clock-rotate-left text-gold-600 mr-1.5"></i>กู้คืนยอดรายวันจากข้อความรายงานที่ส่ง LINE แล้ว
                             </button>
                             ${renderCmdHistory()}
@@ -4627,8 +4647,8 @@
                             <div class="bg-navy-900 px-4 py-3 text-white flex items-center justify-between">
                                 <span class="text-xs sm:text-sm font-semibold"><i class="fa-brands fa-line text-[#06C755] mr-1.5"></i>ตัวอย่างข้อความรายงานผู้บังคับบัญชา</span>
                                 <div class="flex gap-1.5">
-                                    <button type="button" onclick="saveCmdDayRecordAndRender()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก</button>
-                                    <button type="button" onclick="shareCmdReport('line')" class="px-3 py-1 rounded-lg bg-[#06C755] text-white text-xs font-bold" title="บันทึกยอดวันนี้ แล้วส่ง LINE">บันทึก & ส่ง LINE</button>
+                                    <button type="button" onclick="saveCmdDayRecordAndRender()" class="btn-formal-primary px-3 py-1 rounded-lg text-xs font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>บันทึก</button>
+                                    <button type="button" onclick="shareCmdReport('line')" class="btn-formal px-3 py-1 rounded-lg text-xs font-bold" title="บันทึกยอดวันนี้ แล้วส่ง LINE">บันทึก & ส่ง LINE</button>
                                 </div>
                             </div>
                             <div class="p-4 bg-gray-50">
@@ -5080,11 +5100,11 @@ ${st.leader2Name}
                     </div>
                     <div class="m-actions flex flex-wrap items-center gap-2.5">
                         ${isTeamView ? `
-                            <button onclick="openPullPersonnelToTeamModal('${filter}')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm shadow-md flex items-center transition">
+                            <button onclick="openPullPersonnelToTeamModal('${filter}')" class="btn-formal px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center transition">
                                 <i class="fa-solid fa-download mr-2"></i> ดึงข้อมูลจากฐานข้อมูลกำลังพล
                             </button>
                         ` : ''}
-                        ${bulkBarHtml('personnel', 'นาย', isTeamView ? { extraHtml: '<button type="button" onclick="bulkRemoveFromTeam()" class="px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold"><i class="fa-solid fa-user-minus mr-1"></i>นำออกจากทีม</button>', deleteLabel: 'ลบออกจากระบบ' } : {})}
+                        ${bulkBarHtml('personnel', 'นาย', isTeamView ? { extraHtml: '<button type="button" onclick="bulkRemoveFromTeam()" class="btn-formal px-2.5 py-1 rounded-lg font-semibold"><i class="fa-solid fa-user-minus mr-1"></i>นำออกจากทีม</button>', deleteLabel: 'ลบออกจากระบบ' } : {})}
                         <button onclick="openPersonnelModal(null, '${filter}')" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-xs sm:text-sm shadow-md flex items-center transition">
                             <i class="fa-solid fa-user-plus mr-2"></i> เพิ่มข้อมูลใหม่
                         </button>
@@ -5274,7 +5294,7 @@ ${st.leader2Name}
                     </div>
                     <div class="grid grid-cols-2 gap-2.5 mt-5">
                         ${phone
-                            ? `<a href="tel:${escHtml(phone)}" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold text-center shadow flex items-center justify-center"><i class="fa-solid fa-phone mr-2"></i>โทรออก</a>`
+                            ? `<a href="tel:${escHtml(phone)}" class="btn-formal-primary py-2.5 rounded-xl text-sm font-semibold text-center flex items-center justify-center"><i class="fa-solid fa-phone mr-2"></i>โทรออก</a>`
                             : `<span class="py-2.5 rounded-xl bg-gray-200 text-gray-400 text-sm font-semibold text-center flex items-center justify-center cursor-not-allowed"><i class="fa-solid fa-phone mr-2"></i>ไม่มีเบอร์</span>`}
                         <button type="button" onclick="${editArgs}" class="py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold shadow flex items-center justify-center"><i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไขข้อมูล</button>
                     </div>
@@ -5668,7 +5688,7 @@ ${st.leader2Name}
                         <p class="text-gray-500 text-xs sm:text-sm">คลิกที่กำลังพลเพื่อดูข้อมูลสรุป • จีบนิ้วหรือ Ctrl + ล้อเมาส์เพื่อย่อ-ขยาย ลากเพื่อเลื่อนดู • ส่งออก JPEG / PDF / พิมพ์</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button type="button" onclick="openOrgAutoPullModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-bold text-xs sm:text-sm shadow-md flex items-center">
+                        <button type="button" onclick="openOrgAutoPullModal()" class="btn-formal px-4 py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center">
                             <i class="fa-solid fa-sitemap mr-1.5"></i> ดึงสังกัดทีมอัตโนมัติ
                         </button>
                         <button type="button" onclick="toggleOrgTeamChain()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center" title="เส้นต่อจากสารวัตร → รองสารวัตร → กำลังพล ภายในกรอบทีม">
@@ -5681,7 +5701,7 @@ ${st.leader2Name}
                         <button type="button" onclick="printOrgChart()" class="btn-ghost px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm flex items-center">
                             <i class="fa-solid fa-print mr-1.5 text-gold-600"></i> พิมพ์
                         </button>
-                        <button type="button" onclick="openExportOrgChartModal()" class="px-4 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm shadow flex items-center">
+                        <button type="button" onclick="openExportOrgChartModal()" class="btn-formal px-4 py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center">
                             <i class="fa-solid fa-file-export mr-1.5"></i> ส่งออก (JPEG / PDF / LINE)
                         </button>
                         <button type="button" onclick="openAddLinkModal()" class="btn-gold px-3.5 py-2 rounded-xl text-xs">
@@ -5721,8 +5741,8 @@ ${st.leader2Name}
                             <input id="orgZoomRange" type="range" min="15" max="300" step="1" value="${Math.round(orgChartZoom * 100)}" oninput="orgZoomFromRange(this.value)" class="oc-zoom-range" title="เลื่อนเพื่อย่อ-ขยาย">
                             <button type="button" onclick="stepOrgChartZoom(1)" class="btn-ghost w-8 h-8 rounded-xl text-xs flex items-center justify-center" title="ขยายขนาด"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                             <span id="orgZoomPercentLabel" class="px-2 py-1 rounded-lg bg-navy-900 text-gold-400 text-xs font-bold min-w-[48px] text-center">${Math.round(orgChartZoom * 100)}%</span>
-                            <button type="button" data-org-fit="width" onclick="fitOrgChartToViewport('width')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300 ring-gold-500 ${orgChartFitMode === 'width' ? 'ring-2' : ''}" title="ปรับให้พอดีความกว้างจอ"><i class="fa-solid fa-arrows-left-right-to-line mr-1"></i>พอดีจอ</button>
-                            <button type="button" data-org-fit="all" onclick="fitOrgChartToViewport('all')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300 ring-gold-500 ${orgChartFitMode === 'all' ? 'ring-2' : ''}" title="ย่อให้เห็นทั้งผังในจอเดียว"><i class="fa-solid fa-expand mr-1"></i>ทั้งผัง</button>
+                            <button type="button" data-org-fit="width" onclick="fitOrgChartToViewport('width')" class="btn-formal px-2.5 py-1.5 rounded-xl text-xs font-semibold ring-gold-500 ${orgChartFitMode === 'width' ? 'ring-2' : ''}" title="ปรับให้พอดีความกว้างจอ"><i class="fa-solid fa-arrows-left-right-to-line mr-1"></i>พอดีจอ</button>
+                            <button type="button" data-org-fit="all" onclick="fitOrgChartToViewport('all')" class="btn-formal px-2.5 py-1.5 rounded-xl text-xs font-semibold ring-gold-500 ${orgChartFitMode === 'all' ? 'ring-2' : ''}" title="ย่อให้เห็นทั้งผังในจอเดียว"><i class="fa-solid fa-expand mr-1"></i>ทั้งผัง</button>
                             <button type="button" onclick="resetOrgChartZoom()" class="btn-navy px-2.5 py-1.5 rounded-xl text-xs">100%</button>
                             <select onchange="setOrgChartLayout(this.value)" class="border rounded-xl px-2 py-1.5 text-xs bg-white text-navy-900 font-semibold" title="รูปแบบการจัดวางทีม">
                                 <option value="auto" ${orgChartLayout === 'auto' ? 'selected' : ''}>จัดวาง: อัตโนมัติ (${orgEffectiveCols()} คอลัมน์)</option>
@@ -6269,7 +6289,7 @@ ${st.leader2Name}
                             <button type="button" onclick="downloadOrgChartPDF()" class="py-2.5 px-3 rounded-xl bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm shadow flex items-center justify-center">
                                 <i class="fa-solid fa-file-pdf mr-1.5"></i> บันทึกไฟล์ PDF
                             </button>
-                            <button type="button" onclick="shareOrgChartToLine()" class="py-2.5 px-3 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs sm:text-sm shadow flex items-center justify-center">
+                            <button type="button" onclick="shareOrgChartToLine()" class="btn-formal-primary py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center">
                                 <i class="fa-brands fa-line text-lg mr-1.5"></i> แชร์ส่งทาง LINE
                             </button>
                         </div>
@@ -6365,7 +6385,7 @@ ${st.leader2Name}
                             <option value="">-- เลือกรายชื่อกำลังพลเพื่อดึงภาพและข้อมูล --</option>
                             ${personnelOptions}
                         </select>
-                        <button type="button" onclick="applySelectedPersonnelToNode()" class="px-4 py-2 rounded-lg bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold text-xs sm:text-sm shrink-0 shadow">
+                        <button type="button" onclick="applySelectedPersonnelToNode()" class="btn-formal-primary px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shrink-0">
                             <i class="fa-solid fa-download mr-1"></i> ดึงข้อมูลมาใส่
                         </button>
                     </div>
@@ -8273,15 +8293,15 @@ ${st.leader2Name}
                         <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ตารางเวร ว.5</h2>
                         <p class="text-gray-500 text-xs sm:text-sm">คลิกแถวเพื่อดูลูกทีม / หมายเหตุ • แสดงผู้ติดภารกิจของแต่ละวัน</p>
                         <div class="m-actions flex flex-wrap gap-1.5 mt-2">
-                            <button type="button" onclick="navigate('report_tm')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>รายงาน ทม.</button>
-                            <button type="button" onclick="navigate('report_commander')" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 text-xs font-semibold"><i class="fa-solid fa-clipboard-check mr-1"></i>รายงานผู้บังคับบัญชา</button>
+                            <button type="button" onclick="navigate('report_tm')" class="btn-formal px-3 py-1.5 rounded-lg text-xs font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>รายงาน ทม.</button>
+                            <button type="button" onclick="navigate('report_commander')" class="btn-formal px-3 py-1.5 rounded-lg text-xs font-semibold"><i class="fa-solid fa-clipboard-check mr-1"></i>รายงานผู้บังคับบัญชา</button>
                         </div>
                     </div>
                     <div class="m-actions flex flex-wrap items-center gap-2">
                         <button type="button" onclick="openW5Modal()" class="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-plus mr-1.5"></i>เพิ่มเวร</button>
-                        <button type="button" onclick="openW5AutoModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>จัดอัตโนมัติ</button>
-                        <button type="button" onclick="openBusyModal()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-user-clock mr-1.5"></i>บันทึกผู้ติดภารกิจ</button>
-                        <button type="button" onclick="openW5ExportModal()" class="px-3.5 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-share-from-square mr-1.5"></i>ส่งออก</button>
+                        <button type="button" onclick="openW5AutoModal()" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>จัดอัตโนมัติ</button>
+                        <button type="button" onclick="openBusyModal()" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold"><i class="fa-solid fa-user-clock mr-1.5"></i>บันทึกผู้ติดภารกิจ</button>
+                        <button type="button" onclick="openW5ExportModal()" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold"><i class="fa-solid fa-share-from-square mr-1.5"></i>ส่งออก</button>
                         <button type="button" onclick="openW5ClearModal()" class="px-3.5 py-2 rounded-xl border border-red-300 bg-white hover:bg-red-50 text-red-600 text-xs sm:text-sm font-semibold"><i class="fa-solid fa-eraser mr-1.5"></i>ล้างข้อมูลการจัดเวร</button>
                     </div>
                 </div>
@@ -8333,7 +8353,7 @@ ${st.leader2Name}
                     <div class="m-cardhead px-4 py-2.5 bg-rose-50/70 border-b border-rose-100 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
                         <span class="font-semibold text-navy-900"><i class="fa-solid fa-user-clock text-rose-600 mr-1.5"></i>กำลังพลติดภารกิจ / ราชการ <span class="text-gray-500 font-normal">• ${busyList.length} รายการ</span></span>
                         <div class="flex flex-wrap items-center gap-2">
-                            <button type="button" onclick="openBusyModal()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่ม</button>
+                            <button type="button" onclick="openBusyModal()" class="btn-formal px-3 py-1.5 rounded-xl text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่ม</button>
                             ${bulkBarHtml('dutyBusy', 'รายการ')}
                         </div>
                     </div>
@@ -8425,7 +8445,7 @@ ${st.leader2Name}
                     <textarea id="w5xText" rows="12" class="w-full border rounded-xl px-3 py-2 text-sm leading-relaxed">${escHtml(buildW5NickText())}</textarea>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" onclick="copyTextToClipboard(document.getElementById('w5xText').value)" class="py-2.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900 text-sm font-semibold"><i class="fa-solid fa-copy mr-1.5 text-gold-600"></i>คัดลอกข้อความ</button>
-                        <button type="button" onclick="shareTextToLine(document.getElementById('w5xText').value)" class="py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งข้อความทาง LINE</button>
+                        <button type="button" onclick="shareTextToLine(document.getElementById('w5xText').value)" class="btn-formal-primary py-2.5 rounded-xl text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งข้อความทาง LINE</button>
                     </div>
                 </div>
             `, { type: 'exportPreview' });
@@ -8801,8 +8821,8 @@ ${st.leader2Name}
                     </div>
                     <div class="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
                         <div class="flex flex-wrap items-center gap-1.5">
-                            ${o ? `<button type="button" onclick="openMissionSummary('${m.id}')" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-bolt mr-1 text-gold-600"></i>สรุปด่วน</button>` : ''}
-                            <button type="button" onclick="navigate('mission_expenses', { id: '${m.id}' })" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-semibold border border-emerald-300"><i class="fa-solid fa-receipt mr-1"></i>ค่าใช้จ่าย</button>
+                            ${o ? `<button type="button" onclick="openMissionSummary('${m.id}')" class="btn-formal px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-bolt mr-1 text-gold-600"></i>สรุปด่วน</button>` : ''}
+                            <button type="button" onclick="navigate('mission_expenses', { id: '${m.id}' })" class="btn-formal px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-receipt mr-1"></i>ค่าใช้จ่าย</button>
                         </div>
                         <button type="button" onclick="navigate('mission_detail', { id: '${m.id}' })" class="px-4 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs font-semibold shadow ml-auto">
                             ${o ? 'เปิดภารกิจ' : 'กรอกแผนการปฏิบัติ'} <i class="fa-solid fa-arrow-right ml-1"></i>
@@ -8854,7 +8874,7 @@ ${st.leader2Name}
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 mt-3">
                             <button type="button" onclick="navigate('mission_detail', { id: '${m.id}' })" class="px-3 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs font-semibold shadow"><i class="fa-solid fa-folder-open mr-1"></i>${m.ops ? 'เปิดภารกิจ' : 'กรอกแผนการปฏิบัติ'}</button>
-                            ${m.ops ? `<button type="button" onclick="openMissionSummary('${m.id}')" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-bolt mr-1 text-gold-600"></i>สรุปด่วน</button>` : ''}
+                            ${m.ops ? `<button type="button" onclick="openMissionSummary('${m.id}')" class="btn-formal px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-bolt mr-1 text-gold-600"></i>สรุปด่วน</button>` : ''}
                             <button type="button" onclick="openMissionModal('${m.id}')" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไข</button>
                             <button type="button" onclick="toggleMissionCancel('${m.id}')" class="px-3 py-2 rounded-xl bg-white text-xs font-semibold border ${cancelled ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50' : 'border-red-300 text-red-600 hover:bg-red-50'}"><i class="fa-solid ${cancelled ? 'fa-rotate-left' : 'fa-ban'} mr-1"></i>${cancelled ? 'คืนสถานะภารกิจ' : 'ยกเลิกภารกิจ'}</button>
                             <button type="button" onclick="deleteItem('missions', '${m.id}')" class="px-2.5 py-2 rounded-xl text-red-600 hover:bg-red-50 text-xs ml-auto" title="ลบ"><i class="fa-solid fa-trash"></i></button>
@@ -8874,7 +8894,7 @@ ${st.leader2Name}
                     </div>
                     <div class="m-actions flex flex-wrap items-center gap-2">
                         ${bulkBarHtml('missions', 'ภารกิจ')}
-                        <button type="button" onclick="openMissionAnalyzeModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-bold text-sm shadow flex items-center" title="อัปโหลดหนังสือสั่งการ/คำสั่ง แล้วให้ระบบสรุปเป็นภารกิจ"><i class="fa-solid fa-file-circle-plus mr-2"></i> อัปโหลดไฟล์ / วิเคราะห์ภารกิจ</button>
+                        <button type="button" onclick="openMissionAnalyzeModal()" class="btn-formal px-4 py-2.5 rounded-xl font-bold text-sm flex items-center" title="อัปโหลดหนังสือสั่งการ/คำสั่ง แล้วให้ระบบสรุปเป็นภารกิจ"><i class="fa-solid fa-file-circle-plus mr-2"></i> อัปโหลดไฟล์ / วิเคราะห์ภารกิจ</button>
                         <button type="button" onclick="openMissionModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center"><i class="fa-solid fa-plus mr-2"></i> เพิ่มภารกิจใหม่</button>
                     </div>
                 </div>
@@ -8941,8 +8961,8 @@ ${st.leader2Name}
                         <button type="button" onclick="openMissionModal('${m.id}')" class="px-4 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 text-gold-400 border border-gold-500/40 text-sm self-start shrink-0"><i class="fa-solid fa-pen-to-square mr-1.5"></i> แก้ไขข้อมูลทั่วไป</button>
                     </div>
                     <div class="px-4 sm:px-6 py-3 flex flex-wrap items-center gap-2 bg-gray-50 border-b">
-                        <button type="button" onclick="openMissionSummary('${m.id}')" ${m.ops ? '' : 'disabled'} class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 text-xs sm:text-sm font-bold shadow ${m.ops ? '' : 'opacity-50 cursor-not-allowed'}"><i class="fa-solid fa-bolt mr-1.5"></i>สรุปภารกิจด่วน / ส่ง LINE</button>
-                        <button type="button" onclick="navigate('mission_expenses', { id: '${m.id}' })" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow"><i class="fa-solid fa-receipt mr-1.5"></i>ค่าใช้จ่าย ${money.exp ? '(' + fmtMoney(money.exp) + ' ฿)' : ''}${billCount ? ` • บิล ${billCount}` : ''}</button>
+                        <button type="button" onclick="openMissionSummary('${m.id}')" ${m.ops ? '' : 'disabled'} class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold ${m.ops ? '' : 'opacity-50 cursor-not-allowed'}"><i class="fa-solid fa-bolt mr-1.5"></i>สรุปภารกิจด่วน / ส่ง LINE</button>
+                        <button type="button" onclick="navigate('mission_expenses', { id: '${m.id}' })" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold"><i class="fa-solid fa-receipt mr-1.5"></i>ค่าใช้จ่าย ${money.exp ? '(' + fmtMoney(money.exp) + ' ฿)' : ''}${billCount ? ` • บิล ${billCount}` : ''}</button>
                         <div class="ml-auto flex flex-wrap gap-2">
                             ${editing
                                 ? `<button type="button" onclick="resetOpsForm()" class="px-3.5 py-2 rounded-xl border border-red-300 bg-white hover:bg-red-50 text-red-600 text-xs sm:text-sm font-semibold"><i class="fa-solid fa-eraser mr-1.5"></i>ล้างแบบฟอร์ม</button>`
@@ -8966,7 +8986,7 @@ ${st.leader2Name}
                 ? coordinators.map((c, idx) => `
                     <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-gray-200">
                         <div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center">${idx + 1}</span><span class="font-semibold text-navy-900 text-sm">${escHtml(c.name || '-')}</span></div>
-                        ${c.phone ? `<a href="tel:${escHtml(c.phone)}" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200"><i class="fa-solid fa-phone mr-1"></i>${escHtml(c.phone)}</a>` : ''}
+                        ${c.phone ? `<a href="tel:${escHtml(c.phone)}" class="btn-formal px-2.5 py-1 rounded-lg text-xs font-semibold"><i class="fa-solid fa-phone mr-1"></i>${escHtml(c.phone)}</a>` : ''}
                     </div>`).join('')
                 : '<div class="text-sm text-gray-400">ยังไม่ได้ระบุผู้ประสานงาน</div>';
             const box = (label, val) => `<div class="bg-gray-50 p-3 rounded-xl border"><div class="text-xs text-gray-500">${label}</div><div class="text-sm font-medium text-navy-900 mt-0.5">${val || '-'}</div></div>`;
@@ -8983,8 +9003,8 @@ ${st.leader2Name}
                         <div class="space-y-3">
                             ${m.imageData ? `<div class="bg-gray-50 p-3 rounded-xl border border-gold-500/40 space-y-2">
                                 <div class="flex items-center justify-between"><span class="text-xs font-bold text-navy-900"><i class="fa-solid fa-image text-gold-600 mr-1"></i>ภาพประกอบภารกิจ</span>
-                                <div class="flex gap-1.5"><button type="button" onclick="openQuickMissionImage('${m.id}')" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-xs font-semibold border border-amber-300"><i class="fa-solid fa-eye mr-1"></i>ดูภาพ</button>
-                                <button type="button" onclick="downloadMissionImage('${m.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-semibold"><i class="fa-solid fa-download mr-1"></i>โหลด</button></div></div>
+                                <div class="flex gap-1.5"><button type="button" onclick="openQuickMissionImage('${m.id}')" class="btn-formal px-2.5 py-1 rounded-lg text-xs font-semibold"><i class="fa-solid fa-eye mr-1"></i>ดูภาพ</button>
+                                <button type="button" onclick="downloadMissionImage('${m.id}')" class="btn-formal px-2.5 py-1 rounded-lg text-xs font-semibold"><i class="fa-solid fa-download mr-1"></i>โหลด</button></div></div>
                                 <img src="${m.imageData}" onclick="openQuickMissionImage('${m.id}')" class="w-full max-h-56 object-cover rounded-xl border cursor-pointer"></div>` : ''}
                             ${box('ตารางการนัดหมาย (ข้อมูลเดิม)', escHtml(m.appointmentSchedule))}
                             ${box('รายชื่อกำลังพล (ข้อมูลเดิม)', escHtml(m.personnelList))}
@@ -9507,7 +9527,7 @@ ${st.leader2Name}
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="navigate('mission_detail', { id: '${id}' })" class="px-3.5 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-navy-900 text-xs sm:text-sm font-semibold"><i class="fa-solid fa-arrow-left mr-1.5"></i>กลับไปภารกิจ</button>
-                        <button type="button" onclick="openExpenseExport('${id}')" class="px-3.5 py-2 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold shadow"><i class="fa-solid fa-share-from-square mr-1.5"></i>ส่งออก LINE / พิมพ์ A4 เบิกเงิน</button>
+                        <button type="button" onclick="openExpenseExport('${id}')" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-share-from-square mr-1.5"></i>ส่งออก LINE / พิมพ์ A4 เบิกเงิน</button>
                     </div>
                 </div>
 
@@ -9522,7 +9542,7 @@ ${st.leader2Name}
                         <h3 class="font-bold text-navy-900"><i class="fa-solid ${editing ? 'fa-pen-to-square' : 'fa-plus'} text-gold-600 mr-1.5"></i>${editing ? 'แก้ไขรายการ' : 'เพิ่มรายการ'}</h3>
                         <div class="inline-flex rounded-xl border overflow-hidden text-xs font-semibold">
                             <button type="button" onclick="setExpKind('expense')" class="px-3 py-1.5 ${kind === 'expense' ? 'bg-red-600 text-white' : 'bg-white text-navy-900'}">จ่ายค่า (ค่าใช้จ่าย)</button>
-                            <button type="button" onclick="setExpKind('income')" class="px-3 py-1.5 ${kind === 'income' ? 'bg-emerald-600 text-white' : 'bg-white text-navy-900'}">ได้รับเงินค่า</button>
+                            <button type="button" onclick="setExpKind('income')" class="px-3 py-1.5 ${kind === 'income' ? 'bg-navy-900 text-gold-300' : 'bg-white text-navy-900'}">ได้รับเงินค่า</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -9835,7 +9855,7 @@ ${st.leader2Name}
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     <button type="button" onclick="runWithBusy(this, () => exportExpense('${mid}', 'download'))" class="py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold"><i class="fa-solid fa-download mr-1"></i>บันทึกภาพ (JPEG)</button>
                     <button type="button" onclick="runWithBusy(this, () => exportExpense('${mid}', 'line'))" class="py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-bold"><i class="fa-brands fa-line mr-1"></i>ส่งภาพทาง LINE</button>
-                    <button type="button" onclick="printExpenseA4('${mid}')" class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold"><i class="fa-solid fa-print mr-1"></i>พิมพ์ A4 (เบิกเงิน)</button>
+                    <button type="button" onclick="printExpenseA4('${mid}')" class="btn-formal-primary py-2.5 rounded-xl text-xs sm:text-sm font-semibold"><i class="fa-solid fa-print mr-1"></i>พิมพ์ A4 (เบิกเงิน)</button>
                     <button type="button" onclick="runWithBusy(this, () => exportExpensePdf('${mid}'))" class="py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs sm:text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-1"></i>บันทึก PDF (A4)</button>
                     <button type="button" onclick="copyTextToClipboard(buildExpenseText(db.missions.find(x => x.id === '${mid}')))" class="py-2.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900 text-xs sm:text-sm font-semibold"><i class="fa-solid fa-copy mr-1 text-gold-600"></i>คัดลอกข้อความ</button>
                     <button type="button" onclick="shareTextToLine(buildExpenseText(db.missions.find(x => x.id === '${mid}')))" class="py-2.5 rounded-xl border border-[#06C755] text-[#06A846] hover:bg-emerald-50 text-xs sm:text-sm font-semibold"><i class="fa-brands fa-line mr-1"></i>ส่งข้อความ LINE</button>
@@ -10083,7 +10103,7 @@ ${st.leader2Name}
                             <div class="font-bold text-sm">มีการอัปเดตโค้ดใหม่ กรุณารีเฟรช</div>
                             ${safeNote ? `<div class="text-xs text-gray-300 mt-0.5">${safeNote}</div>` : ''}
                             <div class="flex gap-2 mt-2.5">
-                                <button type="button" onclick="reloadToLatestVersion('${escHtml(tag)}')" class="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-navy-950 text-xs font-bold">
+                                <button type="button" onclick="reloadToLatestVersion('${escHtml(tag)}')" class="btn-formal-primary px-3 py-1.5 rounded-lg text-xs font-bold">
                                     <i class="fa-solid fa-rotate-right mr-1"></i>รีเฟรชเลย
                                 </button>
                                 <button type="button" onclick="document.getElementById('appUpdateNotice')?.remove()" class="px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/10 text-xs font-semibold">ภายหลัง</button>
@@ -10181,7 +10201,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.6.0';
+        const APP_VERSION = '2.7.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -11130,13 +11150,13 @@ ${st.leader2Name}
                     ${gTargets.length ? gTargets.map(id => `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border text-navy-900"><span class="gcal-dot" style="background:${escHtml(gcalCalColor(id))}"></span>${escHtml(gcalCalName(id))}</span>`).join('') : '<span class="text-gray-400">ไม่ได้ส่งไปปฏิทิน</span>'}
                     ${gLinked ? `<span class="text-emerald-700"><i class="fa-solid fa-check"></i> ซิงค์แล้ว</span>` : ''}
                     <button type="button" onclick="downloadMissionIcs('${m.id}')" class="ml-auto px-2.5 py-1 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-navy-900 font-semibold" title="เพิ่มลงปฏิทินในมือถือ (iPhone / Android / Outlook)"><i class="fa-solid fa-calendar-plus mr-1 text-gold-600"></i>ไฟล์ปฏิทิน (.ics)</button>
-                    ${gcalState().accounts.length ? `<button type="button" onclick="gcalPushMissionNow('${m.id}')" class="px-2.5 py-1 rounded-lg bg-[#1a73e8] hover:bg-[#1765cc] text-white font-semibold"><i class="fa-solid fa-rotate mr-1"></i>ส่งไป Google</button>` : ''}
+                    ${gcalState().accounts.length ? `<button type="button" onclick="gcalPushMissionNow('${m.id}')" class="btn-formal px-2.5 py-1 rounded-lg font-semibold"><i class="fa-solid fa-rotate mr-1"></i>ส่งไป Google</button>` : ''}
                 </div>`;
             if (!a) {
                 return `
                 <div class="an-card px-4 sm:px-6 py-3 border-b space-y-2.5">
                     <div class="flex flex-wrap items-center gap-2">
-                        <button type="button" onclick="openMissionAnalyzeModal('${m.id}')" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 text-xs sm:text-sm font-bold shadow"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>อัปโหลดไฟล์ / วิเคราะห์สรุปภารกิจ</button>
+                        <button type="button" onclick="openMissionAnalyzeModal('${m.id}')" class="btn-formal px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>อัปโหลดไฟล์ / วิเคราะห์สรุปภารกิจ</button>
                         <span class="text-[11px] text-gray-500">ให้ระบบสรุปความเกี่ยวข้อง นัดหมาย และข้อสั่งการจากหนังสือสั่งการ</span>
                     </div>
                     ${files}
@@ -11551,7 +11571,7 @@ ${st.leader2Name}
                             <li class="flex gap-2"><span class="ai-step">5</span><span class="flex-1">คัดลอก <b>URL ของเว็บแอป</b> (ลงท้ายด้วย /exec) มาวาง แล้วกดเชื่อมต่อ
                                 <div class="flex gap-2 mt-1.5">
                                     <input type="url" id="br_url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-xs font-mono bg-white">
-                                    <button type="button" id="br_connect_btn" onclick="gcalConnectBridge()" class="px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0"><i class="fa-solid fa-link mr-1"></i>เชื่อมต่อ</button>
+                                    <button type="button" id="br_connect_btn" onclick="gcalConnectBridge()" class="btn-formal-primary px-3 rounded-xl text-xs font-bold shrink-0"><i class="fa-solid fa-link mr-1"></i>เชื่อมต่อ</button>
                                 </div></span></li>
                         </ol>
                         <p class="text-[11px] text-gray-500"><i class="fa-solid fa-users mr-1"></i>ต้องการหลายบัญชี: ทำซ้ำขั้นตอนนี้ด้วยบัญชี Google อื่น (กดคัดลอกโค้ดใหม่ทุกครั้ง) หรือให้เจ้าของปฏิทินแชร์ปฏิทินให้บัญชีที่ติดตั้งสคริปต์แบบ “ทำการเปลี่ยนแปลงกิจกรรม” แล้วกดปุ่มรีเฟรชรายการปฏิทิน</p>
@@ -11569,7 +11589,7 @@ ${st.leader2Name}
                                         <i class="fa-solid fa-circle-user text-xl text-navy-700"></i>
                                         <div class="min-w-0 flex-1"><div class="text-sm font-semibold text-navy-900 truncate">${escHtml(a.email)}</div>
                                             <div class="text-[11px] ${gcalTokenValid(a) ? 'text-emerald-700' : 'text-amber-700'}">${a.bridge ? '<i class="fa-solid fa-circle-check mr-1"></i>เชื่อมผ่าน Apps Script • ใช้ได้ทุกเครื่อง' : (gcalTokenValid(a) ? '<i class="fa-solid fa-circle-check mr-1"></i>เชื่อมต่ออยู่ (เฉพาะเครื่องนี้)' : '<i class="fa-solid fa-clock mr-1"></i>สิทธิ์หมดอายุ — กด “ต่ออายุ”')}</div></div>
-                                        ${gcalTokenValid(a) ? '' : `<button type="button" onclick="gcalReconnectAll(renderGcalSettingsBody)" class="px-2.5 py-1.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-semibold">ต่ออายุ</button>`}
+                                        ${gcalTokenValid(a) ? '' : `<button type="button" onclick="gcalReconnectAll(renderGcalSettingsBody)" class="btn-formal px-2.5 py-1.5 rounded-lg text-xs font-semibold">ต่ออายุ</button>`}
                                         <button type="button" onclick="gcalRefreshCalendars('${escHtml(a.email)}')" class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold text-navy-900" title="โหลดรายการปฏิทินใหม่"><i class="fa-solid fa-rotate"></i></button>
                                         <button type="button" onclick="gcalRemoveAccount('${escHtml(a.email)}')" class="px-2.5 py-1.5 rounded-lg border border-red-300 text-red-600 text-xs font-semibold" title="ยกเลิกการเชื่อมต่อ"><i class="fa-solid fa-link-slash"></i></button>
                                     </div>
@@ -11597,7 +11617,7 @@ ${st.leader2Name}
                                 <input type="text" id="gcal_client" value="${escHtml(cid)}" placeholder="xxxxxxxx.apps.googleusercontent.com" class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-xs font-mono bg-white">
                                 <button type="button" onclick="gcalSaveClientId()" class="px-3 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold shrink-0">บันทึก</button>
                             </div>
-                            <button type="button" onclick="gcalAddAccount()" ${cid ? '' : 'disabled'} class="px-3 py-2 rounded-xl ${cid ? 'bg-[#1a73e8] hover:bg-[#1765cc]' : 'bg-gray-400 cursor-not-allowed'} text-white text-xs font-semibold shadow"><i class="fa-solid fa-plus mr-1"></i>เพิ่มบัญชี Google (OAuth)</button>
+                            <button type="button" onclick="gcalAddAccount()" ${cid ? '' : 'disabled'} class="px-3 py-2 rounded-xl ${cid ? 'btn-formal-primary' : 'bg-gray-400 text-white cursor-not-allowed'} text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่มบัญชี Google (OAuth)</button>
                             <ol class="list-decimal ml-5 text-[11px] text-gray-600 space-y-1">
                                 <li>console.cloud.google.com → เปิดใช้ Google Calendar API และ Google Drive API</li>
                                 <li>ตั้งค่า OAuth consent screen แล้วสร้าง OAuth client ID ประเภท Web application</li>
@@ -11905,7 +11925,7 @@ ${st.leader2Name}
             if (!s.accounts.length) {
                 return `<div class="glass-card rounded-2xl px-3 py-2.5 mb-4 flex flex-wrap items-center gap-2 text-xs">
                     <i class="fa-regular fa-calendar text-[#4285f4] text-base"></i><span class="text-navy-900">ซิงค์ภารกิจกับ <b>Google Calendar</b> — ดึงนัดหมายมาแสดง และส่งภารกิจไปลงปฏิทินอัตโนมัติ</span>
-                    <button type="button" onclick="openGcalSettingsModal()" class="ml-auto px-3 py-1.5 rounded-lg bg-[#1a73e8] hover:bg-[#1765cc] text-white font-semibold"><i class="fa-brands fa-google mr-1"></i>เชื่อมต่อ</button></div>`;
+                    <button type="button" onclick="openGcalSettingsModal()" class="btn-formal ml-auto px-3 py-1.5 rounded-lg font-semibold"><i class="fa-brands fa-google mr-1"></i>เชื่อมต่อ</button></div>`;
             }
             const expired = s.accounts.filter(a => !gcalTokenValid(a)).length;
             const pend = gcalPending().size;
@@ -11917,7 +11937,7 @@ ${st.leader2Name}
                 ${pend ? `<span class="text-amber-700 font-semibold"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>รอส่ง ${pend} ภารกิจ</span>` : ''}
                 <span class="ml-auto flex gap-1.5">
                     ${expired ? `<button type="button" onclick="gcalReconnectAll(() => { gcalPull(true); gcalFlushPending(); })" class="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-semibold">ต่ออายุและซิงค์</button>`
-                        : `<button type="button" onclick="gcalPull(true); gcalFlushPending();" class="px-3 py-1.5 rounded-lg bg-[#1a73e8] hover:bg-[#1765cc] text-white font-semibold"><i class="fa-solid fa-rotate mr-1"></i>ซิงค์</button>`}
+                        : `<button type="button" onclick="gcalPull(true); gcalFlushPending();" class="btn-formal px-3 py-1.5 rounded-lg font-semibold"><i class="fa-solid fa-rotate mr-1"></i>ซิงค์</button>`}
                     <button type="button" onclick="openGcalSettingsModal()" class="px-2.5 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-navy-900" title="ตั้งค่า"><i class="fa-solid fa-gear"></i></button>
                 </span></div>`;
         }
@@ -12054,7 +12074,7 @@ ${st.leader2Name}
                         <div class="flex flex-wrap items-center gap-2 text-xs">
                             ${openOrders ? `<span class="px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold"><i class="fa-solid fa-list-check mr-1"></i>ข้อสั่งการถึงหน่วยที่ยังไม่ทำ ${openOrders} ข้อ</span>` : ''}
                             <button type="button" onclick="setMissionFilter({ view: 'calendar' }); navigate('missions_list')" class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-navy-900 font-semibold"><i class="fa-regular fa-calendar-days mr-1"></i>ดูปฏิทิน</button>
-                            <button type="button" onclick="openMissionAnalyzeModal()" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 font-bold"><i class="fa-solid fa-file-circle-plus mr-1"></i>อัปโหลดหนังสือสั่งการ</button>
+                            <button type="button" onclick="openMissionAnalyzeModal()" class="btn-formal px-3 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-file-circle-plus mr-1"></i>อัปโหลดหนังสือสั่งการ</button>
                         </div>
                     </div>
                     ${items.length ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-2">${items.slice(0, 10).map(x => `
@@ -13452,7 +13472,7 @@ ${st.leader2Name}
                     <textarea id="${prefix}Text" rows="16" class="w-full border rounded-xl px-3 py-2 text-sm leading-relaxed font-body">${escHtml(textVal)}</textarea>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" onclick="xpCopy('${prefix}Text')" class="py-2.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900 text-sm font-semibold"><i class="fa-solid fa-copy mr-1.5 text-gold-600"></i>คัดลอกข้อความ</button>
-                        <button type="button" onclick="shareTextToLine(document.getElementById('${prefix}Text').value)" class="py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งข้อความทาง LINE</button>
+                        <button type="button" onclick="shareTextToLine(document.getElementById('${prefix}Text').value)" class="btn-formal-primary py-2.5 rounded-xl text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งข้อความทาง LINE</button>
                     </div>
                 </div>`;
         }
@@ -13726,7 +13746,7 @@ ${st.leader2Name}
                                 <p class="text-xs sm:text-sm text-gray-300">เลือกวันที่เพื่อดูผลการตรวจ • กด “แก้ไข” เพื่อเปิดแบบฟอร์มของรถคันนั้นและบันทึกทับ</p>
                             </div>
                         </div>
-                        <button type="button" onclick="vcStart()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 font-bold text-sm shadow shrink-0"><i class="fa-solid fa-plus mr-1.5"></i>ตรวจเช็ครถเพิ่ม</button>
+                        <button type="button" onclick="vcStart()" class="btn-formal-primary px-4 py-2.5 rounded-xl font-bold text-sm shrink-0"><i class="fa-solid fa-plus mr-1.5"></i>ตรวจเช็ครถเพิ่ม</button>
                     </div>
                 </div>
                 ${!date ? `<div class="vc-card p-10 text-center">
