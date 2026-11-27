@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.3.1: ภาพส่งออกตาราง (เวร ว.5 / สรุปภารกิจ / ค่าใช้จ่าย) ข้อความอยู่กึ่งกลางเซลล์ในแนวตั้ง และจัดหัวตาราง วันที่ วัน ชื่อเล่น ให้อยู่กึ่งกลาง">
-    <meta name="app-version" content="2.3.1">
+    <meta name="app-update-note" content="อัปเดต v2.3.2: ตารางเวร ว.5 ดึงชื่อเล่นได้แม้สะกดชื่อต่างกันเล็กน้อย, ช่องชื่อเล่นในการส่งออกไม่นำชื่อจริงมาใส่, จัดเวรอัตโนมัติ เพิ่มชื่อได้ และกดเลือกรายชื่อตามลำดับ (คนแรกที่กด = ลำดับ 1)">
+    <meta name="app-version" content="2.3.2">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -2528,7 +2528,8 @@
         // ลำดับเริ่มต้นของรายการ: ตามลำดับที่จำไว้ (ถ้ามี) แล้วต่อท้ายด้วยผู้ที่ยังไม่อยู่ในลำดับ (ตามยศ)
         function buildW5AutoOrder(useSaved) {
             const eligible = getW5EligiblePersonnel();
-            const byId = new Map(eligible.map(p => [p.id, p]));
+            // รวมผู้ที่เพิ่มชื่อเข้ามาเอง (นอกช่วงยศ) ที่จำไว้ในลำดับด้วย
+            const byId = new Map(db.personnel.map(p => [p.id, p]));
             const rot = useSaved ? getW5Rotation() : null;
             const order = [], checked = new Set(), fresh = new Set();
             if (rot) {
@@ -2543,36 +2544,47 @@
         }
 
         function w5AutoActiveOrder() { return w5AutoState.order.filter(id => w5AutoState.checked.has(id)); }
+        // ให้รายชื่อที่เลือกแล้วอยู่ด้านบนตามลำดับที่กดเลือก ส่วนที่ยังไม่เลือกอยู่ด้านล่าง
+        function w5AutoCompact() {
+            const c = w5AutoState.checked;
+            w5AutoState.order = w5AutoState.order.filter(id => c.has(id)).concat(w5AutoState.order.filter(id => !c.has(id)));
+        }
 
         function renderW5AutoList() {
             const box = document.getElementById('w5a_list');
             if (!box) return;
             const isNew = w5AutoState.mode === 'new';
             const byId = new Map(db.personnel.map(p => [p.id, p]));
+            w5AutoState.order = w5AutoState.order.filter(id => byId.has(id));
+            if (isNew) w5AutoCompact();
+            const nChecked = w5AutoState.order.filter(id => w5AutoState.checked.has(id)).length;
             let n = 0;
             box.innerHTML = w5AutoState.order.map((id, i) => {
                 const p = byId.get(id);
-                if (!p) return '';
                 const on = w5AutoState.checked.has(id);
                 const seq = on ? ++n : null;
                 const isFresh = w5AutoState.fresh.has(id);
+                const isExtra = !isW5EligibleRank(p.rank);
                 return `
-                    <div class="flex items-center gap-2 p-2 rounded-xl border ${on ? 'border-gray-200 bg-white' : 'border-dashed border-gray-200 bg-gray-50 opacity-60'}">
+                    <div ${isNew ? `onclick="w5AutoToggle('${id}', ${on ? 'false' : 'true'})"` : ''} class="flex items-center gap-2 p-2 rounded-xl border select-none ${isNew ? 'cursor-pointer hover:border-gold-500' : ''} ${on ? 'border-gray-200 bg-white' : 'border-dashed border-gray-200 bg-gray-50 opacity-60'}">
                         <span class="w-7 h-7 rounded-full ${on ? 'bg-navy-900 text-gold-400' : 'bg-gray-200 text-gray-400'} text-xs font-bold flex items-center justify-center shrink-0">${seq || '–'}</span>
-                        <input type="checkbox" ${on ? 'checked' : ''} ${isNew ? '' : 'disabled'} onchange="w5AutoToggle('${id}', this.checked)" class="w-4 h-4 accent-navy-900 rounded shrink-0" title="รวมในการจัดเวร">
+                        <input type="checkbox" ${on ? 'checked' : ''} ${isNew ? '' : 'disabled'} onclick="event.stopPropagation(); w5AutoToggle('${id}', this.checked)" class="w-4 h-4 accent-navy-900 rounded shrink-0" title="กดเลือกตามลำดับ (คนแรกที่กด = ลำดับ 1)">
                         <div class="min-w-0 flex-grow">
-                            <div class="text-sm font-semibold text-navy-900 truncate">${escHtml(w5PersonName(p))}${isFresh ? ' <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 align-middle">ใหม่</span>' : ''}</div>
+                            <div class="text-sm font-semibold text-navy-900 truncate">${escHtml(w5PersonName(p))}${isFresh ? ' <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 align-middle">ใหม่</span>' : ''}${isExtra ? ' <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 align-middle">เพิ่มเอง</span>' : ''}</div>
                             <div class="text-[11px] text-gray-500 truncate">${escHtml(p.position || '')}${p.team ? ` • ${escHtml(teamLabelOf(p.team) || '')}` : ''}</div>
                         </div>
                         ${isNew ? `
-                        <div class="flex gap-1 shrink-0">
+                        <div class="flex gap-1 shrink-0" onclick="event.stopPropagation()">
+                            ${on ? `
                             <button type="button" onclick="w5AutoMove(${i}, -1)" ${i === 0 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border hover:bg-gray-100 disabled:opacity-30" title="เลื่อนขึ้น"><i class="fa-solid fa-chevron-up text-xs"></i></button>
-                            <button type="button" onclick="w5AutoMove(${i}, 1)" ${i === w5AutoState.order.length - 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border hover:bg-gray-100 disabled:opacity-30" title="เลื่อนลง"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+                            <button type="button" onclick="w5AutoMove(${i}, 1)" ${i >= nChecked - 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg border hover:bg-gray-100 disabled:opacity-30" title="เลื่อนลง"><i class="fa-solid fa-chevron-down text-xs"></i></button>` : ''}
+                            ${isExtra ? `<button type="button" onclick="w5AutoRemove('${id}')" class="w-8 h-8 rounded-lg border border-red-200 text-red-600 hover:bg-red-50" title="นำชื่อออกจากรายการ"><i class="fa-solid fa-xmark text-xs"></i></button>` : ''}
                         </div>` : ''}
                     </div>`;
-            }).join('') || '<div class="text-center text-gray-400 py-6 text-sm">ไม่พบกำลังพลยศ พ.ต.ต. – ร.ต.ท.</div>';
+            }).join('') || '<div class="text-center text-gray-400 py-6 text-sm">ไม่พบกำลังพลยศ พ.ต.ต. – ร.ต.ท. — กด “เพิ่มชื่อ” เพื่อเพิ่มรายชื่อเอง</div>';
             const cnt = document.getElementById('w5a_count');
             if (cnt) cnt.innerText = n;
+            renderW5AddOptions();
             renderW5AutoStart();
         }
 
@@ -2587,22 +2599,31 @@
             sel.value = w5AutoState.start;
         }
 
+        // กดเลือกครั้งแรก = ลำดับ 1, กดคนถัดไป = ลำดับ 2, 3, 4 ... ตามลำดับการกด
         function w5AutoToggle(id, on) {
+            if (w5AutoState.mode !== 'new') return;
+            const o = w5AutoState.order;
+            const i = o.indexOf(id);
+            if (i >= 0) o.splice(i, 1);
             if (on) w5AutoState.checked.add(id); else w5AutoState.checked.delete(id);
+            const pos = o.filter(x => w5AutoState.checked.has(x)).length;
+            o.splice(pos, 0, id);
             renderW5AutoList();
         }
         function w5AutoMove(i, dir) {
             const j = i + dir, o = w5AutoState.order;
-            if (j < 0 || j >= o.length) return;
+            const nChecked = o.filter(id => w5AutoState.checked.has(id)).length;
+            if (j < 0 || j >= nChecked || i >= nChecked) return;
             [o[i], o[j]] = [o[j], o[i]];
             renderW5AutoList();
         }
         function w5AutoSelect(mode) {
-            if (mode === 'all') w5AutoState.order.forEach(id => w5AutoState.checked.add(id));
+            if (mode === 'all') { w5AutoCompact(); w5AutoState.order.forEach(id => w5AutoState.checked.add(id)); }
             if (mode === 'none') w5AutoState.checked.clear();
             if (mode === 'rank') {
                 const byId = new Map(db.personnel.map(p => [p.id, p]));
                 w5AutoState.order = sortPersonnelByRank(w5AutoState.order.map(id => byId.get(id)).filter(Boolean)).map(p => p.id);
+                w5AutoCompact();
             }
             if (mode === 'saved') {
                 const b = buildW5AutoOrder(true);
@@ -2610,6 +2631,31 @@
             }
             renderW5AutoList();
         }
+        // ---- เพิ่มชื่อเข้ารายการลำดับ (เลือกจากกำลังพลที่ยังไม่อยู่ในรายการ) ----
+        function renderW5AddOptions() {
+            const sel = document.getElementById('w5a_add');
+            if (!sel) return;
+            const inList = new Set(w5AutoState.order);
+            const rest = sortPersonnelByRank(db.personnel.filter(p => !inList.has(p.id)));
+            sel.innerHTML = `<option value="">— เลือกกำลังพลที่จะเพิ่ม (${rest.length} นาย) —</option>` +
+                rest.map(p => `<option value="${p.id}">${escHtml(w5PersonName(p))}${p.nickname ? ' (' + escHtml(p.nickname) + ')' : ''}${p.position ? ' • ' + escHtml(p.position) : ''}</option>`).join('');
+            const btn = document.getElementById('w5a_add_btn');
+            if (btn) btn.disabled = !rest.length;
+        }
+        function w5AutoAdd() {
+            const sel = document.getElementById('w5a_add');
+            const id = sel ? sel.value : '';
+            if (!id) { showStatusPopup('ยังไม่ได้เลือกชื่อ', 'กรุณาเลือกกำลังพลที่จะเพิ่มเข้ารายการ', 'edit', 2000); return; }
+            if (w5AutoState.order.includes(id)) return;
+            w5AutoState.order.push(id);
+            w5AutoToggle(id, true); // เพิ่มแล้วต่อท้ายเป็นลำดับถัดไปทันที
+        }
+        function w5AutoRemove(id) {
+            w5AutoState.order = w5AutoState.order.filter(x => x !== id);
+            w5AutoState.checked.delete(id);
+            renderW5AutoList();
+        }
+
         function setW5AutoMode(mode) {
             w5AutoState.mode = mode;
             if (mode === 'continue') {
@@ -2617,17 +2663,22 @@
                 w5AutoState.order = b.order; w5AutoState.checked = b.checked; w5AutoState.fresh = b.fresh;
                 w5AutoState.start = 'auto';
             } else {
+                // เลือกลำดับใหม่: เริ่มจากยังไม่เลือกใคร ให้กดเลือกตามลำดับ (คนแรกที่กด = ลำดับ 1)
+                w5AutoState.checked = new Set();
+                w5AutoState.fresh = new Set();
                 w5AutoState.start = 'first';
             }
             document.querySelectorAll('input[name="w5a_mode"]').forEach(r => { r.checked = r.value === mode; });
             const tools = document.getElementById('w5a_tools');
             if (tools) tools.classList.toggle('hidden', mode !== 'new');
+            const addWrap = document.getElementById('w5a_add_wrap');
+            if (addWrap) addWrap.classList.toggle('hidden', mode !== 'new');
             const startWrap = document.getElementById('w5a_start_wrap');
             if (startWrap) startWrap.classList.toggle('hidden', mode !== 'new');
             const hint = document.getElementById('w5a_mode_hint');
             if (hint) hint.innerHTML = mode === 'continue'
                 ? '<i class="fa-solid fa-lock mr-1"></i>ใช้ลำดับที่จำไว้ และเริ่มจากคนถัดจากผู้เข้าเวรวันสุดท้ายของเดือนก่อน (หากมีผู้ที่มี “ใหม่” จะต่อท้ายลำดับ)'
-                : '<i class="fa-solid fa-arrow-down-1-9 mr-1"></i>ติ๊กเลือกผู้เข้าเวร และกดลูกศรเพื่อจัดลำดับการรันรายชื่อ ระบบจะจำลำดับนี้ไว้ใช้เดือนถัดไป';
+                : '<i class="fa-solid fa-arrow-down-1-9 mr-1"></i>กดเลือกรายชื่อตามลำดับที่ต้องการ — <b>คนแรกที่กด = ลำดับ 1</b> คนถัดไปเป็นลำดับ 2, 3, 4 … (กดซ้ำเพื่อยกเลิก) • เพิ่มชื่อได้จากช่อง “เพิ่มชื่อ” • ระบบจะจำลำดับนี้ไว้ใช้เดือนถัดไป';
             renderW5AutoList();
         }
 
@@ -2697,6 +2748,10 @@
                     </div>
                     <p id="w5a_mode_hint" class="text-[11px] text-gray-500 mb-2"></p>
                     <div id="w5a_list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
+                    <div id="w5a_add_wrap" class="mt-2 flex gap-2">
+                        <select id="w5a_add" class="flex-grow min-w-0 border rounded-xl px-3 py-2 text-sm bg-white"></select>
+                        <button type="button" id="w5a_add_btn" onclick="w5AutoAdd()" class="px-3 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold whitespace-nowrap disabled:opacity-40"><i class="fa-solid fa-user-plus mr-1"></i>เพิ่มชื่อ</button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">กรณีผู้ที่ถึงเวรติดภารกิจในวันนั้น</label>
@@ -2742,12 +2797,19 @@
             const mm = String(month).padStart(2, '0');
             const daysInMonth = new Date(year, month, 0).getDate();
 
+            // หาลำดับของชื่อในรายการ (ทนต่อการสะกดต่างกันเล็กน้อย)
+            const idxOfName = nm => {
+                const i = names.indexOf(nm);
+                if (i >= 0) return i;
+                const p = findPersonByName(nm);
+                return p ? people.findIndex(x => x.id === p.id) : -1;
+            };
             let ptr = 0;
             if (startSel === 'auto') {
                 const prefix = `${year}-${mm}-01`;
-                const prev = db.dutyW5.filter(w => w.date < prefix && names.includes(w.officer))
-                    .sort((a, b) => a.date.localeCompare(b.date)).pop();
-                if (prev) ptr = (names.indexOf(prev.officer) + 1) % names.length;
+                const prev = db.dutyW5.filter(w => w.date < prefix)
+                    .sort((a, b) => b.date.localeCompare(a.date)).find(w => idxOfName(w.officer) >= 0);
+                if (prev) ptr = (idxOfName(prev.officer) + 1) % names.length;
                 else {
                     // ไม่พบเวรเดือนก่อน: ใช้คนถัดไปที่จำไว้จากการจัดครั้งล่าสุด
                     const rot = getW5Rotation();
@@ -2764,7 +2826,7 @@
                 const date = `${year}-${mm}-${String(d).padStart(2, '0')}`;
                 const existing = db.dutyW5.find(w => w.date === date);
                 if (existing && !overwrite) {
-                    const i = names.indexOf(existing.officer);
+                    const i = idxOfName(existing.officer);
                     if (i >= 0) ptr = (i + 1) % names.length;
                     kept++;
                     continue;
@@ -7065,14 +7127,52 @@ ${st.leader2Name}
         function fmtMoney(n) { return Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function personFullName(p) { return p ? `${p.rank || ''}${p.firstName || ''} ${p.lastName || ''}`.trim() : ''; }
         function personNick(p) { return p ? (p.nickname || p.firstName || '') : ''; }
+        // ปรับชื่อภาษาไทยให้เทียบกันได้ แม้สะกดต่างกันเล็กน้อย (เช่น สิริ/ศิริ, วรรณยุกต์ต่างกัน)
+        function normThaiName(s) {
+            return String(s || '').replace(/\s+/g, '')
+                .replace(/[\u0E47-\u0E4E]/g, '')
+                .replace(/[ศษ]/g, 'ส').replace(/ณ/g, 'น').replace(/ญ/g, 'ย').replace(/[ฐฑฒธ]/g, 'ท')
+                .replace(/ฎ/g, 'ด').replace(/ฏ/g, 'ต').replace(/ภ/g, 'พ').replace(/ฬ/g, 'ล').replace(/ฆ/g, 'ค').replace(/ฌ/g, 'ช');
+        }
+        function strEditDistance(a, b) {
+            if (a === b) return 0;
+            if (!a.length) return b.length;
+            if (!b.length) return a.length;
+            let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+            for (let i = 1; i <= a.length; i++) {
+                const cur = [i];
+                for (let j = 1; j <= b.length; j++) {
+                    cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                }
+                prev = cur;
+            }
+            return prev[b.length];
+        }
         function findPersonByName(name) {
             const n = String(name || '').replace(/\s+/g, '');
             if (!n) return null;
-            return db.personnel.find(p => personFullName(p).replace(/\s+/g, '') === n)
-                || db.personnel.find(p => p.firstName && p.lastName && n.includes(p.firstName) && n.includes(p.lastName))
-                || null;
+            const exact = db.personnel.find(p => personFullName(p).replace(/\s+/g, '') === n)
+                || db.personnel.find(p => p.firstName && p.lastName && n.includes(p.firstName) && n.includes(p.lastName));
+            if (exact) return exact;
+            // สะกดต่างกันเล็กน้อย: เทียบแบบปรับตัวอักษรพ้องเสียง แล้วค่อยเทียบระยะห่างของตัวอักษร
+            const nn = normThaiName(n);
+            const norm = db.personnel.find(p => normThaiName(personFullName(p)) === nn)
+                || db.personnel.find(p => p.firstName && p.lastName && nn.includes(normThaiName(p.firstName)) && nn.includes(normThaiName(p.lastName)));
+            if (norm) return norm;
+            let best = null, bestD = Infinity, tie = false;
+            db.personnel.forEach(p => {
+                if (!p.firstName) return;
+                const full = normThaiName(personFullName(p));
+                const bare = normThaiName(`${p.firstName}${p.lastName || ''}`);
+                const d = Math.min(strEditDistance(nn, full), nn.endsWith(bare) ? 0 : strEditDistance(nn.slice(-bare.length), bare));
+                if (d < bestD) { best = p; bestD = d; tie = false; }
+                else if (d === bestD) tie = true;
+            });
+            return best && !tie && bestD <= Math.max(1, Math.min(3, Math.floor(nn.length * 0.15))) ? best : null;
         }
         function nickOfName(name) { const p = findPersonByName(name); return p ? personNick(p) : (name || '-'); }
+        // ชื่อเล่นสำหรับคอลัมน์ "ชื่อเล่น" ในการส่งออก — ไม่นำชื่อจริงมาใส่แทน
+        function nickOnlyOfName(name) { const p = findPersonByName(name); return (p && String(p.nickname || '').trim()) || '-'; }
         function safeFileName(s) { return String(s || 'file').replace(/[\\/:*?"<>|]/g, '_').slice(0, 80); }
 
         // อ่านจำนวนเงินเป็นตัวอักษรไทย (บาทถ้วน)
@@ -7682,14 +7782,14 @@ ${st.leader2Name}
         // ---- ส่งออกตารางเวร ว.5 (ดูตัวอย่างก่อน: ภาพ / ข้อความ) ----
         function buildW5NickText() {
             const list = getW5FilteredList();
-            return w5TitleText() + '\n' + list.map(w => `${fmtThaiDMY(w.date)}  ${nickOfName(w.officer)}${w.substitute ? ` (แทนโดย ${nickOfName(w.substitute)})` : ''}`).join('\n');
+            return w5TitleText() + '\n' + list.map(w => `${fmtThaiDMY(w.date)}  ${nickOnlyOfName(w.officer)}${w.substitute ? ` (แทนโดย ${nickOnlyOfName(w.substitute)})` : ''}`).join('\n');
         }
         function buildW5SheetHtml() {
             const list = getW5FilteredList();
             const half = list.length > 12 ? Math.ceil(list.length / 2) : list.length;
             const cols = [list.slice(0, half), list.slice(half)].filter(a => a.length);
             const tIso = todayIso();
-            const rowHtml = w => `<tr class="${w.date === tIso ? 'xp-today' : ''}"><td class="ctr" style="white-space:nowrap;font-weight:600">${fmtThaiDMY(w.date)}</td><td class="ctr" style="color:#64748b">${weekdayShort(w.date)}</td><td>${escHtml(w.officer)}${w.substitute ? `<div style="font-size:11px;color:#b45309">ผู้แทน: ${escHtml(w.substitute)}</div>` : ''}</td><td class="ctr" style="font-weight:700;white-space:nowrap">${escHtml(nickOfName(w.officer))}${w.substitute ? `<div style="font-size:11px;color:#b45309">แทน: ${escHtml(nickOfName(w.substitute))}</div>` : ''}</td></tr>`;
+            const rowHtml = w => `<tr class="${w.date === tIso ? 'xp-today' : ''}"><td class="ctr" style="white-space:nowrap;font-weight:600">${fmtThaiDMY(w.date)}</td><td class="ctr" style="color:#64748b">${weekdayShort(w.date)}</td><td>${escHtml(w.officer)}${w.substitute ? `<div style="font-size:11px;color:#b45309">ผู้แทน: ${escHtml(w.substitute)}</div>` : ''}</td><td class="ctr" style="font-weight:700;white-space:nowrap">${escHtml(nickOnlyOfName(w.officer))}${w.substitute ? `<div style="font-size:11px;color:#b45309">แทน: ${escHtml(nickOnlyOfName(w.substitute))}</div>` : ''}</td></tr>`;
             const tables = cols.map(c => `<table class="xp-table" style="table-layout:fixed"><colgroup><col style="width:96px"><col style="width:52px"><col><col style="width:78px"></colgroup><thead><tr><th class="ctr">วันที่</th><th class="ctr">วัน</th><th>นายตำรวจเวร</th><th class="ctr">ชื่อเล่น</th></tr></thead><tbody>${c.map(rowHtml).join('')}</tbody></table>`).join('');
             const busy = getW5BusyList();
             const busyHtml = busy.length ? `<div class="xp-sec">ผู้ติดภารกิจ / ราชการ</div>
@@ -9482,7 +9582,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.3.1';
+        const APP_VERSION = '2.3.2';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
