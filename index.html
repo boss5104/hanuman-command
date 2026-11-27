@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.3.4: ภาพส่งออกตารางเวร ว.5 แก้ช่องวันที่ของผู้ติดภารกิจทับกับชื่อ (กรณีช่วงวันข้ามเดือน) • ส่งออกภาพและข้อความแสดงผู้ติดภารกิจในแต่ละวัน">
-    <meta name="app-version" content="2.3.4">
+    <meta name="app-update-note" content="อัปเดต v2.4.0: หน้าเข้าสู่ระบบ (เจ้าหน้าที่ / ผู้ดูแลระบบ) • เมนูตรวจเช็คสภาพรถสำหรับเจ้าหน้าที่ • ผลการตรวจสภาพยานพาหนะ พร้อมส่งออกภาพและข้อความ • กรองประเภทรถและส่งออกรายงานสถานะยานพาหนะ • ผู้ดูแลแก้ไขหัวข้อการตรวจได้">
+    <meta name="app-version" content="2.4.0">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -678,6 +678,181 @@
         .a4-sign { display: flex; justify-content: space-around; margin-top: auto; padding-top: 22px; font-size: 13.5px; text-align: center; line-height: 2; }
         .a4-pno { position: absolute; bottom: 16px; right: 46px; font-size: 10.5px; color: #94a3b8; }
     </style>
+    <!-- ===== v2.4: หน้าเข้าสู่ระบบ / ตรวจเช็คสภาพรถ / ผลการตรวจสภาพยานพาหนะ ===== -->
+    <style id="v24Styles">
+        body.role-staff .admin-only { display: none !important; }
+        /* ---------- หน้าเข้าสู่ระบบ ---------- */
+        .auth-gate { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 18px; overflow-y: auto;
+            background: radial-gradient(1200px 600px at 15% -10%, rgba(197,160,89,.22), transparent 60%), radial-gradient(900px 500px at 110% 110%, rgba(39,70,128,.55), transparent 60%), linear-gradient(160deg, #050914 0%, #0a1128 45%, #122240 100%); }
+        .auth-gate.hidden { display: none; }
+        .auth-gate::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .07;
+            background-image: linear-gradient(rgba(230,194,91,.9) 1px, transparent 1px), linear-gradient(90deg, rgba(230,194,91,.9) 1px, transparent 1px); background-size: 46px 46px;
+            mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%); }
+        .auth-card { position: relative; width: 100%; max-width: 410px; margin: auto; border-radius: 28px; padding: 26px 22px 20px; color: #f8fafc;
+            background: linear-gradient(180deg, rgba(18,34,64,.88), rgba(10,17,40,.92)); border: 1px solid rgba(230,194,91,.35);
+            box-shadow: 0 30px 80px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: authIn .5s cubic-bezier(.2,.9,.3,1.2); }
+        .auth-card::after { content: ''; position: absolute; left: 22%; right: 22%; top: -1px; height: 2px; background: linear-gradient(90deg, transparent, #e6c25b, transparent); }
+        @keyframes authIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+        .auth-crest { width: 74px; height: 74px; margin: 0 auto 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #f3d98b;
+            background: radial-gradient(circle at 30% 25%, #274680, #050914 70%); border: 2px solid #c5a059; box-shadow: 0 0 0 6px rgba(197,160,89,.12), 0 0 34px rgba(230,194,91,.35); }
+        .auth-title { text-align: center; font: 700 19px/1.25 'Prompt', sans-serif; letter-spacing: .08em; }
+        .auth-sub { text-align: center; font-size: 12.5px; color: #e6c25b; margin-top: 2px; }
+        .auth-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0 6px; }
+        .auth-role { position: relative; border-radius: 18px; padding: 12px 10px; text-align: center; cursor: pointer; transition: all .2s ease; color: #cbd5e1;
+            background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); }
+        .auth-role:hover { border-color: rgba(230,194,91,.55); color: #fff; }
+        .auth-role .ic { width: 40px; height: 40px; margin: 0 auto 6px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 17px; background: rgba(255,255,255,.07); color: #e6c25b; transition: all .2s; }
+        .auth-role .nm { font: 600 14px 'Prompt', sans-serif; }
+        .auth-role .ds { font-size: 10.5px; opacity: .7; margin-top: 1px; }
+        .auth-role.on { color: #fff; background: linear-gradient(160deg, rgba(197,160,89,.28), rgba(197,160,89,.08)); border-color: #e6c25b; box-shadow: 0 10px 26px -12px rgba(230,194,91,.6); }
+        .auth-role.on .ic { background: linear-gradient(135deg, #f3d98b, #c5a059); color: #0a1128; }
+        .auth-role.on::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; top: 8px; right: 10px; font-size: 10px; color: #0a1128; background: #e6c25b; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .auth-hint { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 14px; min-height: 18px; }
+        .auth-hint.err { color: #fca5a5; font-weight: 600; }
+        .auth-hint.ok { color: #6ee7b7; font-weight: 600; }
+        .auth-dots { display: flex; justify-content: center; gap: 16px; margin: 10px 0 16px; }
+        .auth-dots.shake { animation: authShake .42s; }
+        @keyframes authShake { 0%,100% { transform: none; } 20%,60% { transform: translateX(-9px); } 40%,80% { transform: translateX(9px); } }
+        .auth-dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(230,194,91,.6); transition: all .18s ease; }
+        .auth-dot.fill { background: #e6c25b; border-color: #e6c25b; box-shadow: 0 0 14px rgba(230,194,91,.75); transform: scale(1.1); }
+        .auth-dots.ok .auth-dot { background: #34d399; border-color: #34d399; box-shadow: 0 0 14px rgba(52,211,153,.7); }
+        .auth-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+        .auth-key { height: 58px; border-radius: 18px; font: 500 23px 'Prompt', sans-serif; color: #f8fafc; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+            transition: transform .08s ease, background .15s; -webkit-tap-highlight-color: transparent; user-select: none; }
+        .auth-key:hover { background: rgba(255,255,255,.11); border-color: rgba(230,194,91,.4); }
+        .auth-key:active { transform: scale(.93); background: rgba(230,194,91,.25); }
+        .auth-key.fn { font-size: 17px; color: #e6c25b; background: transparent; border-color: transparent; }
+        .auth-remember { display: flex; align-items: center; gap: 12px; margin: 18px auto 0; max-width: 300px; padding: 11px 13px; border-radius: 16px; cursor: pointer;
+            background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
+        .auth-switch { position: relative; width: 44px; height: 25px; border-radius: 999px; background: rgba(255,255,255,.18); flex-shrink: 0; transition: background .2s; }
+        .auth-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+        .auth-remember input:checked + .auth-switch { background: linear-gradient(90deg, #c5a059, #e6c25b); }
+        .auth-remember input:checked + .auth-switch::after { transform: translateX(19px); }
+        .auth-foot { text-align: center; font-size: 10.5px; color: #64748b; margin-top: 16px; letter-spacing: .05em; }
+
+        /* ---------- ชิปเลือกประเภทรถ ---------- */
+        .vt-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 14px; scrollbar-width: thin; }
+        .vt-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap;
+            background: #fff; color: #0a1128; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(10,17,40,.05); transition: all .15s; }
+        .vt-chip:hover { border-color: #c5a059; }
+        .vt-chip .ct { min-width: 22px; padding: 0 6px; height: 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; background: #f1f5f9; color: #475569; }
+        .vt-chip.on { background: linear-gradient(135deg, #0a1128, #1c335e); color: #f3d98b; border-color: #c5a059; box-shadow: 0 6px 16px -8px rgba(10,17,40,.6); }
+        .vt-chip.on .ct { background: #e6c25b; color: #0a1128; }
+        body.theme-dark .vt-chip { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+        body.theme-eyecare .vt-chip { background: #fffdf8; border-color: #dfd1b8; }
+
+        /* ---------- แท็บหน้าสถานะรถ ---------- */
+        .vtab-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border-radius: 20px; margin-bottom: 22px;
+            background: linear-gradient(135deg, #0a1128, #122240); border: 1px solid rgba(197,160,89,.35); box-shadow: 0 12px 30px -18px rgba(10,17,40,.7); }
+        .vtab { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 10px; border-radius: 15px; color: #cbd5e1; font: 600 14px 'Prompt', sans-serif; transition: all .2s; text-align: center; }
+        .vtab:hover { color: #fff; background: rgba(255,255,255,.06); }
+        .vtab.on { background: linear-gradient(135deg, #f3d98b, #c5a059); color: #0a1128; box-shadow: 0 6px 18px -6px rgba(230,194,91,.7); }
+        .vtab .bd { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.14); }
+        .vtab.on .bd { background: #0a1128; color: #f3d98b; }
+
+        /* ---------- ฟอร์มตรวจเช็คสภาพรถ ---------- */
+        .vc-hero { position: relative; overflow: hidden; border-radius: 24px; padding: 22px; color: #fff; background: linear-gradient(135deg, #0a1128 0%, #1c335e 60%, #274680 100%); border: 1px solid rgba(197,160,89,.4); box-shadow: 0 20px 40px -24px rgba(10,17,40,.8); }
+        .vc-hero::after { content: ''; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(230,194,91,.35), transparent 65%); }
+        .vc-step { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font: 700 12px 'Prompt', sans-serif; background: linear-gradient(135deg, #f3d98b, #c5a059); color: #0a1128; flex-shrink: 0; }
+        .vc-card { background: #fff; border: 1px solid #e8e1cf; border-radius: 22px; box-shadow: 0 10px 30px -22px rgba(10,17,40,.45); overflow: hidden; }
+        .vc-card-h { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f1ead8; background: linear-gradient(180deg, #fffdf7, #fff); }
+        .vc-ic { width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #e6c25b; background: linear-gradient(135deg, #0a1128, #1c335e); box-shadow: 0 6px 14px -6px rgba(10,17,40,.7); }
+        .vc-no { font: 700 11px 'Prompt', sans-serif; color: #a3803b; letter-spacing: .08em; }
+        .vc-tt { font: 700 15.5px/1.3 'Prompt', sans-serif; color: #0a1128; }
+        .vc-legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 0; }
+        .vc-lg { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
+        .vc-lg::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+        .vc-lg.l0 { background: #ecfdf5; color: #047857; } .vc-lg.l1 { background: #fffbeb; color: #b45309; } .vc-lg.l2 { background: #fef2f2; color: #b91c1c; }
+        .vc-item { padding: 13px 16px; border-bottom: 1px dashed #efe7d4; transition: background .2s; }
+        .vc-item:last-child { border-bottom: 0; }
+        .vc-item.s0 { background: linear-gradient(90deg, rgba(16,185,129,.06), transparent 40%); }
+        .vc-item.s1 { background: linear-gradient(90deg, rgba(245,158,11,.09), transparent 45%); }
+        .vc-item.s2 { background: linear-gradient(90deg, rgba(239,68,68,.09), transparent 45%); }
+        .vc-q { display: flex; gap: 8px; font-size: 14px; font-weight: 600; color: #0a1128; line-height: 1.4; margin-bottom: 9px; }
+        .vc-q .n { color: #a3803b; font: 600 12px 'Prompt', sans-serif; flex-shrink: 0; padding-top: 1px; }
+        .vc-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .vc-opt { display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 8px 6px; min-height: 42px; border-radius: 13px; font-size: 12px; font-weight: 600; line-height: 1.25;
+            color: #475569; background: #f8fafc; border: 1.5px solid #e2e8f0; transition: all .15s ease; -webkit-tap-highlight-color: transparent; }
+        .vc-opt i { font-size: 13px; opacity: .55; }
+        .vc-opt:hover { border-color: #cbd5e1; background: #fff; }
+        .vc-opt:active { transform: scale(.97); }
+        .vc-opt.l0.on { background: linear-gradient(135deg, #10b981, #047857); color: #fff; border-color: #047857; box-shadow: 0 8px 18px -10px rgba(4,120,87,.9); }
+        .vc-opt.l1.on { background: linear-gradient(135deg, #fbbf24, #d97706); color: #3b2400; border-color: #d97706; box-shadow: 0 8px 18px -10px rgba(217,119,6,.9); }
+        .vc-opt.l2.on { background: linear-gradient(135deg, #f87171, #dc2626); color: #fff; border-color: #b91c1c; box-shadow: 0 8px 18px -10px rgba(185,28,28,.9); }
+        .vc-opt.on i { opacity: 1; }
+        .vc-note { margin-top: 8px; width: 100%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 7px 11px; font-size: 13px; background: #fff; }
+        .vc-meas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 4px 16px 14px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(135deg, #fffaf0, #fdf3d6); border: 1px solid #ecd9a6; }
+        .vc-mv { display: inline-flex; flex-direction: column; align-items: center; min-width: 64px; padding: 5px 9px; border-radius: 12px; background: #fff; border: 1px solid #ecd9a6; }
+        .vc-mv b { font: 700 16px 'Prompt', sans-serif; color: #0a1128; font-variant-numeric: tabular-nums; }
+        .vc-mv span { font-size: 10.5px; color: #8a6d2f; }
+        .vc-all0 { font-size: 11.5px; font-weight: 600; padding: 6px 11px; border-radius: 999px; border: 1px solid #a7f3d0; color: #047857; background: #ecfdf5; white-space: nowrap; }
+        .vc-all0:hover { background: #d1fae5; }
+        .vc-ovr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .vc-ov { border-radius: 18px; padding: 14px 10px; text-align: center; border: 2px solid #e2e8f0; background: #fff; transition: all .18s; }
+        .vc-ov .oi { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 7px; display: flex; align-items: center; justify-content: center; font-size: 19px; }
+        .vc-ov .ot { font: 700 13.5px/1.3 'Prompt', sans-serif; color: #0a1128; }
+        .vc-ov .od { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .vc-ov.k0 .oi { background: #ecfdf5; color: #059669; } .vc-ov.k1 .oi { background: #fffbeb; color: #d97706; } .vc-ov.k2 .oi { background: #fef2f2; color: #dc2626; }
+        .vc-ov.k0.on { border-color: #10b981; background: linear-gradient(180deg, #ecfdf5, #fff); box-shadow: 0 12px 24px -16px rgba(5,150,105,.9); }
+        .vc-ov.k1.on { border-color: #f59e0b; background: linear-gradient(180deg, #fffbeb, #fff); box-shadow: 0 12px 24px -16px rgba(217,119,6,.9); }
+        .vc-ov.k2.on { border-color: #ef4444; background: linear-gradient(180deg, #fef2f2, #fff); box-shadow: 0 12px 24px -16px rgba(220,38,38,.9); }
+        .vc-ov.on .oi { color: #fff; } .vc-ov.k0.on .oi { background: #059669; } .vc-ov.k1.on .oi { background: #d97706; } .vc-ov.k2.on .oi { background: #dc2626; }
+        .vc-bar { position: sticky; bottom: 10px; z-index: 20; margin-top: 22px; padding: 8px; border-radius: 22px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+            background: rgba(10,17,40,.92); border: 1px solid rgba(230,194,91,.4); box-shadow: 0 18px 40px -16px rgba(0,0,0,.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .vc-bb { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; border-radius: 15px; font-size: 11px; font-weight: 600; color: #cbd5e1; line-height: 1.2; text-align: center; transition: all .15s; }
+        .vc-bb i { font-size: 16px; color: #e6c25b; }
+        .vc-bb:hover { background: rgba(255,255,255,.08); color: #fff; }
+        .vc-bb.pri { background: linear-gradient(135deg, #f3d98b, #c5a059); color: #0a1128; box-shadow: 0 6px 16px -6px rgba(230,194,91,.8); }
+        .vc-bb.pri i { color: #0a1128; }
+        .vc-bb.dng i { color: #fca5a5; }
+        .vc-veh { position: relative; text-align: left; border-radius: 20px; overflow: hidden; background: #fff; border: 1.5px solid #e8e1cf; transition: all .18s; box-shadow: 0 8px 22px -18px rgba(10,17,40,.6); }
+        .vc-veh:hover { transform: translateY(-2px); border-color: #c5a059; box-shadow: 0 16px 30px -18px rgba(10,17,40,.6); }
+        .vc-veh img { width: 100%; height: 112px; object-fit: cover; display: block; background: #0a1128; }
+        .vc-veh .vb { padding: 10px 12px 12px; }
+        .vc-veh .pl { display: inline-block; margin-top: 5px; padding: 2px 9px; border-radius: 8px; background: #0a1128; color: #f3d98b; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+        .vc-veh .st { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+        .vc-veh.done { border-color: #10b981; }
+        .vc-dd { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; background: #fff; border: 1px solid #e8e1cf; border-radius: 16px; box-shadow: 0 20px 40px -16px rgba(10,17,40,.45); max-height: 300px; overflow-y: auto; }
+        .vc-dd button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 12px; text-align: left; border-bottom: 1px solid #f5f0e3; }
+        .vc-dd button:hover { background: #fdf8ea; }
+        .vc-dd img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid #e6c25b; flex-shrink: 0; }
+        .vc-person { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: linear-gradient(135deg, #fffaf0, #fdf3d6); border: 1px solid #ecd9a6; }
+        .vc-person img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #c5a059; }
+        .vc-prog { height: 8px; border-radius: 999px; background: rgba(255,255,255,.15); overflow: hidden; }
+        .vc-prog > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #e6c25b, #f3d98b); transition: width .3s ease; }
+        .vc-inp { width: 100%; border: 1px solid #d1d5db; border-radius: 14px; padding: 10px 13px; background: #fff; font-size: 14px; }
+        .vc-inp:focus, .vc-note:focus { outline: none; border-color: #c5a059; box-shadow: 0 0 0 3px rgba(197,160,89,.2); }
+        .vc-big { font: 700 26px 'Prompt', sans-serif; text-align: center; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+        .vc-car { position: relative; width: 150px; height: 230px; margin: 0 auto; border-radius: 62px 62px 46px 46px; background: linear-gradient(180deg, #1c335e, #0a1128); border: 2px solid #c5a059; box-shadow: inset 0 0 0 7px rgba(255,255,255,.04); }
+        .vc-car::before { content: ''; position: absolute; left: 22px; right: 22px; top: 44px; height: 40px; border-radius: 22px 22px 8px 8px; background: rgba(147,197,253,.25); }
+        .vc-car::after { content: ''; position: absolute; left: 26px; right: 26px; bottom: 30px; height: 26px; border-radius: 6px 6px 16px 16px; background: rgba(147,197,253,.18); }
+        .vc-tire { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .vc-tire label { font-size: 11.5px; font-weight: 600; color: #64748b; }
+        .vc-tire input { width: 92px; }
+        .vc-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; }
+        .vc-dot.s0 { background: #10b981; } .vc-dot.s1 { background: #f59e0b; } .vc-dot.s2 { background: #ef4444; } .vc-dot.sn { background: #cbd5e1; }
+        .vc-tile { position: relative; overflow: hidden; border-radius: 20px; padding: 15px 16px; background: #fff; border: 1px solid #e8e1cf; box-shadow: 0 10px 24px -20px rgba(10,17,40,.6); }
+        .vc-tile .tv { font: 700 26px 'Prompt', sans-serif; line-height: 1.1; }
+        .vc-tile .tl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .vc-tile .ti { position: absolute; right: 12px; top: 12px; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .vc-tile::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--vc-accent, #c5a059); }
+        .vc-row { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #f1ead8; align-items: center; }
+        @media (min-width: 900px) { .vc-row { grid-template-columns: 34px minmax(200px, 1.4fr) 1fr 150px minmax(150px, 1.2fr) 120px; } .vc-row.hd { display: grid; } }
+        .vc-row.hd { display: none; font: 600 11.5px 'Prompt', sans-serif; color: #64748b; background: #faf7ef; padding-top: 10px; padding-bottom: 10px; }
+        .vc-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+        .vc-pill.k0 { background: #d1fae5; color: #065f46; } .vc-pill.k1 { background: #fef3c7; color: #92400e; } .vc-pill.k2 { background: #fee2e2; color: #991b1b; } .vc-pill.kn { background: #f1f5f9; color: #64748b; }
+        body.theme-dark .vc-card, body.theme-dark .vc-veh, body.theme-dark .vc-tile, body.theme-dark .vc-ov, body.theme-dark .vc-dd { background: #1e293b; border-color: #334155; }
+        body.theme-dark .vc-card-h { background: #172033; border-color: #334155; }
+        body.theme-dark .vc-tt, body.theme-dark .vc-q, body.theme-dark .vc-ov .ot, body.theme-dark .vc-mv b { color: #f1f5f9; }
+        body.theme-dark .vc-item { border-color: #334155; }
+        body.theme-dark .vc-opt { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+        body.theme-dark .vc-note, body.theme-dark .vc-inp { background: #0f172a; border-color: #475569; color: #f8fafc; }
+        body.theme-dark .vc-meas, body.theme-dark .vc-person { background: #172033; border-color: #475569; }
+        body.theme-dark .vc-mv { background: #0f172a; border-color: #475569; }
+        body.theme-dark .vc-row { border-color: #334155; } body.theme-dark .vc-row.hd { background: #172033; }
+        body.theme-dark .vc-dd button { border-color: #334155; } body.theme-dark .vc-dd button:hover { background: #273449; }
+        body.theme-eyecare .vc-card, body.theme-eyecare .vc-veh, body.theme-eyecare .vc-tile, body.theme-eyecare .vc-ov { background: #fffdf8; border-color: #dfd1b8; }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -715,8 +890,14 @@
                 <button onclick="loadFromGoogleSheets(true)" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="รีเฟรชข้อมูลล่าสุดจาก Google Sheet">
                     <i class="fa-solid fa-rotate text-sm"></i>
                 </button>
-                <button onclick="openSettingsModal()" class="p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="ตั้งค่าการเชื่อมต่อ Google Sheet">
+                <button onclick="openSettingsModal()" class="admin-only p-2 sm:p-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-gray-300 hover:text-gold-400 border border-white/10 transition" title="ตั้งค่าการเชื่อมต่อ Google Sheet">
                     <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+                <!-- v2.4: ผู้ใช้ที่เข้าสู่ระบบ + ออกจากระบบ -->
+                <button type="button" id="authChip" onclick="authLogoutAsk()" class="hidden items-center gap-1.5 px-2.5 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 border border-white/10 text-xs text-gray-200 transition" title="ออกจากระบบ">
+                    <i id="authChipIcon" class="fa-solid fa-user-shield text-gold-400"></i>
+                    <span id="authChipLabel" class="hidden md:inline font-semibold"></span>
+                    <i class="fa-solid fa-right-from-bracket text-gray-400"></i>
                 </button>
                 <button onclick="navigate('home')" class="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-navy-950 font-semibold text-xs sm:text-sm transition shadow-md">
                     <i class="fa-solid fa-house sm:mr-1"></i> <span class="hidden sm:inline">หน้าหลัก</span>
@@ -898,6 +1079,65 @@
         <div class="bg-white rounded-3xl p-4 shadow-2xl border-2 border-gold-500/40 w-full max-w-xs animate-pop-in">
             <div class="text-center text-sm font-bold text-navy-900 mb-2"><i class="fa-regular fa-calendar-days text-gold-600 mr-1.5"></i>เลือกวันที่ (ปฏิทินไทย)</div>
             <div id="thaiDatePickerBody"></div>
+        </div>
+    </div>
+
+    <!-- ===== v2.4: หน้าเข้าสู่ระบบ (เจ้าหน้าที่ / ผู้ดูแลระบบ) ===== -->
+    <div id="authGate" class="auth-gate" role="dialog" aria-modal="true" aria-label="เข้าสู่ระบบ">
+        <div class="auth-card">
+            <div class="auth-crest"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="auth-title">HANUMAN TACTICAL COMMAND</div>
+            <div class="auth-sub">ระบบบริหารจัดการภารกิจและกำลังพล • เข้าสู่ระบบ</div>
+            <div class="auth-roles">
+                <button type="button" id="authRole-staff" class="auth-role" onclick="authPickRole('staff')">
+                    <div class="ic"><i class="fa-solid fa-user-gear"></i></div>
+                    <div class="nm">เจ้าหน้าที่</div>
+                    <div class="ds">ตรวจเช็คสภาพรถ</div>
+                </button>
+                <button type="button" id="authRole-admin" class="auth-role" onclick="authPickRole('admin')">
+                    <div class="ic"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="nm">ผู้ดูแลระบบ</div>
+                    <div class="ds">จัดการข้อมูลทั้งหมด</div>
+                </button>
+            </div>
+            <div id="authHint" class="auth-hint">กรอกรหัสผ่าน 4 หลัก</div>
+            <div id="authDots" class="auth-dots"><span class="auth-dot"></span><span class="auth-dot"></span><span class="auth-dot"></span><span class="auth-dot"></span></div>
+            <div class="auth-pad">
+                <button type="button" class="auth-key" onclick="authKey('1')">1</button>
+                <button type="button" class="auth-key" onclick="authKey('2')">2</button>
+                <button type="button" class="auth-key" onclick="authKey('3')">3</button>
+                <button type="button" class="auth-key" onclick="authKey('4')">4</button>
+                <button type="button" class="auth-key" onclick="authKey('5')">5</button>
+                <button type="button" class="auth-key" onclick="authKey('6')">6</button>
+                <button type="button" class="auth-key" onclick="authKey('7')">7</button>
+                <button type="button" class="auth-key" onclick="authKey('8')">8</button>
+                <button type="button" class="auth-key" onclick="authKey('9')">9</button>
+                <button type="button" class="auth-key fn" onclick="authKey('clear')" title="ล้าง"><i class="fa-solid fa-eraser"></i></button>
+                <button type="button" class="auth-key" onclick="authKey('0')">0</button>
+                <button type="button" class="auth-key fn" onclick="authKey('back')" title="ลบ"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+            <label class="auth-remember">
+                <input type="checkbox" id="authRemember" class="sr-only">
+                <span class="auth-switch"></span>
+                <span class="text-left">
+                    <span class="block text-sm font-semibold text-white">จดจำรหัสผ่าน</span>
+                    <span class="block text-[11px] text-gray-400">ครั้งถัดไปเข้าสู่ระบบอัตโนมัติบนเครื่องนี้</span>
+                </span>
+            </label>
+            <div class="auth-foot">HANUMAN SPECIAL OPERATIONS UNIT</div>
+        </div>
+    </div>
+
+    <!-- ===== v2.4: ป๊อปอัพยืนยันทั่วไป ===== -->
+    <div id="vcConfirmModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-xs hidden z-[72] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-gold-500/40 animate-pop-in">
+            <div id="vcConfirmIcon" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-amber-100 text-amber-600"><i class="fa-solid fa-circle-question"></i></div>
+            <h4 id="vcConfirmTitle" class="text-lg font-bold text-navy-900 mb-1.5"></h4>
+            <p id="vcConfirmDesc" class="text-sm text-gray-600 font-body mb-6"></p>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="vcConfirmClose()" class="py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold text-sm">ยกเลิก</button>
+                <button type="button" id="vcConfirmOk" class="py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-semibold text-sm shadow">ตกลง</button>
+            </div>
         </div>
     </div>
 
@@ -1216,6 +1456,8 @@
             ['dutyHanuman', 'dutyW5', 'missions', 'personnel', 'vehicles'].forEach(k => { db[k] = parse(db[k], []); if (!Array.isArray(db[k])) db[k] = []; });
             db.dutyBusy = parse(db.dutyBusy, []); if (!Array.isArray(db.dutyBusy)) db.dutyBusy = [];
             db.missionBills = parse(db.missionBills, []); if (!Array.isArray(db.missionBills)) db.missionBills = [];
+            // v2.4: ผลการตรวจเช็คสภาพรถ (กรอกโดยเจ้าหน้าที่)
+            db.vehicleChecks = parse(db.vehicleChecks, []); if (!Array.isArray(db.vehicleChecks)) db.vehicleChecks = [];
             db.cmdDaily = parse(db.cmdDaily, {});
             if (!db.cmdDaily || typeof db.cmdDaily !== 'object' || Array.isArray(db.cmdDaily)) db.cmdDaily = {};
             db.presets = parse(db.presets, {});
@@ -1440,7 +1682,7 @@
                     });
                 });
             }
-            ['dutyBusy', 'presets', 'missionBills', 'orgHierarchy', 'cmdDaily', 'appConfig'].forEach(k => {
+            ['dutyBusy', 'presets', 'missionBills', 'orgHierarchy', 'cmdDaily', 'appConfig', 'vehicleChecks'].forEach(k => {
                 const rv = remoteData[k];
                 if (rv === undefined || rv === null || rv === '') remoteData[k] = db[k];
             });
@@ -1641,6 +1883,13 @@
 
         function render() {
             const app = document.getElementById('appContent');
+            // v2.4: ต้องเข้าสู่ระบบก่อน / เจ้าหน้าที่เห็นเฉพาะเมนูของเจ้าหน้าที่
+            if (typeof authRole === 'function') {
+                const role = authRole();
+                if (!role) { updateBreadcrumbs([]); app.innerHTML = ''; return; }
+                if (role === 'staff' && !STAFF_PAGES.includes(currentRoute.page)) currentRoute = { page: 'home', params: {} };
+                if (role === 'staff' && currentRoute.page === 'home') { renderStaffHome(app); return; }
+            }
             const { page, params } = currentRoute;
             if (page !== 'personnel_chart' && orgChartFullscreen) {
                 orgChartFullscreen = false;
@@ -1661,6 +1910,7 @@
                 case 'personnel_list': renderPersonnelList(app, params.filter, params.title); break;
                 case 'personnel_chart': renderPersonnelChart(app); break;
                 case 'vehicles': renderVehicles(app); break;
+                case 'vcheck': renderVehicleCheck(app); break;
                 default: renderHome(app);
             }
         }
@@ -5966,7 +6216,9 @@ ${st.leader2Name}
         function getVehUi() {
             let ui = {};
             try { ui = JSON.parse(localStorage.getItem('hanuman_veh_ui') || '{}') || {}; } catch (e) {}
-            return { view: ui.view === 'list' ? 'list' : 'card', sort: ui.sort || 'type', dir: ui.dir === 'desc' ? 'desc' : 'asc', status: ui.status || 'all' };
+            return { view: ui.view === 'list' ? 'list' : 'card', sort: ui.sort || 'type', dir: ui.dir === 'desc' ? 'desc' : 'asc', status: ui.status || 'all',
+                // v2.4: กรองตามประเภทรถ / แท็บผลการตรวจสภาพ / วันที่ของผลการตรวจ
+                type: ui.type || 'all', tab: ui.tab === 'checks' ? 'checks' : 'status', checkDate: ui.checkDate || '' };
         }
         function setVehUi(patch) {
             const ui = { ...getVehUi(), ...patch };
@@ -5993,8 +6245,16 @@ ${st.leader2Name}
             ]);
 
             const ui = getVehUi();
-            const totalVehicles = db.vehicles.length;
-            const countOf = (st) => db.vehicles.filter(v => vehStatusOf(v) === st).length;
+            // v2.4: แท็บ "ผลการตรวจสภาพยานพาหนะ"
+            if (ui.tab === 'checks' && typeof renderVehicleCheckResults === 'function') {
+                container.innerHTML = vehPageHeadHtml(ui) + renderVehicleCheckResults(ui);
+                return;
+            }
+            // v2.4: แสดงเฉพาะประเภทรถที่เลือก
+            const typeList = ui.type === 'all' || !db.vehicles.some(v => (v.type || '') === ui.type) ? db.vehicles : db.vehicles.filter(v => (v.type || '') === ui.type);
+            if (typeList === db.vehicles) ui.type = 'all';
+            const totalVehicles = typeList.length;
+            const countOf = (st) => typeList.filter(v => vehStatusOf(v) === st).length;
 
             // กรองตามสถานะ + จัดเรียง
             const sortVal = {
@@ -6004,7 +6264,7 @@ ${st.leader2Name}
                 status: v => String(VEH_STATUS_KEYS.indexOf(vehStatusOf(v))),
                 note: v => v.note || ''
             }[ui.sort] || (v => v.type || '');
-            const list = db.vehicles
+            const list = typeList
                 .filter(v => ui.status === 'all' || vehStatusOf(v) === ui.status)
                 .slice()
                 .sort((x, y) => {
@@ -6146,7 +6406,7 @@ ${st.leader2Name}
             };
             const sortOpts = [['type', 'ประเภทรถ'], ['status', 'สถานะ'], ['plate', 'ทะเบียน'], ['brand', 'ยี่ห้อ / รุ่น']];
 
-            container.innerHTML = `
+            container.innerHTML = vehPageHeadHtml(ui) + `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3.5">
                         <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-2xl shadow-md border border-gold-500/30 shrink-0">
@@ -6159,11 +6419,16 @@ ${st.leader2Name}
                     </div>
                     <div class="flex flex-wrap items-center gap-2 self-start">
                         ${bulkBarHtml('vehicles', 'คัน')}
+                        <button onclick="openVehStatusExport()" class="px-4 py-2.5 rounded-xl border border-gold-500 bg-white hover:bg-amber-50 text-navy-900 font-semibold text-sm shadow-sm flex items-center">
+                            <i class="fa-solid fa-file-export text-gold-600 mr-2"></i> ส่งออกรายงาน
+                        </button>
                         <button onclick="openVehicleModal()" class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-medium text-sm shadow flex items-center">
                             <i class="fa-solid fa-plus mr-2"></i> เพิ่มข้อมูลรถใหม่
                         </button>
                     </div>
                 </div>
+
+                ${vehTypeChipsHtml(ui.type, 'setVehType', db.vehicles)}
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
                     ${sumCard('all', 'ยานพาหนะทั้งหมด', totalVehicles, 'fa-cars', 'border-navy-900', 'text-navy-900', 'bg-navy-900/10 text-navy-900')}
@@ -6198,7 +6463,7 @@ ${st.leader2Name}
 
                 ${ui.view === 'list'
                     ? listHtml
-                    : (groupsHtml || `<div class="text-center py-12 text-gray-400">${db.vehicles.length ? 'ไม่มีรถในสถานะนี้' : 'ยังไม่มีข้อมูลยานพาหนะ'}</div>`)}
+                    : (groupsHtml || `<div class="text-center py-12 text-gray-400">${db.vehicles.length ? 'ไม่มีรถในสถานะ/ประเภทนี้' : 'ยังไม่มีข้อมูลยานพาหนะ'}</div>`)}
             `;
         }
 
@@ -6907,6 +7172,7 @@ ${st.leader2Name}
             if (type === 'missionAnalyze') { submitMissionAnalysis(); return; }
             if (type === 'gcalSettings') { submitGcalSettings(); return; }
             if (type === 'aiSettings') { submitAiSettings(); return; }
+            if (String(type).startsWith('vc') && typeof vcHandleModalSubmit === 'function') { vcHandleModalSubmit(currentModalContext); return; }
             let afterSaveNav = null;
             let afterMission = null;
 
@@ -9604,7 +9870,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.3.4';
+        const APP_VERSION = '2.4.0';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -11550,6 +11816,1468 @@ ${st.leader2Name}
             const last = +lsGet('hanuman_gcal_last', 0);
             if (Date.now() - last > 5 * 60000 && (gcalState().accounts.some(gcalTokenValid) || gcalBridges().length)) gcalPull(false);
         });
+    </script>
+    <script>
+        // =====================================================================
+        // v2.4 — เข้าสู่ระบบ (เจ้าหน้าที่ / ผู้ดูแลระบบ) • ตรวจเช็คสภาพรถ (เจ้าหน้าที่)
+        //        • ผลการตรวจสภาพยานพาหนะ + ส่งออกภาพ/ข้อความ (ผู้ดูแลระบบ)
+        //        • กรองประเภทรถ + ส่งออกรายงานสถานะยานพาหนะ
+        // =====================================================================
+
+        // ---------- 1) เข้าสู่ระบบ ----------
+        const AUTH_PINS = { staff: '1234', admin: '9999' };
+        const AUTH_LABEL = { staff: 'เจ้าหน้าที่', admin: 'ผู้ดูแลระบบ' };
+        const STAFF_PAGES = ['home', 'vcheck'];
+        let authState = { role: null, pick: 'staff', pin: '', busy: false };
+
+        function authRole() { return authState.role; }
+        function authLoad() {
+            try {
+                const rem = JSON.parse(localStorage.getItem('hanuman_auth_remember') || 'null');
+                if (rem && AUTH_PINS[rem.role] && rem.pin === AUTH_PINS[rem.role]) return rem.role;
+            } catch (e) {}
+            try {
+                const ses = sessionStorage.getItem('hanuman_auth_session');
+                if (AUTH_PINS[ses]) return ses;
+            } catch (e) {}
+            return null;
+        }
+        function authApplyRole(role) {
+            authState.role = role;
+            document.body.classList.toggle('role-staff', role === 'staff');
+            document.body.classList.toggle('role-admin', role === 'admin');
+            const chip = document.getElementById('authChip');
+            if (chip) {
+                chip.classList.toggle('hidden', !role);
+                chip.classList.toggle('inline-flex', !!role);
+                document.getElementById('authChipLabel').textContent = role ? AUTH_LABEL[role] : '';
+                document.getElementById('authChipIcon').className = `fa-solid ${role === 'staff' ? 'fa-user-gear' : 'fa-user-shield'} text-gold-400`;
+            }
+            const gate = document.getElementById('authGate');
+            if (gate) gate.classList.toggle('hidden', !!role);
+            document.body.style.overflow = role ? '' : 'hidden';
+        }
+        function authPickRole(role) {
+            authState.pick = role;
+            authState.pin = '';
+            ['staff', 'admin'].forEach(r => document.getElementById('authRole-' + r).classList.toggle('on', r === role));
+            authHint(`กรอกรหัสผ่าน 4 หลัก สำหรับ${AUTH_LABEL[role]}`);
+            authDraw();
+            try { localStorage.setItem('hanuman_auth_lastrole', role); } catch (e) {}
+        }
+        function authHint(t, cls = '') {
+            const el = document.getElementById('authHint');
+            if (!el) return;
+            el.className = 'auth-hint ' + cls;
+            el.textContent = t;
+        }
+        function authDraw() {
+            const dots = document.querySelectorAll('#authDots .auth-dot');
+            dots.forEach((d, i) => d.classList.toggle('fill', i < authState.pin.length));
+        }
+        function authKey(k) {
+            if (authState.busy || authState.role) return;
+            if (k === 'back') authState.pin = authState.pin.slice(0, -1);
+            else if (k === 'clear') authState.pin = '';
+            else if (/^\d$/.test(k) && authState.pin.length < 4) authState.pin += k;
+            authDraw();
+            if (authState.pin.length === 4) authTry();
+        }
+        function authTry() {
+            const role = authState.pick;
+            const dots = document.getElementById('authDots');
+            if (authState.pin === AUTH_PINS[role]) {
+                authState.busy = true;
+                dots.classList.add('ok');
+                authHint(`ยินดีต้อนรับ ${AUTH_LABEL[role]} — กำลังเข้าสู่ระบบ...`, 'ok');
+                const remember = document.getElementById('authRemember').checked;
+                try {
+                    if (remember) localStorage.setItem('hanuman_auth_remember', JSON.stringify({ role, pin: authState.pin }));
+                    else localStorage.removeItem('hanuman_auth_remember');
+                } catch (e) {}
+                try { sessionStorage.setItem('hanuman_auth_session', role); } catch (e) {}
+                setTimeout(() => {
+                    authState.busy = false;
+                    authState.pin = '';
+                    dots.classList.remove('ok');
+                    authDraw();
+                    authApplyRole(role);
+                    navigationHistory = [];
+                    currentRoute = { page: 'home', params: {} };
+                    render();
+                    window.scrollTo({ top: 0 });
+                }, 380);
+            } else {
+                dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake');
+                authHint(`รหัสผ่านไม่ถูกต้องสำหรับ${AUTH_LABEL[role]} กรุณาลองใหม่`, 'err');
+                if (navigator.vibrate) { try { navigator.vibrate(120); } catch (e) {} }
+                setTimeout(() => { authState.pin = ''; authDraw(); }, 380);
+            }
+        }
+        function authLogoutAsk() {
+            vcConfirm('ออกจากระบบ', `ต้องการออกจากระบบ (${AUTH_LABEL[authState.role] || ''}) ใช่หรือไม่? หากจดจำรหัสผ่านไว้ ระบบจะล้างการจดจำด้วย`, 'ออกจากระบบ', () => authLogout(), 'fa-right-from-bracket');
+        }
+        function authLogout() {
+            try { localStorage.removeItem('hanuman_auth_remember'); sessionStorage.removeItem('hanuman_auth_session'); } catch (e) {}
+            closeModal();
+            authApplyRole(null);
+            navigationHistory = [];
+            currentRoute = { page: 'home', params: {} };
+            render();
+            authPickRole(authState.pick);
+        }
+        document.addEventListener('keydown', (e) => {
+            if (authState.role) return;
+            if (/^\d$/.test(e.key)) { e.preventDefault(); authKey(e.key); }
+            else if (e.key === 'Backspace') { e.preventDefault(); authKey('back'); }
+            else if (e.key === 'Escape') authKey('clear');
+        });
+        (function authInit() {
+            let last = 'staff';
+            try { last = localStorage.getItem('hanuman_auth_lastrole') || 'staff'; } catch (e) {}
+            authPickRole(AUTH_PINS[last] ? last : 'staff');
+            try { document.getElementById('authRemember').checked = !!localStorage.getItem('hanuman_auth_remember'); } catch (e) {}
+            authApplyRole(authLoad());
+        })();
+
+        // ---------- ป๊อปอัพยืนยัน ----------
+        let vcConfirmFn = null;
+        function vcConfirm(title, desc, okLabel, onOk, icon = 'fa-circle-question', danger = false) {
+            document.getElementById('vcConfirmTitle').textContent = title;
+            document.getElementById('vcConfirmDesc').textContent = desc;
+            const ok = document.getElementById('vcConfirmOk');
+            ok.textContent = okLabel;
+            ok.className = `py-2.5 rounded-xl font-semibold text-sm shadow ${danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-navy-900 hover:bg-navy-800 text-gold-400'}`;
+            const ic = document.getElementById('vcConfirmIcon');
+            ic.className = `w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-md ${danger ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`;
+            ic.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+            vcConfirmFn = onOk;
+            ok.onclick = () => { const f = vcConfirmFn; vcConfirmClose(); if (f) f(); };
+            document.getElementById('vcConfirmModal').classList.remove('hidden');
+        }
+        function vcConfirmClose() { vcConfirmFn = null; document.getElementById('vcConfirmModal').classList.add('hidden'); }
+
+        // ---------- 2) นิยามหัวข้อการตรวจ ----------
+        const VC_DEFAULT_SECTIONS = [
+            { key: 'tire', no: '2.1.2', icon: 'fa-circle-dot', title: 'ระบบยางและล้อ', short: 'ยาง/ล้อ',
+              levels: ['ปกติ / พร้อมใช้งาน', 'ควรเฝ้าระวัง / เติมลมเพิ่ม', 'ต้องซ่อมบำรุง / เปลี่ยนด่วน'],
+              items: [
+                { k: 'pressure', t: 'แรงดันลมยาง (หน้าซ้าย / หน้าขวา / หลังซ้าย / หลังขวา)', s: 'ลมยาง' },
+                { k: 'tread', t: 'ความลึกดอกยางและสภาพหน้ายาง (การสึกหรอ)', s: 'ดอกยาง' },
+                { k: 'age', t: 'อายุยาง (สัปดาห์/ปีที่ผลิต - DOT)', s: 'อายุยาง' },
+                { k: 'spare', t: 'ยางอะไหล่ และอุปกรณ์แม่แรง/ประแจ', s: 'ยางอะไหล่/แม่แรง' }
+              ] },
+            { key: 'elec', no: '2.1.3', icon: 'fa-car-battery', title: 'ระบบแบตเตอรี่และระบบไฟ', short: 'แบตเตอรี่/ไฟ',
+              levels: ['ปกติ / ติดครบ', 'ควรเฝ้าระวัง / ไฟอ่อน', 'ชำรุด / มีไฟเตือน'],
+              items: [
+                { k: 'volt', t: 'แรงดันไฟแบตเตอรี่ (Voltage) และค่า CCA', s: 'แบตเตอรี่' },
+                { k: 'terminal', t: 'สภาพขั้วแบตเตอรี่และระดับน้ำกลั่น', s: 'ขั้วแบตเตอรี่/น้ำกลั่น' },
+                { k: 'lights', t: 'ระบบไฟส่องสว่างภายนอก (ไฟหน้า, ไฟเลี้ยว, ไฟเบรก, ไฟถอย, ไฟฉุกเฉิน)', s: 'ไฟส่องสว่าง' },
+                { k: 'horn', t: 'แตร และสัญญาณไฟเตือนบนหน้าปัด (Engine, ABS, ถุงลม, แบตเตอรี่)', s: 'แตร/ไฟเตือนหน้าปัด' }
+              ] },
+            { key: 'fluid', no: '2.1.4', icon: 'fa-oil-can', title: 'ระบบของเหลวและห้องเครื่อง (Fluids & Engine Bay)', short: 'ของเหลว/ห้องเครื่อง',
+              levels: ['ปกติ', 'พร่อง / ควรเฝ้าระวัง', 'รั่วซึม / ต้องเปลี่ยนด่วน'],
+              items: [
+                { k: 'oil', t: 'ระดับและสภาพน้ำมันเครื่อง (Min-Max / สีและความหนืด)', s: 'น้ำมันเครื่อง' },
+                { k: 'coolant', t: 'ระดับน้ำหล่อเย็น (หม้อน้ำและถังพักสำรอง)', s: 'น้ำหล่อเย็น' },
+                { k: 'brakefluid', t: 'ระดับและคุณภาพน้ำมันเบรก / น้ำมันคลัตช์', s: 'น้ำมันเบรก/คลัตช์' },
+                { k: 'steer', t: 'ระดับน้ำมันพวงมาลัยเพาเวอร์ / น้ำมันเกียร์', s: 'น้ำมันพวงมาลัย/เกียร์' },
+                { k: 'wiper', t: 'น้ำฉีดกระจก และสภาพยางใบปัดน้ำฝน', s: 'น้ำฉีดกระจก/ใบปัด' },
+                { k: 'belt', t: 'สายพานหน้าเครื่อง และท่อยางต่างๆ (รอยแตกร้าว/รั่วซึม)', s: 'สายพาน/ท่อยาง' },
+                { k: 'filter', t: 'ไส้กรองอากาศเครื่องยนต์ และไส้กรองแอร์', s: 'ไส้กรองอากาศ/แอร์' }
+              ] },
+            { key: 'brake', no: '2.1.5', icon: 'fa-circle-stop', title: 'ระบบเบรกและช่วงล่าง (Brakes & Suspension)', short: 'เบรก/ช่วงล่าง',
+              levels: ['ปกติ', 'ใกล้หมด / เริ่มเสื่อม', 'ผิดปกติ / ชำรุด'],
+              items: [
+                { k: 'pad', t: 'ความหนาผ้าเบรก (หน้า / หลัง)', s: 'ผ้าเบรก' },
+                { k: 'disc', t: 'สภาพจานเบรก / ดรัมเบรก', s: 'จานเบรก/ดรัมเบรก' },
+                { k: 'shock', t: 'โช้คอัพ และสปริง (คราบน้ำมันรั่วซึม / การคืนตัว)', s: 'โช้คอัพ/สปริง' },
+                { k: 'joint', t: 'ลูกหมาก บูชยาง และยางหุ้มเพลาขับ', s: 'ลูกหมาก/บูชยาง' }
+              ] },
+            { key: 'cabin', no: '2.1.6', icon: 'fa-snowflake', title: 'ระบบปรับอากาศ อุปกรณ์ภายใน และสรุปผลการตรวจ', short: 'แอร์/อุปกรณ์ภายใน',
+              levels: ['ปกติ / ครบถ้วน', 'ควรดูแล / กลิ่นอับ', 'ชำรุด / ขาดหาย'],
+              items: [
+                { k: 'ac', t: 'ความเย็นและแรงลมของระบบแอร์', s: 'ระบบแอร์' },
+                { k: 'belt', t: 'เข็มขัดนิรภัย และระบบเซ็นทรัลล็อกประตู', s: 'เข็มขัดนิรภัย/เซ็นทรัลล็อก' },
+                { k: 'emerg', t: 'อุปกรณ์ฉุกเฉิน (ถังดับเพลิง, ป้ายสามเหลี่ยม, ชุดปฐมพยาบาล)', s: 'อุปกรณ์ฉุกเฉิน' }
+              ] }
+        ];
+        // หัวข้อการตรวจ: ผู้ดูแลระบบแก้ไขได้ (เก็บใน db.appConfig.vcSections และซิงค์ขึ้น Google Sheet)
+        function vcSectionsValid(arr) {
+            return Array.isArray(arr) && arr.length && arr.every(x => x && x.key && x.title && Array.isArray(x.levels) && x.levels.length === 3 && Array.isArray(x.items));
+        }
+        function vcSections() {
+            const custom = db.appConfig && db.appConfig.vcSections;
+            const base = vcSectionsValid(custom) ? custom : VC_DEFAULT_SECTIONS;
+            return base.map((sec, i) => Object.assign({ icon: 'fa-list-check', short: sec.title }, sec, { no: `2.1.${i + 2}` }));
+        }
+        function vcItemCount() { return vcSections().reduce((a, s) => a + s.items.length, 0); }
+        const VC_OVERALL = {
+            ready: { k: 0, label: 'พร้อมใช้งาน 100%', short: 'พร้อมใช้งาน', icon: 'fa-circle-check', desc: 'ทุกระบบปกติ' },
+            usable: { k: 1, label: 'ใช้งานได้', short: 'ใช้งานได้ (เฝ้าระวัง)', icon: 'fa-triangle-exclamation', desc: 'มีรายการต้องเฝ้าระวัง' },
+            grounded: { k: 2, label: 'งดใช้งานชั่วคราว', short: 'งดใช้งานชั่วคราว', icon: 'fa-ban', desc: 'ต้องส่งซ่อมด่วน' }
+        };
+        const VC_LEVEL_ICON = ['fa-circle-check', 'fa-triangle-exclamation', 'fa-circle-xmark'];
+        const vcItemKey = (sec, it) => `${sec.key}.${it.k}`;
+
+        // ---------- 3) สถานะแบบร่าง (เก็บไว้ในเครื่องระหว่างกรอก) ----------
+        function vcNowHM() { const n = new Date(); return `${pad2(n.getHours())}:${pad2(n.getMinutes())}`; }
+        function vcBlankItems() { return { mileage: '', items: {}, psi: { fl: '', fr: '', rl: '', rr: '' }, dot: { w: '', y: '' }, volt: '', cca: '', overall: '', overallManual: false, watch: '', action: '' }; }
+        function vcNewDraft(keep) {
+            return Object.assign({ step: 'setup', date: todayIso(), time: vcNowHM(), inspectorId: '', inspectorName: '', team: '', vehicleId: '', recId: '', dirty: false, vtype: 'all' },
+                keep || {}, vcBlankItems());
+        }
+        let vcDraft = (() => {
+            try { const d = JSON.parse(localStorage.getItem('hanuman_vc_draft') || 'null'); if (d && d.date) return Object.assign(vcNewDraft(), d); } catch (e) {}
+            return vcNewDraft();
+        })();
+        function vcPersist() { try { localStorage.setItem('hanuman_vc_draft', JSON.stringify(vcDraft)); } catch (e) {} }
+        function vcTouch() { vcDraft.dirty = true; vcPersist(); }
+        function vcRerender() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+        function vcRecordFor(date, vehicleId) { return (db.vehicleChecks || []).find(r => r.date === date && r.vehicleId === vehicleId) || null; }
+        function vcVehicleById(id) { return db.vehicles.find(v => v.id === id) || null; }
+        function vcVehLabel(v) { return v ? (String(v.brand || '').trim() || String(v.type || '').trim() || 'ยานพาหนะ') : '-'; }
+        function vcPhoto(v) { return (v && v.photo) || 'https://placehold.co/600x400/0a1128/c5a059?text=Vehicle'; }
+        function vcPersonPhoto(p) { return (p && p.photo) || `https://ui-avatars.com/api/?name=${encodeURIComponent((p && p.firstName) || 'P')}&background=0a1128&color=c5a059&size=120`; }
+        // นับเฉพาะหัวข้อที่ยังอยู่ในแบบฟอร์มปัจจุบัน (หัวข้อที่ผู้ดูแลลบไปแล้วไม่นับ)
+        function vcLiveItems(items) {
+            const keys = new Set();
+            vcSections().forEach(sec => sec.items.forEach(it => keys.add(vcItemKey(sec, it))));
+            return Object.entries(items || {}).filter(([k, x]) => keys.has(k) && x && typeof x.s === 'number').map(([, x]) => x);
+        }
+        function vcWorst(items) { return vcLiveItems(items).reduce((w, x) => Math.max(w, x.s), -1); }
+        function vcCheckedCount(items) { return vcLiveItems(items).length; }
+        function vcSuggest(d) {
+            const w = vcWorst(d.items);
+            if (w === 2) return 'grounded';
+            if (w === 1) return 'usable';
+            if (w === 0 && vcCheckedCount(d.items) === vcItemCount()) return 'ready';
+            return '';
+        }
+        function vcDotYear(dot) {
+            const y = parseInt(dot && dot.y, 10);
+            if (!y) return null;
+            return y < 100 ? 2000 + y : y;
+        }
+
+        // ---------- 4) หน้าแรกของเจ้าหน้าที่ ----------
+        function renderStaffHome(container) {
+            navigationHistory = [];
+            updateBreadcrumbs([]);
+            const today = todayIso();
+            const done = (db.vehicleChecks || []).filter(r => r.date === today);
+            const total = db.vehicles.length;
+            const pct = total ? Math.round(Math.min(done.length, total) / total * 100) : 0;
+            const cnt = k => done.filter(r => r.overall === k).length;
+            const n = new Date();
+            const hello = n.getHours() < 12 ? 'สวัสดีตอนเช้า' : n.getHours() < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+            container.innerHTML = `
+                <div class="vc-hero mb-6">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <span class="px-3 py-1 rounded-full bg-white/10 border border-gold-500/40 text-gold-300 text-[11px] font-semibold tracking-widest uppercase">Staff Console</span>
+                            <h2 class="text-2xl sm:text-3xl font-bold mt-3">${hello}, เจ้าหน้าที่</h2>
+                            <p class="text-sm text-gray-300 mt-1"><i class="fa-regular fa-calendar text-gold-400 mr-1.5"></i>${formatThaiDateFullYear(today)}</p>
+                        </div>
+                        <div class="sm:text-right min-w-[210px]">
+                            <div class="text-xs text-gray-300">ตรวจเช็คสภาพรถวันนี้</div>
+                            <div class="text-3xl font-bold text-gold-300 mt-0.5">${Math.min(done.length, total)}<span class="text-base text-gray-300 font-medium"> / ${total} คัน</span></div>
+                            <div class="vc-prog mt-2"><div style="width:${pct}%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div onclick="vcStart()" class="nav-btn-card glass-card gold-border-top rounded-2xl p-6 cursor-pointer lg:col-span-2 flex flex-col sm:flex-row sm:items-center gap-5">
+                        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-4xl shadow-lg border border-gold-500/30 shrink-0 relative">
+                            <i class="fa-solid fa-car-on"></i>
+                            <span class="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-gradient-to-br from-gold-300 to-gold-500 text-navy-950 text-sm flex items-center justify-center shadow"><i class="fa-solid fa-clipboard-check"></i></span>
+                        </div>
+                        <div class="flex-grow">
+                            <span class="text-xs font-semibold text-gold-600 uppercase tracking-wider">เมนูหลัก</span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-navy-900 mt-0.5">ตรวจเช็คสภาพรถ</h3>
+                            <p class="text-gray-500 text-sm font-body mt-1 leading-relaxed">บันทึกผลตรวจ ยางและล้อ • แบตเตอรี่และระบบไฟ • ของเหลวและห้องเครื่อง • เบรกและช่วงล่าง • แอร์และอุปกรณ์ภายใน พร้อมสรุปสภาพรถ</p>
+                        </div>
+                        <div class="shrink-0 px-5 py-3 rounded-2xl bg-gradient-to-r from-gold-500 to-gold-400 text-navy-950 font-bold text-sm shadow-md text-center">
+                            เริ่มตรวจเช็ค <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5">
+                        <div class="text-sm font-bold text-navy-900 mb-3"><i class="fa-solid fa-chart-pie text-gold-600 mr-1.5"></i>สรุปผลวันนี้</div>
+                        ${[['ready', 'emerald'], ['usable', 'amber'], ['grounded', 'red']].map(([k, c]) => `
+                            <div class="flex items-center justify-between py-2 border-b last:border-0">
+                                <span class="text-sm text-gray-600"><i class="fa-solid ${VC_OVERALL[k].icon} text-${c}-500 mr-2"></i>${VC_OVERALL[k].short}</span>
+                                <span class="font-bold text-navy-900">${cnt(k)} คัน</span>
+                            </div>`).join('')}
+                        <div class="flex items-center justify-between py-2">
+                            <span class="text-sm text-gray-600"><i class="fa-regular fa-clock text-gray-400 mr-2"></i>ยังไม่ได้ตรวจ</span>
+                            <span class="font-bold text-navy-900">${Math.max(0, total - done.length)} คัน</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        function vcStart() {
+            if (vcDraft.date !== todayIso() && !vcDraft.vehicleId) vcDraft.date = todayIso();
+            if (vcDraft.step === 'form' && !vcVehicleById(vcDraft.vehicleId)) vcDraft.step = 'setup';
+            vcPersist();
+            navigate('vcheck');
+        }
+
+        // ---------- 5) หน้าตรวจเช็คสภาพรถ ----------
+        function vcBreadcrumbs(extra) {
+            const items = [{ label: authRole() === 'staff' ? 'หน้าหลักเจ้าหน้าที่' : 'หน้าหลัก', action: "navigate('home')" }];
+            if (authRole() === 'admin') items.push({ label: '4. ตารางสถานะรถ', action: "navigate('vehicles')" });
+            items.push(extra ? { label: 'ตรวจเช็คสภาพรถ', action: "vcGoSetup()" } : { label: 'ตรวจเช็คสภาพรถ' });
+            if (extra) items.push({ label: extra });
+            updateBreadcrumbs(items);
+        }
+        function renderVehicleCheck(container) {
+            if (vcDraft.step === 'form' && vcVehicleById(vcDraft.vehicleId)) return renderVcForm(container);
+            vcDraft.step = 'setup';
+            renderVcSetup(container);
+        }
+        function vcInspectorHtml() {
+            const p = vcDraft.inspectorId ? db.personnel.find(x => x.id === vcDraft.inspectorId) : null;
+            if (vcDraft.inspectorName) {
+                return `<div class="vc-person">
+                    <img src="${escHtml(vcPersonPhoto(p || { firstName: vcDraft.inspectorName }))}" alt="">
+                    <div class="flex-grow min-w-0">
+                        <div class="font-bold text-navy-900 truncate">${escHtml(vcDraft.inspectorName)}</div>
+                        <div class="text-xs text-gray-500 truncate">${p ? escHtml([p.position, p.nickname ? 'ชื่อเล่น: ' + p.nickname : ''].filter(Boolean).join(' • ')) : 'เพิ่มชื่อเอง'}</div>
+                    </div>
+                    <button type="button" onclick="vcClearInspector()" class="px-3 py-1.5 rounded-xl border border-gold-500/60 bg-white text-xs font-semibold text-navy-900 hover:bg-amber-50 shrink-0"><i class="fa-solid fa-rotate mr-1"></i>เปลี่ยน</button>
+                </div>`;
+            }
+            return `<div class="flex gap-2">
+                <div class="relative flex-grow">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gold-600 text-sm"></i>
+                    <input type="text" id="vc_insp_q" autocomplete="off" oninput="vcSearchPerson(this.value)" onfocus="vcSearchPerson(this.value)" placeholder="ค้นหาชื่อ / ชื่อเล่น / ยศ / ทีม" class="vc-inp" style="padding-left:2.4rem">
+                    <div id="vc_insp_dd" class="vc-dd hidden"></div>
+                </div>
+                <button type="button" onclick="vcAddPersonModal()" class="px-3.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold shrink-0 shadow" title="เพิ่มชื่อหากไม่มีในข้อมูล"><i class="fa-solid fa-user-plus sm:mr-1.5"></i><span class="hidden sm:inline">เพิ่มชื่อ</span></button>
+            </div>`;
+        }
+        function vcSearchPerson(q) {
+            const dd = document.getElementById('vc_insp_dd');
+            if (!dd) return;
+            const t = String(q || '').trim().toLowerCase();
+            const list = sortPersonnelByRank(db.personnel).filter(p => {
+                if (!t) return true;
+                const hay = `${personFullName(p)} ${p.firstName || ''} ${p.lastName || ''} ${p.nickname || ''} ${teamLabelOf(p.team)} ${p.position || ''}`.toLowerCase();
+                return t.split(/\s+/).every(w => hay.includes(w));
+            }).slice(0, 30);
+            dd.innerHTML = list.length ? list.map(p => `
+                <button type="button" onmousedown="event.preventDefault()" onclick="vcPickPerson('${escHtml(p.id)}')">
+                    <img src="${escHtml(vcPersonPhoto(p))}" alt="">
+                    <span class="min-w-0 flex-grow">
+                        <span class="block text-sm font-semibold text-navy-900 truncate">${escHtml(personFullName(p))}${p.nickname ? ` <span class="text-gray-500 font-normal">(${escHtml(p.nickname)})</span>` : ''}</span>
+                        <span class="block text-[11px] text-gray-500 truncate">${escHtml(p.position || '-')}</span>
+                    </span>
+                    ${teamLabelOf(p.team) ? `<span class="text-[10.5px] px-2 py-0.5 rounded-full bg-navy-900 text-gold-300 shrink-0">${escHtml(teamLabelOf(p.team))}</span>` : ''}
+                </button>`).join('')
+                : `<div class="p-4 text-center text-sm text-gray-500">ไม่พบรายชื่อ<br><button type="button" onmousedown="event.preventDefault()" onclick="vcAddPersonModal()" class="mt-2 px-3 py-1.5 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>เพิ่มชื่อ “${escHtml(q)}”</button></div>`;
+            dd.classList.remove('hidden');
+        }
+        document.addEventListener('click', (e) => {
+            const dd = document.getElementById('vc_insp_dd');
+            if (dd && !e.target.closest('#vc_insp_dd') && e.target.id !== 'vc_insp_q') dd.classList.add('hidden');
+        });
+        function vcPickPerson(id) {
+            const p = db.personnel.find(x => x.id === id);
+            if (!p) return;
+            vcDraft.inspectorId = p.id;
+            vcDraft.inspectorName = personFullName(p);
+            const tl = String(p.team || '').trim();
+            vcDraft.team = tl && tl !== '-' ? tl : vcDraft.team;
+            vcPersist();
+            vcRerender();
+        }
+        function vcClearInspector() { vcDraft.inspectorId = ''; vcDraft.inspectorName = ''; vcPersist(); vcRerender(); setTimeout(() => { const i = document.getElementById('vc_insp_q'); if (i) i.focus(); }, 50); }
+        function vcDatePicked(d) { vcDraft.date = d || todayIso(); vcPersist(); vcRerender(); }
+        function vcSetField(k, v) { vcDraft[k] = v; vcPersist(); }
+        function vcSetVType(t) { vcDraft.vtype = t; vcPersist(); vcRerender(); }
+        function vcTeamOptions(sel) {
+            const opts = [['', '— ไม่ระบุ —'], ...ORG_TEAMS.map(t => [t, 'ทีม ' + t]), ['กองบัญชาการ', 'กองบัญชาการ']];
+            if (sel && !opts.some(o => o[0] === sel)) opts.push([sel, teamLabelOf(sel) || sel]);
+            return opts.map(([v, l]) => `<option value="${escHtml(v)}" ${v === sel ? 'selected' : ''}>${escHtml(l)}</option>`).join('');
+        }
+
+        // ประเภทรถ (ใช้ร่วม: หน้าสถานะรถ / หน้าตรวจเช็ค)
+        function vehTypesOf(list) {
+            const m = new Map();
+            list.forEach(v => { const t = v.type || 'ไม่ระบุประเภท'; m.set(t, (m.get(t) || 0) + 1); });
+            return Array.from(m.entries());
+        }
+        function vehTypeChipsHtml(cur, fnName, list) {
+            const types = vehTypesOf(list);
+            if (types.length < 2 && cur === 'all') return '';
+            return `<div class="vt-chips" role="tablist" aria-label="เลือกประเภทรถ">
+                <button type="button" class="vt-chip ${cur === 'all' ? 'on' : ''}" onclick="${fnName}('all')"><i class="fa-solid fa-layer-group"></i>ทุกประเภท<span class="ct">${list.length}</span></button>
+                ${types.map(([t, n]) => `<button type="button" class="vt-chip ${cur === t ? 'on' : ''}" onclick="${fnName}(${escHtml(JSON.stringify(t))})"><i class="fa-solid ${getVehicleTypeIcon(t)}"></i>${escHtml(t)}<span class="ct">${n}</span></button>`).join('')}
+            </div>`;
+        }
+        function setVehType(t) { setVehUi({ type: t, status: 'all' }); }
+
+        function renderVcSetup(container) {
+            vcBreadcrumbs();
+            const date = vcDraft.date || todayIso();
+            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const total = db.vehicles.length;
+            const doneN = db.vehicles.filter(v => recs.some(r => r.vehicleId === v.id)).length;
+            const pct = total ? Math.round(doneN / total * 100) : 0;
+            const vt = vcDraft.vtype && db.vehicles.some(v => (v.type || 'ไม่ระบุประเภท') === vcDraft.vtype) ? vcDraft.vtype : 'all';
+            const list = vt === 'all' ? db.vehicles : db.vehicles.filter(v => (v.type || 'ไม่ระบุประเภท') === vt);
+            const vehCards = list.map(v => {
+                const r = recs.find(x => x.vehicleId === v.id);
+                const o = r && VC_OVERALL[r.overall];
+                const stCls = !r ? 'bg-white/90 text-gray-600' : o.k === 0 ? 'bg-emerald-500 text-white' : o.k === 1 ? 'bg-amber-400 text-navy-950' : 'bg-red-600 text-white';
+                return `<button type="button" onclick="vcSelectVehicle('${escHtml(v.id)}')" class="vc-veh ${r ? 'done' : ''}">
+                    <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'">
+                    <span class="st ${stCls}"><i class="fa-solid ${r ? o.icon : 'fa-hourglass-half'} mr-1"></i>${r ? o.short : 'ยังไม่ได้ตรวจ'}</span>
+                    <div class="vb">
+                        <div class="text-[11px] text-gray-500 truncate"><i class="fa-solid ${getVehicleTypeIcon(v.type)} text-gold-600 mr-1"></i>${escHtml(v.type || '-')}</div>
+                        <div class="font-bold text-navy-900 truncate">${escHtml(vcVehLabel(v))}</div>
+                        <span class="pl">${escHtml(v.plate || '-')}</span>
+                    </div>
+                </button>`;
+            }).join('');
+            container.innerHTML = `
+                <div class="vc-hero mb-6">
+                    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-white/10 border border-gold-500/40 text-gold-300 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-clipboard-check"></i></div>
+                            <div>
+                                <h2 class="text-xl sm:text-2xl font-bold">ตรวจเช็คสภาพรถ</h2>
+                                <p class="text-xs sm:text-sm text-gray-300">กรอกข้อมูลผู้ตรวจ แล้วเลือกรถทีละคันเพื่อบันทึกผลการตรวจ</p>
+                            </div>
+                        </div>
+                        <div class="sm:text-right min-w-[200px]">
+                            <div class="text-xs text-gray-300">ความคืบหน้า ${escHtml(fmtThaiDMY(date))}</div>
+                            <div class="text-2xl font-bold text-gold-300">${doneN}<span class="text-sm text-gray-300 font-medium"> / ${total} คัน</span></div>
+                            <div class="vc-prog mt-1.5"><div style="width:${pct}%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vc-card mb-6">
+                    <div class="vc-card-h"><span class="vc-step">1</span><div class="vc-tt">ข้อมูลการตรวจเช็ค</div></div>
+                    <div class="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-regular fa-calendar-days text-gold-600 mr-1.5"></i>วันที่ตรวจเช็ค</label>
+                            ${thaiDateBtnHtml('vc_date', date, 'vcDatePicked', 'เลือกวันที่ตรวจเช็ค', { noClear: true, btnClass: 'py-2.5' })}
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-regular fa-clock text-gold-600 mr-1.5"></i>เวลา</label>
+                                <input type="time" value="${escHtml(vcDraft.time || '')}" onchange="vcSetField('time', this.value)" class="vc-inp">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-people-group text-gold-600 mr-1.5"></i>ทีม</label>
+                                <select onchange="vcSetField('team', this.value)" class="vc-inp">${vcTeamOptions(vcDraft.team)}</select>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-user-check text-gold-600 mr-1.5"></i>ผู้ตรวจเช็ค <span class="text-xs font-normal text-gray-500">(ดึงจากข้อมูลกำลังพล)</span></label>
+                            ${vcInspectorHtml()}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vc-card">
+                    <div class="vc-card-h">
+                        <span class="vc-step">2</span>
+                        <div class="flex-grow"><div class="vc-tt">ยี่ห้อ / รุ่นรถ</div><div class="text-xs text-gray-500">ดึงจากตารางสถานะรถ • แตะเพื่อเข้าสู่หน้าตรวจเช็คสภาพรถ</div></div>
+                        <button type="button" onclick="vcAddVehicleModal()" class="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-xs sm:text-sm font-semibold shadow shrink-0"><i class="fa-solid fa-plus sm:mr-1.5"></i><span class="hidden sm:inline">เพิ่มข้อมูลรถ</span></button>
+                    </div>
+                    <div class="p-4 sm:p-5">
+                        ${vehTypeChipsHtml(vt, 'vcSetVType', db.vehicles)}
+                        ${vehCards ? `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">${vehCards}</div>`
+                            : `<div class="text-center py-10 text-gray-400"><i class="fa-solid fa-car-side text-3xl mb-2 block"></i>ยังไม่มีข้อมูลรถ — กด “เพิ่มข้อมูลรถ”</div>`}
+                    </div>
+                </div>`;
+        }
+        function vcSelectVehicle(id, silent) {
+            if (!vcDraft.inspectorName) {
+                showStatusPopup('กรุณาเลือกผู้ตรวจเช็ค', 'ค้นหาและเลือกชื่อผู้ตรวจเช็คก่อน (หรือกด “เพิ่มชื่อ” หากไม่มีในข้อมูล)', 'edit', 2600);
+                const i = document.getElementById('vc_insp_q'); if (i) i.focus();
+                return;
+            }
+            const v = vcVehicleById(id);
+            if (!v) return;
+            const rec = vcRecordFor(vcDraft.date, id);
+            Object.assign(vcDraft, vcBlankItems(), { vehicleId: id, recId: '', step: 'form', dirty: false });
+            if (rec) {
+                const c = JSON.parse(JSON.stringify(rec));
+                Object.assign(vcDraft, {
+                    recId: c.id, mileage: c.mileage || '', items: c.items || {}, psi: Object.assign({ fl: '', fr: '', rl: '', rr: '' }, c.psi || {}),
+                    dot: Object.assign({ w: '', y: '' }, c.dot || {}), volt: c.volt || '', cca: c.cca || '', overall: c.overall || '', overallManual: true,
+                    watch: c.watch || '', action: c.action || ''
+                });
+            }
+            vcPersist();
+            if (currentRoute.page !== 'vcheck') navigate('vcheck'); else { render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            if (rec && !silent) showStatusPopup('เปิดผลการตรวจเดิม', `รถคันนี้ตรวจแล้วในวันที่ ${fmtThaiDMY(vcDraft.date)} — แก้ไขแล้วกดบันทึกเพื่ออัปเดต`, 'edit', 2400);
+        }
+        function vcGoSetup() { vcDraft.step = 'setup'; vcPersist(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        function vcItemRowHtml(sec, it, idx) {
+            const key = vcItemKey(sec, it);
+            const cur = vcDraft.items[key] || {};
+            const s = typeof cur.s === 'number' ? cur.s : null;
+            return `<div class="vc-item ${s === null ? '' : 's' + s}" id="vcrow_${key.replace('.', '_')}">
+                <div class="vc-q"><span class="n">${sec.no}.${idx + 1}</span><span>${escHtml(it.t)}</span></div>
+                <div class="vc-seg">
+                    ${sec.levels.map((l, i) => `<button type="button" class="vc-opt l${i} ${s === i ? 'on' : ''}" onclick="vcSetItem('${key}', ${i})"><i class="fa-solid ${VC_LEVEL_ICON[i]}"></i><span>${escHtml(l)}</span></button>`).join('')}
+                </div>
+                <input type="text" class="vc-note ${s ? '' : 'hidden'}" value="${escHtml(cur.n || '')}" oninput="vcSetNote('${key}', this.value)" placeholder="ระบุอาการ / รายละเอียด (ไม่บังคับ) เช่น ยางปี 2020 ควรเปลี่ยน">
+            </div>`;
+        }
+        function vcMeasHtml(kind) {
+            if (kind === 'tire') {
+                const p = vcDraft.psi, yr = vcDotYear(vcDraft.dot);
+                const old = yr && (new Date().getFullYear() - yr) >= 5;
+                const mv = (v, l) => `<span class="vc-mv"><b>${v !== '' && v != null ? escHtml(v) : '–'}</b><span>${l}</span></span>`;
+                return `<div class="vc-meas">
+                    <div class="w-full flex items-center justify-between gap-2">
+                        <div class="text-[13px] font-bold text-navy-900"><span class="text-gold-600 mr-1">2.1.2.5</span>ค่าแรงดันลมยางที่วัดได้ (PSI) และอายุยาง (DOT)</div>
+                        <button type="button" onclick="vcOpenNums('tire')" class="px-3 py-1.5 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold shrink-0 shadow"><i class="fa-solid fa-keyboard mr-1"></i>กรอกตัวเลข</button>
+                    </div>
+                    ${mv(p.fl, 'หน้าซ้าย')}${mv(p.fr, 'หน้าขวา')}${mv(p.rl, 'หลังซ้าย')}${mv(p.rr, 'หลังขวา')}
+                    <span class="vc-mv"><b>${vcDraft.dot.w || vcDraft.dot.y ? `${escHtml(vcDraft.dot.w || '–')}/${escHtml(yr || '–')}` : '–'}</b><span>DOT สัปดาห์/ปี</span></span>
+                    ${old ? `<span class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2.5 py-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ยางอายุ ${new Date().getFullYear() - yr} ปี ควรพิจารณาเปลี่ยน</span>` : ''}
+                </div>`;
+            }
+            const mv = (v, l) => `<span class="vc-mv"><b>${v !== '' && v != null ? escHtml(v) : '–'}</b><span>${l}</span></span>`;
+            const vNum = parseFloat(vcDraft.volt);
+            const low = vNum && vNum < 12.4;
+            return `<div class="vc-meas">
+                <div class="w-full flex items-center justify-between gap-2">
+                    <div class="text-[13px] font-bold text-navy-900">ค่าแบตเตอรี่ที่วัดได้</div>
+                    <button type="button" onclick="vcOpenNums('batt')" class="px-3 py-1.5 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold shrink-0 shadow"><i class="fa-solid fa-keyboard mr-1"></i>กรอกตัวเลข</button>
+                </div>
+                ${mv(vcDraft.volt, 'แรงดัน (V)')}${mv(vcDraft.cca, 'ค่า CCA')}
+                ${low ? `<span class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"><i class="fa-solid fa-bolt mr-1"></i>แรงดันต่ำกว่า 12.4V แบตเตอรี่อาจอ่อน</span>` : ''}
+            </div>`;
+        }
+        function vcSectionHtml(sec) {
+            return `<div class="vc-card mb-5" id="vcsec_${sec.key}">
+                <div class="vc-card-h">
+                    <div class="vc-ic"><i class="fa-solid ${sec.icon}"></i></div>
+                    <div class="flex-grow min-w-0"><div class="vc-no">${sec.no}</div><div class="vc-tt">${escHtml(sec.title)}</div></div>
+                    <button type="button" class="vc-all0" onclick="vcAllNormal('${sec.key}')" title="ตั้งทุกหัวข้อในหมวดนี้เป็นปกติ"><i class="fa-solid fa-check-double mr-1"></i>ปกติทั้งหมด</button>
+                </div>
+                <div class="vc-legend">${sec.levels.map((l, i) => `<span class="vc-lg l${i}">${escHtml(l)}</span>`).join('')}</div>
+                <div class="mt-2">${sec.items.map((it, i) => vcItemRowHtml(sec, it, i)).join('')}</div>
+                ${sec.key === 'tire' ? vcMeasHtml('tire') : sec.key === 'elec' ? vcMeasHtml('batt') : ''}
+            </div>`;
+        }
+        function vcOverallHtml() {
+            const sug = vcSuggest(vcDraft);
+            return `<div class="vc-card mb-5" id="vcsec_overall">
+                <div class="vc-card-h">
+                    <div class="vc-ic"><i class="fa-solid fa-flag-checkered"></i></div>
+                    <div class="flex-grow"><div class="vc-no">2.1.${vcSections().length + 2}</div><div class="vc-tt">สรุปสภาพรถโดยรวม</div></div>
+                </div>
+                <div class="p-4 sm:p-5">
+                    <div id="vcSuggest" class="text-xs text-gray-500 mb-3">${vcSuggestText(sug)}</div>
+                    <div class="vc-ovr">
+                        ${Object.entries(VC_OVERALL).map(([k, o]) => `<button type="button" class="vc-ov k${o.k} ${vcDraft.overall === k ? 'on' : ''}" data-ov="${k}" onclick="vcSetOverall('${k}')">
+                            <div class="oi"><i class="fa-solid ${o.icon}"></i></div><div class="ot">${o.label}</div><div class="od">${o.desc}</div></button>`).join('')}
+                    </div>
+                    <div id="vcWatchWrap" class="mt-3 ${vcDraft.overall === 'usable' ? '' : 'hidden'}">
+                        <label class="block text-sm font-semibold text-navy-900 mb-1.5">รายการที่ต้องเฝ้าระวัง <span class="text-xs font-normal text-gray-500">(ไม่บังคับกรอก)</span></label>
+                        <input type="text" class="vc-inp" value="${escHtml(vcDraft.watch)}" oninput="vcSetText('watch', this.value)" placeholder="เช่น ควรเปลี่ยนยาง ยางปี 2020">
+                    </div>
+                </div>
+            </div>
+            <div class="vc-card mb-2">
+                <div class="vc-card-h">
+                    <div class="vc-ic"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <div class="flex-grow"><div class="vc-no">2.1.${vcSections().length + 3}</div><div class="vc-tt">รายการที่ต้องดำเนินการแก้ไขเพิ่มเติม / หมายเหตุ</div></div>
+                </div>
+                <div class="p-4 sm:p-5">
+                    <textarea rows="3" class="vc-inp" oninput="vcSetText('action', this.value)" placeholder="เช่น กระจกหน้าร้าว, แบตเตอรี่เสื่อมสภาพ ส่งซ่อมศูนย์">${escHtml(vcDraft.action)}</textarea>
+                </div>
+            </div>`;
+        }
+        function vcSuggestText(sug) {
+            const n = vcCheckedCount(vcDraft.items);
+            const base = `<i class="fa-solid fa-list-check text-gold-600 mr-1"></i>ตรวจแล้ว <b class="text-navy-900">${n}/${vcItemCount()}</b> หัวข้อ`;
+            if (!sug) return base;
+            return `${base} • <i class="fa-solid fa-wand-magic-sparkles text-gold-600 mr-1"></i>ระบบแนะนำ: <b class="text-navy-900">${VC_OVERALL[sug].label}</b>${vcDraft.overallManual && vcDraft.overall !== sug ? ` <button type="button" onclick="vcSetOverall('${sug}')" class="ml-1 underline text-gold-600 font-semibold">ใช้ค่าแนะนำ</button>` : ''}`;
+        }
+        function renderVcForm(container) {
+            const v = vcVehicleById(vcDraft.vehicleId);
+            vcBreadcrumbs(`${vcVehLabel(v)} ${v.plate || ''}`);
+            const n = vcCheckedCount(vcDraft.items);
+            container.innerHTML = `
+                <div class="vc-hero mb-5">
+                    <div class="relative z-10 flex flex-col sm:flex-row gap-4 sm:items-center">
+                        <img src="${escHtml(vcPhoto(v))}" alt="" onerror="this.style.visibility='hidden'" class="w-full sm:w-40 h-32 sm:h-28 object-cover rounded-2xl border-2 border-gold-500/60 shadow-lg">
+                        <div class="flex-grow min-w-0">
+                            <div class="text-xs text-gold-300 font-semibold tracking-wider"><i class="fa-solid ${getVehicleTypeIcon(v.type)} mr-1"></i>${escHtml(v.type || '-')}</div>
+                            <h2 class="text-xl sm:text-2xl font-bold truncate">${escHtml(vcVehLabel(v))}</h2>
+                            <span class="inline-block mt-1 px-3 py-1 rounded-lg bg-gold-400 text-navy-950 font-bold text-sm">ทะเบียน ${escHtml(v.plate || '-')}</span>
+                            <div class="text-xs text-gray-300 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                                <span><i class="fa-regular fa-calendar text-gold-400 mr-1"></i>${escHtml(fmtThaiDMY(vcDraft.date))}${vcDraft.time ? ' • ' + escHtml(fmtTime(vcDraft.time)) : ''}</span>
+                                <span><i class="fa-solid fa-user-check text-gold-400 mr-1"></i>${escHtml(vcDraft.inspectorName)}${vcDraft.team ? ' • ' + escHtml(teamLabelOf(vcDraft.team)) : ''}</span>
+                                ${vcDraft.recId ? '<span class="text-amber-300 font-semibold"><i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไขผลการตรวจเดิม</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="sm:w-44 shrink-0">
+                            <div class="flex justify-between text-xs text-gray-300 mb-1"><span>ความครบถ้วน</span><b id="vcProgTxt" class="text-gold-300">${n}/${vcItemCount()}</b></div>
+                            <div class="vc-prog"><div id="vcProgBar" style="width:${Math.round(n / vcItemCount() * 100)}%"></div></div>
+                            <button type="button" onclick="vcGoSetup()" class="mt-3 w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i>เปลี่ยนรถ / ผู้ตรวจ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vc-card mb-5">
+                    <div class="vc-card-h">
+                        <div class="vc-ic"><i class="fa-solid fa-gauge-high"></i></div>
+                        <div class="flex-grow"><div class="vc-no">2.1.1</div><div class="vc-tt">เลขไมล์ปัจจุบัน (กม.)</div></div>
+                    </div>
+                    <div class="p-4 sm:p-5">
+                        <div class="relative max-w-sm">
+                            <input type="text" inputmode="numeric" class="vc-inp vc-big" value="${escHtml(vcDraft.mileage)}" oninput="vcMileage(this)" placeholder="0">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">กม.</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${vcSections().map(vcSectionHtml).join('')}
+                ${vcOverallHtml()}
+
+                <div class="vc-bar">
+                    <button type="button" class="vc-bb" onclick="vcNextVehicle()"><i class="fa-solid fa-forward"></i>เลือกรถคันถัดไป</button>
+                    <button type="button" class="vc-bb" onclick="vcGoHome()"><i class="fa-solid fa-house"></i>กลับหน้าแรก</button>
+                    <button type="button" class="vc-bb" onclick="vcRefresh()"><i class="fa-solid fa-rotate"></i>รีเฟรช</button>
+                    <button type="button" class="vc-bb dng" onclick="vcClearForm()"><i class="fa-solid fa-eraser"></i>ล้างข้อมูลที่กรอก</button>
+                    <button type="button" class="vc-bb pri" onclick="vcSave()"><i class="fa-solid fa-floppy-disk"></i>บันทึกข้อมูล</button>
+                </div>`;
+        }
+
+        // ---- การกรอกข้อมูล (อัปเดตเฉพาะส่วนที่เปลี่ยน ไม่วาดหน้าใหม่) ----
+        function vcMileage(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            const f = raw ? Number(raw).toLocaleString('en-US') : '';
+            if (el.value !== f) el.value = f;
+            vcDraft.mileage = f;
+            vcTouch();
+        }
+        function vcSetText(k, v) { vcDraft[k] = v; vcTouch(); }
+        function vcSetNote(key, v) { vcDraft.items[key] = Object.assign(vcDraft.items[key] || {}, { n: v }); vcTouch(); }
+        function vcPaintItem(key) {
+            const row = document.getElementById('vcrow_' + key.replace('.', '_'));
+            if (!row) return;
+            const s = (vcDraft.items[key] || {}).s;
+            row.className = `vc-item ${typeof s === 'number' ? 's' + s : ''}`;
+            row.querySelectorAll('.vc-opt').forEach((b, i) => b.classList.toggle('on', s === i));
+            const note = row.querySelector('.vc-note');
+            if (note) note.classList.toggle('hidden', !s);
+        }
+        function vcAfterItemsChanged() {
+            const n = vcCheckedCount(vcDraft.items);
+            const pt = document.getElementById('vcProgTxt'), pb = document.getElementById('vcProgBar');
+            if (pt) pt.textContent = `${n}/${vcItemCount()}`;
+            if (pb) pb.style.width = Math.round(n / vcItemCount() * 100) + '%';
+            const sug = vcSuggest(vcDraft);
+            if (!vcDraft.overallManual && sug) vcDraft.overall = sug;
+            vcPaintOverall();
+            const st = document.getElementById('vcSuggest');
+            if (st) st.innerHTML = vcSuggestText(sug);
+            vcTouch();
+        }
+        function vcSetItem(key, s) {
+            const cur = vcDraft.items[key] || {};
+            vcDraft.items[key] = Object.assign(cur, { s: cur.s === s ? null : s });
+            if (vcDraft.items[key].s === null) delete vcDraft.items[key].s;
+            vcPaintItem(key);
+            vcAfterItemsChanged();
+        }
+        function vcAllNormal(secKey) {
+            const sec = vcSections().find(x => x.key === secKey);
+            sec.items.forEach(it => { const k = vcItemKey(sec, it); vcDraft.items[k] = Object.assign(vcDraft.items[k] || {}, { s: 0 }); vcPaintItem(k); });
+            vcAfterItemsChanged();
+        }
+        function vcPaintOverall() {
+            document.querySelectorAll('#vcsec_overall .vc-ov').forEach(b => b.classList.toggle('on', b.dataset.ov === vcDraft.overall));
+            const w = document.getElementById('vcWatchWrap');
+            if (w) w.classList.toggle('hidden', vcDraft.overall !== 'usable');
+        }
+        function vcSetOverall(k) {
+            vcDraft.overall = k;
+            vcDraft.overallManual = true;
+            vcPaintOverall();
+            const st = document.getElementById('vcSuggest');
+            if (st) st.innerHTML = vcSuggestText(vcSuggest(vcDraft));
+            vcTouch();
+        }
+
+        // ---- ป๊อปอัพกรอกตัวเลข (ลมยาง / DOT / แบตเตอรี่) ----
+        function vcNumInput(id, val, ph, extra = '') {
+            return `<input type="text" inputmode="decimal" id="${id}" value="${escHtml(val || '')}" placeholder="${ph}" class="vc-inp vc-big" style="font-size:22px;padding:8px 6px" ${extra} onfocus="this.select()">`;
+        }
+        function vcOpenNums(kind) {
+            if (kind === 'tire') {
+                const p = vcDraft.psi;
+                const tire = (k, l) => `<div class="vc-tire"><label>${l}</label>${vcNumInput('vcn_' + k, p[k], 'PSI')}</div>`;
+                openModal('กรอกค่าลมยาง (PSI) และอายุยาง (DOT)', `
+                    <div class="text-xs text-gray-500 -mt-1"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>กรอกค่าที่วัดได้จริง เช่น หน้า 32 / หลัง 35 PSI • DOT คือ 4 ตัวท้ายบนแก้มยาง (สัปดาห์ + ปี) เช่น 2320 = สัปดาห์ 23 ปี 2020</div>
+                    <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5 py-2">
+                        <div class="space-y-16 sm:space-y-20 justify-self-end">${tire('fl', 'หน้าซ้าย')}${tire('rl', 'หลังซ้าย')}</div>
+                        <div class="vc-car"><div class="absolute inset-x-0 top-2 text-center text-[10px] text-gold-300 font-semibold tracking-widest">หน้ารถ</div></div>
+                        <div class="space-y-16 sm:space-y-20 justify-self-start">${tire('fr', 'หน้าขวา')}${tire('rr', 'หลังขวา')}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="vcFillPsi('front')" class="py-2 rounded-xl border text-xs font-semibold text-navy-900 hover:bg-gray-50"><i class="fa-solid fa-clone mr-1 text-gold-600"></i>ใช้ค่าหน้าซ้ายกับหน้าขวา</button>
+                        <button type="button" onclick="vcFillPsi('rear')" class="py-2 rounded-xl border text-xs font-semibold text-navy-900 hover:bg-gray-50"><i class="fa-solid fa-clone mr-1 text-gold-600"></i>ใช้ค่าหลังซ้ายกับหลังขวา</button>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                        <div class="text-sm font-bold text-navy-900 mb-2"><i class="fa-solid fa-calendar-week text-gold-600 mr-1.5"></i>อายุยาง (DOT)</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="block text-xs text-gray-600 mb-1">สัปดาห์ที่ผลิต (1–53)</label>${vcNumInput('vcn_dw', vcDraft.dot.w, 'เช่น 23')}</div>
+                            <div><label class="block text-xs text-gray-600 mb-1">ปีที่ผลิต (ค.ศ.)</label>${vcNumInput('vcn_dy', vcDotYear(vcDraft.dot) || '', 'เช่น 2020')}</div>
+                        </div>
+                        <div class="mt-2"><label class="block text-xs text-gray-600 mb-1">หรือกรอกรหัส DOT 4 หลัก</label>
+                            <input type="text" inputmode="numeric" maxlength="4" placeholder="เช่น 2320" oninput="vcDotCode(this.value)" class="vc-inp text-center font-bold tracking-[.3em]"></div>
+                    </div>
+                `, { type: 'vcNums', kind: 'tire' });
+            } else {
+                openModal('กรอกค่าแบตเตอรี่', `
+                    <div class="text-xs text-gray-500 -mt-1"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>แบตเตอรี่ปกติขณะดับเครื่องประมาณ 12.6V ขึ้นไป • ค่า CCA ดูจากเครื่องวัดเทียบกับค่าบนฉลากแบตเตอรี่</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-bolt text-gold-600 mr-1"></i>แรงดัน (Volt)</label>${vcNumInput('vcn_volt', vcDraft.volt, 'เช่น 12.6')}</div>
+                        <div><label class="block text-sm font-semibold text-navy-900 mb-1.5"><i class="fa-solid fa-car-battery text-gold-600 mr-1"></i>ค่า CCA</label>${vcNumInput('vcn_cca', vcDraft.cca, 'เช่น 550')}</div>
+                    </div>
+                `, { type: 'vcNums', kind: 'batt' });
+            }
+            document.getElementById('modalSaveBtn').innerHTML = '<i class="fa-solid fa-check mr-1.5"></i> บันทึกค่า';
+            setTimeout(() => { const f = document.querySelector('#modalForm input'); if (f) f.focus(); }, 80);
+        }
+        function vcFillPsi(which) {
+            const a = which === 'front' ? ['vcn_fl', 'vcn_fr'] : ['vcn_rl', 'vcn_rr'];
+            const src = document.getElementById(a[0]).value || document.getElementById(a[1]).value;
+            a.forEach(id => { document.getElementById(id).value = src; });
+        }
+        function vcDotCode(v) {
+            const d = String(v).replace(/\D/g, '');
+            if (d.length === 4) {
+                document.getElementById('vcn_dw').value = String(parseInt(d.slice(0, 2), 10));
+                document.getElementById('vcn_dy').value = String(2000 + parseInt(d.slice(2), 10));
+            }
+        }
+        const vcNum = (id) => { const x = String(fv(id)).replace(/,/g, '.').replace(/[^\d.]/g, ''); return x; };
+
+        // ---- ปุ่มควบคุม ----
+        function vcValidate() {
+            if (!vcDraft.date) return 'กรุณาเลือกวันที่ตรวจเช็ค';
+            if (!vcDraft.inspectorName) return 'กรุณาเลือกผู้ตรวจเช็ค';
+            if (!vcVehicleById(vcDraft.vehicleId)) return 'กรุณาเลือกรถที่ตรวจเช็ค';
+            if (!vcDraft.overall) return `กรุณาเลือก “สรุปสภาพรถโดยรวม” (ข้อ 2.1.${vcSections().length + 2})`;
+            return '';
+        }
+        function vcSave(after) {
+            const err = vcValidate();
+            if (err) {
+                showStatusPopup('ยังบันทึกไม่ได้', err, 'edit', 2600);
+                const ov = document.getElementById('vcsec_overall');
+                if (ov && !vcDraft.overall) ov.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            const missing = vcItemCount() - vcCheckedCount(vcDraft.items);
+            const doSave = () => {
+                const v = vcVehicleById(vcDraft.vehicleId);
+                const existing = vcRecordFor(vcDraft.date, vcDraft.vehicleId) || (vcDraft.recId && db.vehicleChecks.find(r => r.id === vcDraft.recId));
+                const items = {};
+                Object.entries(vcDraft.items).forEach(([k, x]) => { if (x && (typeof x.s === 'number' || x.n)) items[k] = { s: typeof x.s === 'number' ? x.s : null, n: String(x.n || '').trim() }; });
+                const rec = {
+                    id: existing ? existing.id : uid('vc'),
+                    date: vcDraft.date, time: vcDraft.time || '',
+                    inspectorId: vcDraft.inspectorId || '', inspectorName: vcDraft.inspectorName, team: vcDraft.team || '',
+                    vehicleId: v.id, vehicle: { type: v.type || '', brand: v.brand || '', plate: v.plate || '' },
+                    mileage: vcDraft.mileage || '', items,
+                    psi: Object.assign({}, vcDraft.psi), dot: Object.assign({}, vcDraft.dot), volt: vcDraft.volt || '', cca: vcDraft.cca || '',
+                    overall: vcDraft.overall, watch: vcDraft.overall === 'usable' ? String(vcDraft.watch || '').trim() : '', action: String(vcDraft.action || '').trim(),
+                    by: authRole() || '', createdAt: existing ? existing.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString()
+                };
+                db.vehicleChecks = (db.vehicleChecks || []).filter(r => r.id !== rec.id && !(r.date === rec.date && r.vehicleId === rec.vehicleId));
+                db.vehicleChecks.push(rec);
+                vcDraft.recId = rec.id;
+                vcDraft.dirty = false;
+                vcPersist();
+                saveDB();
+                showStatusPopup(existing ? 'อัปเดตผลการตรวจเรียบร้อย' : 'บันทึกผลการตรวจเรียบร้อย', `${vcVehLabel(v)} ทะเบียน ${v.plate || '-'} • ${VC_OVERALL[rec.overall].label}`, 'success', 1900);
+                if (typeof after === 'function') after(); else vcRerender();
+            };
+            if (missing > 0) vcConfirm('ยังตรวจไม่ครบทุกหัวข้อ', `เหลืออีก ${missing} หัวข้อที่ยังไม่ได้เลือกสถานะ ต้องการบันทึกผลการตรวจเท่าที่กรอกไว้หรือไม่?`, 'บันทึกเลย', doSave, 'fa-list-check');
+            else doSave();
+        }
+        function vcNextVehicleId() {
+            const vs = db.vehicles;
+            const i = vs.findIndex(v => v.id === vcDraft.vehicleId);
+            for (let k = 1; k <= vs.length; k++) {
+                const v = vs[(i + k + vs.length) % vs.length];
+                if (v.id !== vcDraft.vehicleId && !vcRecordFor(vcDraft.date, v.id)) return v.id;
+            }
+            return null;
+        }
+        function vcNextVehicle() {
+            const go = () => {
+                const nid = vcNextVehicleId();
+                if (nid) vcSelectVehicle(nid, true);
+                else { vcGoSetup(); showStatusPopup('ตรวจครบทุกคันแล้ว', `บันทึกผลการตรวจรถครบทุกคันของวันที่ ${fmtThaiDMY(vcDraft.date)} แล้ว`, 'success', 2600); }
+            };
+            if (vcDraft.dirty) vcConfirm('บันทึกก่อนไปคันถัดไป', 'มีข้อมูลที่ยังไม่ได้บันทึก ต้องการบันทึกผลของรถคันนี้ก่อนไปคันถัดไปหรือไม่?', 'บันทึกแล้วไปต่อ', () => vcSave(go), 'fa-floppy-disk');
+            else go();
+        }
+        function vcGoHome() {
+            const go = () => { vcDraft.step = 'setup'; vcPersist(); navigate('home'); };
+            if (vcDraft.dirty) vcConfirm('ออกจากหน้าตรวจเช็ค', 'ข้อมูลที่กรอกยังไม่ได้บันทึก (ระบบเก็บแบบร่างไว้ในเครื่องให้แล้ว) ต้องการกลับหน้าแรกหรือไม่?', 'กลับหน้าแรก', go, 'fa-house');
+            else go();
+        }
+        async function vcRefresh() {
+            vcPersist();
+            if (typeof GAS_WEB_APP_URL !== 'undefined' && GAS_WEB_APP_URL) await loadFromGoogleSheets(true);
+            else { vcRerender(); showStatusPopup('รีเฟรชเรียบร้อย', 'ข้อมูลที่กรอกยังอยู่ครบ', 'success', 1500); }
+        }
+        function vcClearForm() {
+            vcConfirm('ล้างข้อมูลที่กรอก', 'ล้างผลการตรวจของรถคันนี้ที่กรอกไว้ทั้งหมด (เลขไมล์ สถานะทุกหัวข้อ ค่าที่วัดได้ สรุป และหมายเหตุ) ใช่หรือไม่?', 'ล้างข้อมูล', () => {
+                Object.assign(vcDraft, vcBlankItems());
+                vcDraft.dirty = !!vcDraft.recId;
+                vcPersist();
+                vcRerender();
+                showStatusPopup('ล้างข้อมูลแล้ว', vcDraft.recId ? 'กด “บันทึกข้อมูล” หากต้องการบันทึกทับผลการตรวจเดิม' : 'เริ่มกรอกผลการตรวจใหม่ได้เลย', 'delete', 1800);
+            }, 'fa-eraser', true);
+        }
+
+        // ---- ป๊อปอัพเพิ่มชื่อ / เพิ่มรถ ----
+        function vcAddPersonModal() {
+            const q = String(fv('vc_insp_q') || '').trim();
+            const parts = q.split(/\s+/);
+            const ranks = [...OFFICER_RANKS, ...TROOPER_RANKS];
+            let rank = '', first = parts[0] || '', last = parts.slice(1).join(' ');
+            const r = ranks.find(x => first.startsWith(x));
+            if (r) { rank = r; first = first.slice(r.length); }
+            openModal('เพิ่มชื่อผู้ตรวจเช็ค', `
+                <div class="text-xs text-gray-500 -mt-1"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>ชื่อที่เพิ่มจะถูกบันทึกในข้อมูลกำลังพลด้วย เพื่อเลือกได้ในครั้งถัดไป</div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><label class="block text-sm font-medium mb-1">ยศ</label>
+                        <input type="text" id="vcp_rank" list="vcp_ranks" value="${escHtml(rank)}" class="vc-inp" placeholder="เช่น ส.ต.อ.">
+                        <datalist id="vcp_ranks">${ranks.map(x => `<option value="${x}">`).join('')}</datalist></div>
+                    <div><label class="block text-sm font-medium mb-1">ชื่อ <span class="text-red-500">*</span></label><input type="text" id="vcp_first" value="${escHtml(first)}" class="vc-inp"></div>
+                    <div><label class="block text-sm font-medium mb-1">นามสกุล</label><input type="text" id="vcp_last" value="${escHtml(last)}" class="vc-inp"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-sm font-medium mb-1">ชื่อเล่น</label><input type="text" id="vcp_nick" class="vc-inp"></div>
+                    <div><label class="block text-sm font-medium mb-1">ทีม / สังกัด</label><select id="vcp_team" class="vc-inp">${vcTeamOptions(vcDraft.team)}</select></div>
+                </div>
+            `, { type: 'vcPerson' });
+            document.getElementById('modalSaveBtn').innerHTML = '<i class="fa-solid fa-user-plus mr-1.5"></i> เพิ่มและเลือกชื่อนี้';
+        }
+        function vcAddVehicleModal() {
+            const types = Array.from(new Set(db.vehicles.map(v => v.type).filter(Boolean)));
+            openModal('เพิ่มข้อมูลรถ', `
+                <div class="text-xs text-gray-500 -mt-1"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>รถที่เพิ่มจะถูกบันทึกในตารางสถานะรถด้วย</div>
+                <div><label class="block text-sm font-medium mb-1">ประเภทรถ <span class="text-red-500">*</span></label>
+                    <input type="text" id="vcv_type" list="vcv_types" class="vc-inp" placeholder="เช่น รถตู้ / รถกระบะ / รถหุ้มเกราะ">
+                    <datalist id="vcv_types">${types.map(t => `<option value="${escHtml(t)}">`).join('')}</datalist></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-sm font-medium mb-1">ยี่ห้อ / รุ่นรถ <span class="text-red-500">*</span></label><input type="text" id="vcv_brand" class="vc-inp" placeholder="เช่น Isuzu Mu-X (มีโครง)"></div>
+                    <div><label class="block text-sm font-medium mb-1">หมายเลขทะเบียน <span class="text-red-500">*</span></label><input type="text" id="vcv_plate" class="vc-inp" placeholder="เช่น 1ขง 6035"></div>
+                </div>
+                <div><label class="block text-sm font-medium mb-1">หมายเหตุ</label><input type="text" id="vcv_note" class="vc-inp"></div>
+            `, { type: 'vcVehicle' });
+            document.getElementById('modalSaveBtn').innerHTML = '<i class="fa-solid fa-plus mr-1.5"></i> เพิ่มรถ';
+        }
+        function vcHandleModalSubmit(ctx) {
+            if (ctx.type === 'vcNums') {
+                if (ctx.kind === 'tire') {
+                    ['fl', 'fr', 'rl', 'rr'].forEach(k => { vcDraft.psi[k] = vcNum('vcn_' + k); });
+                    const w = parseInt(vcNum('vcn_dw'), 10), y = parseInt(vcNum('vcn_dy'), 10);
+                    vcDraft.dot = { w: w && w >= 1 && w <= 53 ? String(w) : '', y: y ? String(y < 100 ? 2000 + y : y) : '' };
+                    const yr = vcDotYear(vcDraft.dot);
+                    const ageKey = 'tire.age';
+                    if (yr && !(vcDraft.items[ageKey] && typeof vcDraft.items[ageKey].s === 'number')) {
+                        const age = new Date().getFullYear() - yr;
+                        vcDraft.items[ageKey] = Object.assign(vcDraft.items[ageKey] || {}, { s: age >= 6 ? 2 : age >= 5 ? 1 : 0 });
+                        if (age >= 5 && !vcDraft.items[ageKey].n) vcDraft.items[ageKey].n = `ควรเปลี่ยนยาง ยางปี ${yr}`;
+                    }
+                } else {
+                    vcDraft.volt = vcNum('vcn_volt');
+                    vcDraft.cca = vcNum('vcn_cca');
+                }
+                const sug = vcSuggest(vcDraft);
+                if (!vcDraft.overallManual && sug) vcDraft.overall = sug;
+                vcTouch();
+                closeModal();
+                vcRerender();
+                return;
+            }
+            if (ctx.type === 'vcPerson') {
+                const first = fv('vcp_first').trim();
+                if (!first) { showStatusPopup('กรุณากรอกชื่อ', 'ต้องระบุชื่อผู้ตรวจเช็คอย่างน้อย', 'edit', 2000); return; }
+                const rank = fv('vcp_rank').trim();
+                const p = {
+                    id: uid('p'), category: getRankOrder(rank) <= 8.5 ? 'officer' : 'trooper', team: fv('vcp_team') || '',
+                    photo: `https://ui-avatars.com/api/?name=${encodeURIComponent(first)}&background=0a1128&color=c5a059&size=150`,
+                    rank, firstName: first, lastName: fv('vcp_last').trim(), position: '', nickname: fv('vcp_nick').trim(), phone: '',
+                    note: 'เพิ่มจากหน้าตรวจเช็คสภาพรถ'
+                };
+                db.personnel.push(p);
+                saveDB();
+                closeModal();
+                vcPickPerson(p.id);
+                showStatusPopup('เพิ่มชื่อเรียบร้อย', `${personFullName(p)} ถูกเพิ่มในข้อมูลกำลังพลแล้ว`, 'success', 1800);
+                return;
+            }
+            if (ctx.type === 'vcVehicle') {
+                const type = fv('vcv_type').trim(), brand = fv('vcv_brand').trim(), plate = fv('vcv_plate').trim();
+                if (!type || !brand || !plate) { showStatusPopup('กรอกข้อมูลไม่ครบ', 'กรุณาระบุ ประเภทรถ ยี่ห้อ/รุ่น และหมายเลขทะเบียน', 'edit', 2200); return; }
+                const v = { id: 'v_' + Date.now(), photo: '', type, brand, plate, status: 'พร้อมใช้งาน', note: fv('vcv_note').trim() };
+                db.vehicles.push(v);
+                saveDB();
+                closeModal();
+                showStatusPopup('เพิ่มข้อมูลรถเรียบร้อย', `${brand} ทะเบียน ${plate}`, 'success', 1600);
+                if (vcDraft.inspectorName) vcSelectVehicle(v.id, true); else vcRerender();
+                return;
+            }
+            if (ctx.type === 'vcTopics') { vcTopicSave(); return; }
+            if (ctx.type === 'vcExport') { closeModal(); return; }
+            closeModal();
+        }
+
+        // ---------- 6) ส่วนผู้ดูแลระบบ: แท็บหน้าสถานะรถ ----------
+        function vehPageHeadHtml(ui) {
+            const dates = vcCheckDates();
+            const lastN = dates.length ? (db.vehicleChecks || []).filter(r => r.date === dates[0]).length : 0;
+            return `<div class="vtab-bar">
+                <button type="button" class="vtab ${ui.tab !== 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'status' })"><i class="fa-solid fa-table-cells-large"></i><span>แผนภาพและตารางสถานะยานพาหนะ</span><span class="bd">${db.vehicles.length}</span></button>
+                <button type="button" class="vtab ${ui.tab === 'checks' ? 'on' : ''}" onclick="setVehUi({ tab: 'checks' })"><i class="fa-solid fa-clipboard-check"></i><span>ผลการตรวจสภาพยานพาหนะ</span>${lastN ? `<span class="bd">${lastN}</span>` : ''}</button>
+            </div>`;
+        }
+        function vcCheckDates() {
+            return Array.from(new Set((db.vehicleChecks || []).map(r => r.date).filter(Boolean))).sort().reverse();
+        }
+        // ผลการตรวจของวันที่เลือก เรียงตามลำดับรถในตารางสถานะรถ (รถที่ถูกลบไปแล้วต่อท้าย)
+        function vcRoundRows(date, typeFilter = 'all') {
+            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const rows = [];
+            db.vehicles.forEach(v => {
+                if (typeFilter !== 'all' && (v.type || 'ไม่ระบุประเภท') !== typeFilter) return;
+                rows.push({ v, rec: recs.find(r => r.vehicleId === v.id) || null });
+            });
+            recs.filter(r => !db.vehicles.some(v => v.id === r.vehicleId)).forEach(r => {
+                const v = { id: r.vehicleId, type: r.vehicle.type, brand: r.vehicle.brand, plate: r.vehicle.plate };
+                if (typeFilter !== 'all' && (v.type || 'ไม่ระบุประเภท') !== typeFilter) return;
+                rows.push({ v, rec: r, removed: true });
+            });
+            return rows;
+        }
+        function vcSecWorst(rec, sec) {
+            let w = -1;
+            sec.items.forEach(it => { const x = (rec.items || {})[vcItemKey(sec, it)]; if (x && typeof x.s === 'number') w = Math.max(w, x.s); });
+            return w;
+        }
+        function vcFlagged(rec, minLevel = 1) {
+            const out = [];
+            vcSections().forEach(sec => sec.items.forEach(it => {
+                const x = (rec.items || {})[vcItemKey(sec, it)];
+                if (x && typeof x.s === 'number' && x.s >= minLevel) out.push({ sec, it, s: x.s, n: x.n || '', text: x.n ? x.n : `${it.s} ${x.s === 2 ? 'ชำรุด/ต้องซ่อม' : 'ควรเฝ้าระวัง'}` });
+            }));
+            return out;
+        }
+        function vcRecNote(rec) {
+            // ข้อความหมายเหตุของรถแต่ละคัน (ใช้ทั้งภาพและข้อความ)
+            const parts = [];
+            if (rec.overall === 'grounded') {
+                if (rec.action) parts.push(rec.action);
+                else parts.push(...vcFlagged(rec, 2).map(f => f.text));
+                if (!parts.length) parts.push(...vcFlagged(rec, 1).map(f => f.text));
+            } else {
+                if (rec.overall === 'usable') {
+                    if (rec.watch) parts.push(rec.watch);
+                    else parts.push(...vcFlagged(rec, 1).map(f => f.text));
+                }
+                if (rec.action) parts.push(rec.action);
+                const yr = vcDotYear(rec.dot);
+                const all = parts.join(' ');
+                if (yr && new Date(rec.date).getFullYear() - yr >= 5 && !all.includes(String(yr))) parts.push(`ควรเปลี่ยนยาง ยางปี ${yr}`);
+            }
+            return Array.from(new Set(parts.map(x => String(x).trim()).filter(Boolean))).join(', ');
+        }
+        function vcRoundMeta(date) {
+            const recs = (db.vehicleChecks || []).filter(r => r.date === date);
+            const times = recs.map(r => r.time).filter(Boolean).sort();
+            const teams = Array.from(new Set(recs.map(r => String(r.team || '').trim()).filter(t => t && t !== '-')));
+            const names = Array.from(new Set(recs.map(r => r.inspectorName).filter(Boolean)));
+            return { recs, time: times[0] || '', teams, names };
+        }
+        function vcPillHtml(rec) {
+            if (!rec) return '<span class="vc-pill kn"><i class="fa-regular fa-clock"></i>ยังไม่ได้ตรวจ</span>';
+            const o = VC_OVERALL[rec.overall] || VC_OVERALL.usable;
+            return `<span class="vc-pill k${o.k}"><i class="fa-solid ${o.icon}"></i>${o.short}</span>`;
+        }
+        function vcSysDotsHtml(rec) {
+            return `<div class="flex flex-wrap gap-x-3 gap-y-1">${vcSections().map(sec => {
+                const w = rec ? vcSecWorst(rec, sec) : -1;
+                return `<span class="inline-flex items-center gap-1 text-[11px] text-gray-500" title="${escHtml(sec.title)}"><span class="vc-dot ${w < 0 ? 'sn' : 's' + w}"></span>${escHtml(sec.short)}</span>`;
+            }).join('')}</div>`;
+        }
+        function setVcCheckDate(d) { setVehUi({ checkDate: d }); }
+        function renderVehicleCheckResults(ui) {
+            updateBreadcrumbs([
+                { label: 'หน้าหลัก', action: "navigate('home')" },
+                { label: '4. ตารางสถานะรถ', action: "setVehUi({ tab: 'status' })" },
+                { label: 'ผลการตรวจสภาพยานพาหนะ' }
+            ]);
+            const dates = vcCheckDates();
+            const date = dates.includes(ui.checkDate) ? ui.checkDate : (dates[0] || '');
+            const tf = ui.type !== 'all' && db.vehicles.some(v => (v.type || 'ไม่ระบุประเภท') === ui.type) ? ui.type : 'all';
+            const rows = date ? vcRoundRows(date, tf) : [];
+            const meta = date ? vcRoundMeta(date) : { recs: [], teams: [], names: [], time: '' };
+            const checked = rows.filter(r => r.rec);
+            const cnt = k => checked.filter(r => r.rec.overall === k).length;
+            const tile = (label, val, icon, accent, tint) => `<div class="vc-tile" style="--vc-accent:${accent}">
+                <div class="ti" style="background:${tint};color:${accent}"><i class="fa-solid ${icon}"></i></div>
+                <div class="tl">${label}</div><div class="tv" style="color:${accent}">${val}</div></div>`;
+            const headActions = `
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="openVcTopicEditor()" class="px-4 py-2.5 rounded-xl border border-gold-500 bg-white hover:bg-amber-50 text-navy-900 font-semibold text-sm shadow-sm"><i class="fa-solid fa-sliders text-gold-600 mr-2"></i>แก้ไขหัวข้อการตรวจ</button>
+                    <button type="button" onclick="vcStart()" class="px-4 py-2.5 rounded-xl border border-gold-500 bg-white hover:bg-amber-50 text-navy-900 font-semibold text-sm shadow-sm"><i class="fa-solid fa-clipboard-check text-gold-600 mr-2"></i>เปิดแบบฟอร์มตรวจเช็ค</button>
+                    <button type="button" onclick="openVcExport('${escHtml(date)}')" ${date ? '' : 'disabled'} class="px-4 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 font-semibold text-sm shadow disabled:opacity-40"><i class="fa-solid fa-file-export mr-2"></i>ส่งออกภาพ / ข้อความ</button>
+                </div>`;
+            const top = `
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-navy-900 to-navy-700 text-gold-400 flex items-center justify-center text-2xl shadow-md border border-gold-500/30 shrink-0"><i class="fa-solid fa-clipboard-check"></i></div>
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-navy-900">ผลการตรวจสภาพยานพาหนะ</h2>
+                            <p class="text-gray-500 text-xs sm:text-sm">สรุปจากแบบฟอร์มตรวจเช็คสภาพรถของเจ้าหน้าที่ • ส่งออกเป็นภาพสรุปสถานะ และข้อความรายงานผู้บังคับบัญชา</p>
+                        </div>
+                    </div>
+                    ${headActions}
+                </div>`;
+            if (!date) {
+                return top + `<div class="vc-card p-10 text-center">
+                    <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-50 text-gold-600 flex items-center justify-center text-3xl mb-3"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <div class="font-bold text-navy-900">ยังไม่มีผลการตรวจสภาพรถ</div>
+                    <div class="text-sm text-gray-500 mt-1">เมื่อเจ้าหน้าที่บันทึกผลจากเมนู “ตรวจเช็คสภาพรถ” ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</div>
+                </div>`;
+            }
+            const dateOpts = dates.map(d => `<option value="${d}" ${d === date ? 'selected' : ''}>${escHtml(formatThaiDateFullYear(d))} (${(db.vehicleChecks || []).filter(r => r.date === d).length} คัน)</option>`).join('');
+            const list = rows.map(({ v, rec, removed }, i) => `
+                <div class="vc-row ${rec ? '' : 'opacity-70'}">
+                    <div class="hidden lg:block text-xs text-gray-400 font-semibold">${i + 1}</div>
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${escHtml(vcPhoto(v))}" onerror="this.style.visibility='hidden'" alt="" class="w-16 h-12 rounded-xl object-cover border border-gold-500/40 shrink-0 ${rec && rec.overall === 'grounded' ? 'grayscale' : ''}">
+                        <div class="min-w-0">
+                            <div class="font-bold text-navy-900 truncate">${escHtml(vcVehLabel(v))}${removed ? ' <span class="text-[10px] text-red-500">(ลบจากตารางแล้ว)</span>' : ''}</div>
+                            <div class="text-xs text-gray-500 truncate"><i class="fa-solid ${getVehicleTypeIcon(v.type)} text-gold-600 mr-1"></i>${escHtml(v.type || '-')}</div>
+                            <span class="inline-block mt-1 px-2 py-0.5 rounded-md bg-navy-900 text-gold-400 font-bold text-[11px]">${escHtml(v.plate || '-')}</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-600 min-w-0">
+                        ${rec ? `<div class="font-semibold text-navy-900 truncate"><i class="fa-solid fa-user-check text-gold-600 mr-1"></i>${escHtml(rec.inspectorName)}</div>
+                        <div class="mt-0.5">${rec.time ? escHtml(fmtTime(rec.time)) : ''}${rec.mileage ? ` • <i class="fa-solid fa-gauge-high text-gold-600"></i> ${escHtml(rec.mileage)} กม.` : ''}</div>` : '<span class="text-gray-400">—</span>'}
+                    </div>
+                    <div>${vcPillHtml(rec)}</div>
+                    <div class="min-w-0">
+                        ${rec ? vcSysDotsHtml(rec) : ''}
+                        ${rec && vcRecNote(rec) ? `<div class="text-xs mt-1.5 font-body ${rec.overall === 'grounded' ? 'text-red-700' : 'text-amber-800'}"><i class="fa-solid fa-note-sticky mr-1"></i>${escHtml(vcRecNote(rec))}</div>` : ''}
+                    </div>
+                    <div class="flex lg:justify-end gap-2">
+                        ${rec ? `<button type="button" onclick="openVcDetail('${escHtml(rec.id)}')" class="px-3 py-1.5 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold"><i class="fa-solid fa-eye mr-1"></i>ดู</button>
+                        <button type="button" onclick="deleteVcRecord('${escHtml(rec.id)}')" class="px-2.5 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs" title="ลบผลการตรวจ"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
+                </div>`).join('');
+            return top + `
+                <div class="vc-card p-4 mb-5 flex flex-col md:flex-row md:items-center gap-3">
+                    <div class="flex items-center gap-2 flex-grow min-w-0">
+                        <i class="fa-regular fa-calendar-check text-gold-600 text-lg"></i>
+                        <select onchange="setVcCheckDate(this.value)" class="vc-inp font-semibold" style="max-width:360px">${dateOpts}</select>
+                    </div>
+                    <div class="text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+                        ${meta.time ? `<span><i class="fa-regular fa-clock text-gold-600 mr-1"></i>เริ่มตรวจ ${escHtml(fmtTime(meta.time))}</span>` : ''}
+                        ${meta.teams.length ? `<span><i class="fa-solid fa-people-group text-gold-600 mr-1"></i>${escHtml(meta.teams.map(teamLabelOf).join(', '))}</span>` : ''}
+                        ${meta.names.length ? `<span><i class="fa-solid fa-user-check text-gold-600 mr-1"></i>${escHtml(meta.names.join(', '))}</span>` : ''}
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
+                    ${tile('ตรวจแล้ว', `${checked.length}<span class="text-sm text-gray-400 font-medium"> / ${rows.length} คัน</span>`, 'fa-clipboard-check', '#0a1128', 'rgba(10,17,40,.08)')}
+                    ${tile('พร้อมใช้งาน 100%', cnt('ready') + ' คัน', 'fa-circle-check', '#059669', '#ecfdf5')}
+                    ${tile('ใช้งานได้ (เฝ้าระวัง)', cnt('usable') + ' คัน', 'fa-triangle-exclamation', '#d97706', '#fffbeb')}
+                    ${tile('งดใช้งานชั่วคราว', cnt('grounded') + ' คัน', 'fa-ban', '#dc2626', '#fef2f2')}
+                </div>
+                ${vehTypeChipsHtml(tf, 'setVehType', db.vehicles)}
+                <div class="vc-card">
+                    <div class="vc-row hd"><div>#</div><div>ยานพาหนะ</div><div>ผู้ตรวจ / เวลา / เลขไมล์</div><div>สภาพรถ</div><div>ผลรายระบบ / หมายเหตุ</div><div class="text-right">จัดการ</div></div>
+                    ${list || '<div class="p-8 text-center text-gray-400">ไม่มีรถในประเภทนี้</div>'}
+                </div>
+                <div class="flex flex-wrap items-center gap-4 text-[11px] text-gray-500 mt-3">
+                    <span class="inline-flex items-center gap-1.5"><span class="vc-dot s0"></span>ปกติ</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="vc-dot s1"></span>ควรเฝ้าระวัง</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="vc-dot s2"></span>ชำรุด / ต้องซ่อม</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="vc-dot sn"></span>ยังไม่ได้ตรวจ</span>
+                </div>`;
+        }
+        function deleteVcRecord(id) {
+            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            if (!r) return;
+            showConfirmPopup('ลบผลการตรวจ', `ลบผลการตรวจ ${r.vehicle.brand || ''} ทะเบียน ${r.vehicle.plate || ''} วันที่ ${fmtThaiDMY(r.date)} ใช่หรือไม่?`, () => {
+                db.vehicleChecks = db.vehicleChecks.filter(x => x.id !== id);
+                saveDB();
+                closeModal();
+                render();
+                showStatusPopup('ลบผลการตรวจแล้ว', '', 'delete', 1500);
+            });
+        }
+        function openVcDetail(id) {
+            const r = (db.vehicleChecks || []).find(x => x.id === id);
+            if (!r) return;
+            const o = VC_OVERALL[r.overall] || VC_OVERALL.usable;
+            const lvlCls = ['bg-emerald-100 text-emerald-800', 'bg-amber-100 text-amber-800', 'bg-red-100 text-red-800'];
+            const yr = vcDotYear(r.dot);
+            const kv = (k, v) => `<div class="rounded-xl bg-gray-50 border px-3 py-2"><div class="text-[11px] text-gray-500">${k}</div><div class="text-sm font-semibold text-navy-900">${v}</div></div>`;
+            openModal(`ผลการตรวจ: ${escHtml(r.vehicle.brand || r.vehicle.type || '')} ${escHtml(r.vehicle.plate || '')}`, `
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    ${vcPillHtml(r)}
+                    <span class="text-xs text-gray-500">${escHtml(formatThaiDateFullYear(r.date))}${r.time ? ' • ' + escHtml(fmtTime(r.time)) : ''}</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    ${kv('ผู้ตรวจเช็ค', escHtml(r.inspectorName || '-'))}
+                    ${kv('ทีม', escHtml(teamLabelOf(r.team) || '-'))}
+                    ${kv('เลขไมล์', r.mileage ? escHtml(r.mileage) + ' กม.' : '-')}
+                    ${kv('ประเภท', escHtml(r.vehicle.type || '-'))}
+                    ${kv('ลมยาง หน้า ซ/ข (PSI)', `${escHtml(r.psi && r.psi.fl || '–')} / ${escHtml(r.psi && r.psi.fr || '–')}`)}
+                    ${kv('ลมยาง หลัง ซ/ข (PSI)', `${escHtml(r.psi && r.psi.rl || '–')} / ${escHtml(r.psi && r.psi.rr || '–')}`)}
+                    ${kv('DOT สัปดาห์/ปี', r.dot && (r.dot.w || yr) ? `${escHtml(r.dot.w || '–')} / ${escHtml(yr || '–')}` : '-')}
+                    ${kv('แบตเตอรี่', `${r.volt ? escHtml(r.volt) + ' V' : '–'}${r.cca ? ' • CCA ' + escHtml(r.cca) : ''}`)}
+                </div>
+                ${vcSections().map(sec => `
+                    <div class="rounded-2xl border overflow-hidden">
+                        <div class="px-3 py-2 bg-navy-900 text-gold-300 text-sm font-semibold"><i class="fa-solid ${sec.icon} mr-1.5"></i>${sec.no} ${escHtml(sec.title)}</div>
+                        ${sec.items.map((it, i) => {
+                            const x = (r.items || {})[vcItemKey(sec, it)] || {};
+                            const s = typeof x.s === 'number' ? x.s : null;
+                            return `<div class="px-3 py-2 border-t flex items-start justify-between gap-3 text-sm">
+                                <div class="min-w-0"><span class="text-gold-600 text-xs mr-1">${sec.no}.${i + 1}</span>${escHtml(it.t)}${x.n ? `<div class="text-xs text-gray-600 mt-0.5"><i class="fa-solid fa-comment-dots text-gold-600 mr-1"></i>${escHtml(x.n)}</div>` : ''}</div>
+                                <span class="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${s === null ? 'bg-gray-100 text-gray-500' : lvlCls[s]}">${s === null ? 'ไม่ได้ตรวจ' : escHtml(sec.levels[s])}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>`).join('')}
+                ${r.watch ? `<div class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm"><b class="text-amber-800">รายการที่ต้องเฝ้าระวัง:</b> ${escHtml(r.watch)}</div>` : ''}
+                ${r.action ? `<div class="rounded-xl bg-gray-50 border p-3 text-sm"><b class="text-navy-900">ต้องดำเนินการแก้ไข / หมายเหตุ:</b> ${escHtml(r.action)}</div>` : ''}
+                <div class="flex justify-end"><button type="button" onclick="deleteVcRecord('${escHtml(r.id)}')" class="text-xs text-red-600 hover:underline"><i class="fa-solid fa-trash mr-1"></i>ลบผลการตรวจนี้</button></div>
+            `, { type: 'vcExport' });
+            setModalWide(true);
+            document.getElementById('modalSaveBtn').classList.add('hidden');
+        }
+
+        // ---------- 7) ส่งออกผลการตรวจสภาพ (ภาพ / ข้อความ) ----------
+        function vcExportName(v) { return vcVehLabel(v); }
+        function buildVcReportText(date) {
+            const meta = vcRoundMeta(date);
+            const rows = vcRoundRows(date).filter(x => x.rec);
+            const isToday = date === todayIso();
+            const teamTxt = meta.teams.length ? `กำลังพล${meta.teams.map(teamLabelOf).join(', ')}` : 'กำลังพล';
+            const L = [];
+            L.push('เรียน ผู้บังคับบัญชา', '');
+            L.push(`       ${isToday ? 'วันนี้' : 'เมื่อวันที่'} (${fmtThaiDMY(date)})${meta.time ? ` เวลา ${fmtTime(meta.time)}` : ''}`);
+            L.push(`${teamTxt} ทำการตรวจสภาพรถฯ ประจำสัปดาห์`);
+            L.push('ผลการตรวจฯ ', '');
+            rows.forEach(({ v, rec }, i) => {
+                const note = vcRecNote(rec);
+                L.push(`  (${i + 1}.)${vcExportName(v)}`);
+                L.push(`         :: ทะเบียน ${v.plate || '-'}`);
+                if (rec.overall === 'grounded') {
+                    L.push(`        ❌ สภาพ : ไม่พร้อมใช้งาน${note ? ' ' + note : ''}`);
+                } else {
+                    L.push(`        ✅ สภาพ : พร้อมใช้งาน`);
+                    if (note) L.push(`*${note}`);
+                }
+                L.push('');
+            });
+            L.push('', '        จึงเรียนมาเพื่อโปรดทราบ');
+            return L.join('\n');
+        }
+        function buildVcSheetHtml(date) {
+            const meta = vcRoundMeta(date);
+            const rows = vcRoundRows(date).filter(x => x.rec);
+            const cnt = k => rows.filter(r => r.rec.overall === k).length;
+            const dotC = ['#10b981', '#f59e0b', '#ef4444'];
+            const st = {
+                ready: ['#d1fae5', '#065f46', '✔ พร้อมใช้งาน'],
+                usable: ['#fef3c7', '#92400e', '⚠ ใช้งานได้ (เฝ้าระวัง)'],
+                grounded: ['#fee2e2', '#991b1b', '✖ งดใช้งานชั่วคราว']
+            };
+            const tile = (l, n, c, bg) => `<div style="flex:1;border-radius:12px;padding:10px 12px;background:${bg};border:1px solid ${c}33"><div style="font-size:12px;color:#475569;font-weight:600">${l}</div><div style="font:700 22px 'Prompt',sans-serif;color:${c}">${n} <span style="font-size:12px;color:#64748b;font-weight:500">คัน</span></div></div>`;
+            const body = rows.map(({ v, rec }, i) => {
+                const s = st[rec.overall] || st.usable;
+                const note = vcRecNote(rec);
+                const dots = vcSections().map(sec => { const w = vcSecWorst(rec, sec); return `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${w < 0 ? '#cbd5e1' : dotC[w]}"></span>`; }).join('');
+                return `<tr>
+                    <td class="ctr">${i + 1}</td>
+                    <td><div style="font-weight:700">${escHtml(vcExportName(v))}</div><div style="font-size:11.5px;color:#64748b">${escHtml(v.type || '')}</div></td>
+                    <td class="ctr" style="white-space:nowrap;font-weight:700">${escHtml(v.plate || '-')}</td>
+                    <td class="ctr" style="white-space:nowrap">${escHtml(rec.mileage || '-')}</td>
+                    <td class="ctr"><div style="display:flex;gap:5px;justify-content:center">${dots}</div></td>
+                    <td class="ctr"><span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${s[0]};color:${s[1]};font-weight:700;font-size:12.5px;white-space:nowrap">${s[2]}</span></td>
+                    <td style="font-size:12.5px;color:${rec.overall === 'grounded' ? '#991b1b' : '#334155'}">${escHtml(note || '-')}</td>
+                </tr>`;
+            }).join('');
+            const sub = `${escHtml(formatThaiDateFullYear(date))}${meta.time ? ` เวลา ${escHtml(fmtTime(meta.time))}` : ''}${meta.teams.length ? ` • ${escHtml(meta.teams.map(teamLabelOf).join(', '))}` : ''}${meta.names.length ? ` • ผู้ตรวจ: ${escHtml(meta.names.join(', '))}` : ''}`;
+            return `<div class="xp-sheet">
+                ${xpHeadHtml('VEHICLE INSPECTION REPORT', 'ผลการตรวจสภาพยานพาหนะ ประจำสัปดาห์', sub)}
+                <div style="display:flex;gap:10px;margin-bottom:14px">
+                    ${tile('ตรวจแล้ว', rows.length, '#0a1128', '#f8fafc')}
+                    ${tile('พร้อมใช้งาน', cnt('ready'), '#059669', '#ecfdf5')}
+                    ${tile('ใช้งานได้ (เฝ้าระวัง)', cnt('usable'), '#d97706', '#fffbeb')}
+                    ${tile('งดใช้งานชั่วคราว', cnt('grounded'), '#dc2626', '#fef2f2')}
+                </div>
+                <table class="xp-table">
+                    <thead><tr><th class="ctr" style="width:34px">#</th><th style="width:230px">ยานพาหนะ</th><th class="ctr">ทะเบียน</th><th class="ctr">เลขไมล์ (กม.)</th><th class="ctr" style="width:150px">ผลรายระบบ</th><th class="ctr">สภาพ</th><th>หมายเหตุ</th></tr></thead>
+                    <tbody>${body}</tbody>
+                </table>
+                <div style="font-size:11.5px;color:#64748b;margin-top:8px">ผลรายระบบ (เรียงจากซ้ายไปขวา): ${escHtml(vcSections().map(x => x.short).join(' • '))}</div>
+                <div style="display:flex;gap:14px;font-size:11.5px;color:#64748b;margin-top:4px">
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981"></span> ปกติ</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b"></span> ควรเฝ้าระวัง</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span> ชำรุด / ต้องซ่อม</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cbd5e1"></span> ไม่ได้ตรวจ</span>
+                </div>
+                ${xpFootHtml()}
+            </div>`;
+        }
+        function xpTabsHtml(prefix, textHint, textVal, imgFn, lineFn) {
+            return `
+                <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
+                    <button type="button" id="${prefix}TabImg" onclick="xpSwitchTab('${prefix}','img')" class="py-2 rounded-lg text-sm font-semibold"><i class="fa-solid fa-image mr-1.5"></i>ส่งออกเป็นภาพ</button>
+                    <button type="button" id="${prefix}TabTxt" onclick="xpSwitchTab('${prefix}','txt')" class="py-2 rounded-lg text-sm font-semibold"><i class="fa-solid fa-font mr-1.5"></i>ส่งออกเป็นข้อความ</button>
+                </div>
+                <div id="${prefix}PaneImg" class="space-y-3">
+                    <div class="bg-gray-200 rounded-xl p-2 border"><div id="${prefix}Preview" class="relative overflow-hidden"></div></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="runWithBusy(this, () => ${imgFn}('download'))" class="py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-gold-400 text-sm font-semibold"><i class="fa-solid fa-download mr-1.5"></i>บันทึกภาพ (JPEG)</button>
+                        <button type="button" onclick="runWithBusy(this, () => ${imgFn}('line'))" class="py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งภาพทาง LINE</button>
+                    </div>
+                </div>
+                <div id="${prefix}PaneTxt" class="hidden space-y-3">
+                    <div class="text-xs text-gray-500"><i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>${textHint} (แก้ไขข้อความได้ก่อนส่ง)</div>
+                    <textarea id="${prefix}Text" rows="16" class="w-full border rounded-xl px-3 py-2 text-sm leading-relaxed font-body">${escHtml(textVal)}</textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="xpCopy('${prefix}Text')" class="py-2.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-navy-900 text-sm font-semibold"><i class="fa-solid fa-copy mr-1.5 text-gold-600"></i>คัดลอกข้อความ</button>
+                        <button type="button" onclick="shareTextToLine(document.getElementById('${prefix}Text').value)" class="py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold"><i class="fa-brands fa-line mr-1.5"></i>ส่งข้อความทาง LINE</button>
+                    </div>
+                </div>`;
+        }
+        let xpPreviewFns = {};
+        function xpSwitchTab(prefix, tab) {
+            const on = 'bg-navy-900 text-gold-400 shadow', off = 'bg-transparent text-navy-900';
+            const ti = document.getElementById(prefix + 'TabImg'), tt = document.getElementById(prefix + 'TabTxt');
+            if (!ti) return;
+            ti.className = `py-2 rounded-lg text-sm font-semibold ${tab === 'img' ? on : off}`;
+            tt.className = `py-2 rounded-lg text-sm font-semibold ${tab === 'txt' ? on : off}`;
+            document.getElementById(prefix + 'PaneImg').classList.toggle('hidden', tab !== 'img');
+            document.getElementById(prefix + 'PaneTxt').classList.toggle('hidden', tab !== 'txt');
+            if (tab === 'img' && xpPreviewFns[prefix]) xpPreviewFns[prefix]();
+        }
+        function xpCopy(id) {
+            const t = document.getElementById(id).value;
+            const done = () => showStatusPopup('คัดลอกข้อความเรียบร้อย', 'สามารถนำไปวางใน LINE ได้ทันที', 'success', 1800);
+            try { navigator.clipboard.writeText(t).then(done, () => { fallbackCopyText(t); done(); }); } catch (e) { fallbackCopyText(t); done(); }
+        }
+        let vcExportDate = '';
+        function openVcExport(date) {
+            if (!date || !(db.vehicleChecks || []).some(r => r.date === date)) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ยังไม่มีผลการตรวจในวันที่เลือก', 'edit', 2200); return; }
+            vcExportDate = date;
+            xpPreviewFns.vcx = () => mountScaledPreview('vcxPreview', buildVcSheetHtml(vcExportDate), 960);
+            openModal('ส่งออกผลการตรวจสภาพยานพาหนะ — ดูตัวอย่างก่อนส่ง',
+                xpTabsHtml('vcx', 'ข้อความรายงานผู้บังคับบัญชา สรุปสภาพรถแต่ละคัน', buildVcReportText(date), 'exportVcImage'), { type: 'vcExport' });
+            setModalWide(true);
+            document.getElementById('modalSaveBtn').classList.add('hidden');
+            xpSwitchTab('vcx', 'img');
+        }
+        async function exportVcImage(mode) {
+            const url = await renderHtmlToJpeg(buildVcSheetHtml(vcExportDate), 960);
+            const name = `ผลการตรวจสภาพยานพาหนะ ${fmtThaiDMY(vcExportDate)}`;
+            if (mode === 'download') downloadDataUrl(url, safeFileName(name) + '.jpg');
+            else await shareImagesToLine([url], name, buildVcReportText(vcExportDate));
+        }
+
+        // ---------- 8) ส่งออกรายงานสถานะยานพาหนะ (ตามประเภท/สถานะที่เลือก) ----------
+        const VEH_EMOJI = { 'พร้อมใช้งาน': '✅', 'ปฏิบัติภารกิจ': '🚓', 'ซ่อมบำรุง': '🔧', 'ไม่พร้อมใช้งาน': '❌' };
+        function vehExportList() {
+            const ui = getVehUi();
+            const typed = ui.type === 'all' ? db.vehicles : db.vehicles.filter(v => (v.type || '') === ui.type);
+            const list = typed.filter(v => ui.status === 'all' || vehStatusOf(v) === ui.status);
+            const order = (v) => [String(v.type || ''), String(v.plate || '')];
+            return { ui, list: list.slice().sort((a, b) => order(a)[0].localeCompare(order(b)[0], 'th') || order(a)[1].localeCompare(order(b)[1], 'th', { numeric: true })) };
+        }
+        function vehExportScope(ui) {
+            const parts = [];
+            parts.push(ui.type === 'all' ? 'ทุกประเภท' : ui.type);
+            if (ui.status !== 'all') parts.push('สถานะ ' + ui.status);
+            return parts.join(' • ');
+        }
+        function buildVehStatusText() {
+            const { ui, list } = vehExportList();
+            const n = new Date();
+            const L = ['เรียน ผู้บังคับบัญชา', '', '       รายงานสถานะยานพาหนะ'];
+            L.push(`ข้อมูล ณ วันที่ ${fmtThaiDMY(todayIso())} เวลา ${pad2(n.getHours())}.${pad2(n.getMinutes())} น.`);
+            L.push(`ประเภท : ${vehExportScope(ui)}`);
+            L.push(`รวม ${list.length} คัน | ` + VEH_STATUS_KEYS.map(k => `${VEH_EMOJI[k]} ${k} ${list.filter(v => vehStatusOf(v) === k).length}`).join(' | '), '');
+            list.forEach((v, i) => {
+                const k = vehStatusOf(v);
+                L.push(`  (${i + 1}.)${vcVehLabel(v)}`);
+                L.push(`         :: ทะเบียน ${v.plate || '-'}`);
+                L.push(`        ${VEH_EMOJI[k]} สถานะ : ${k}`);
+                if (v.note && String(v.note).trim()) L.push(`*${String(v.note).trim()}`);
+                L.push('');
+            });
+            L.push('', '        จึงเรียนมาเพื่อโปรดทราบ');
+            return L.join('\n');
+        }
+        function buildVehStatusSheetHtml() {
+            const { ui, list } = vehExportList();
+            const col = { 'พร้อมใช้งาน': ['#d1fae5', '#065f46'], 'ปฏิบัติภารกิจ': ['#dbeafe', '#1e40af'], 'ซ่อมบำรุง': ['#fef3c7', '#92400e'], 'ไม่พร้อมใช้งาน': ['#fee2e2', '#991b1b'] };
+            const tile = (l, n, c) => `<div style="flex:1;border-radius:12px;padding:9px 12px;background:${c[0]};border:1px solid ${c[1]}22"><div style="font-size:12px;color:#475569;font-weight:600">${l}</div><div style="font:700 21px 'Prompt',sans-serif;color:${c[1]}">${n} <span style="font-size:12px;color:#64748b;font-weight:500">คัน</span></div></div>`;
+            const rows = list.map((v, i) => {
+                const k = vehStatusOf(v), c = col[k];
+                return `<tr>
+                    <td class="ctr">${i + 1}</td>
+                    <td class="ctr" style="width:78px"><img src="${escHtml(vcPhoto(v))}" crossorigin="anonymous" style="width:66px;height:44px;object-fit:cover;border-radius:6px;display:block;margin:auto;background:#0a1128"></td>
+                    <td>${escHtml(v.type || '-')}</td>
+                    <td style="font-weight:700">${escHtml(v.brand || '-')}</td>
+                    <td class="ctr" style="white-space:nowrap;font-weight:700">${escHtml(v.plate || '-')}</td>
+                    <td class="ctr"><span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${c[0]};color:${c[1]};font-weight:700;font-size:12.5px;white-space:nowrap">${VEH_EMOJI[k]} ${k}</span></td>
+                    <td style="font-size:12.5px;color:#334155">${escHtml(v.note || '-')}</td>
+                </tr>`;
+            }).join('');
+            return `<div class="xp-sheet">
+                ${xpHeadHtml('VEHICLE STATUS REPORT', 'รายงานสถานะยานพาหนะ', `${escHtml(vehExportScope(ui))} • รวม ${list.length} คัน`)}
+                <div style="display:flex;gap:10px;margin-bottom:14px">${VEH_STATUS_KEYS.map(k => tile(k, list.filter(v => vehStatusOf(v) === k).length, col[k])).join('')}</div>
+                <table class="xp-table">
+                    <thead><tr><th class="ctr" style="width:34px">#</th><th class="ctr">ภาพ</th><th>ประเภท</th><th>ยี่ห้อ / รุ่น</th><th class="ctr">ทะเบียน</th><th class="ctr">สถานะ</th><th>หมายเหตุ</th></tr></thead>
+                    <tbody>${rows || '<tr><td colspan="7" class="ctr" style="color:#94a3b8">ไม่มีข้อมูล</td></tr>'}</tbody>
+                </table>
+                ${xpFootHtml()}
+            </div>`;
+        }
+        function openVehStatusExport() {
+            const { ui, list } = vehExportList();
+            if (!list.length) { showStatusPopup('ไม่มีข้อมูลสำหรับส่งออก', 'ไม่มีรถในประเภท/สถานะที่เลือก', 'edit', 2200); return; }
+            xpPreviewFns.vsx = () => mountScaledPreview('vsxPreview', buildVehStatusSheetHtml(), 920);
+            openModal(`ส่งออกรายงานสถานะยานพาหนะ — ${escHtml(vehExportScope(ui))}`,
+                xpTabsHtml('vsx', 'ข้อความรายงานสถานะยานพาหนะตามประเภท/สถานะที่เลือก', buildVehStatusText(), 'exportVehStatusImage'), { type: 'vcExport' });
+            setModalWide(true);
+            document.getElementById('modalSaveBtn').classList.add('hidden');
+            xpSwitchTab('vsx', 'img');
+        }
+        async function exportVehStatusImage(mode) {
+            const url = await renderHtmlToJpeg(buildVehStatusSheetHtml(), 920);
+            const name = `รายงานสถานะยานพาหนะ ${fmtThaiDMY(todayIso())}`;
+            if (mode === 'download') downloadDataUrl(url, safeFileName(name) + '.jpg');
+            else await shareImagesToLine([url], name, buildVehStatusText());
+        }
+
+        // ---------- 9) ผู้ดูแลระบบ: แก้ไขหัวข้อการตรวจ (ข้อ 2) ----------
+        const VC_ICON_CHOICES = ['fa-circle-dot', 'fa-car-battery', 'fa-oil-can', 'fa-circle-stop', 'fa-snowflake', 'fa-list-check', 'fa-gears', 'fa-car-side', 'fa-shield-halved', 'fa-kit-medical', 'fa-gas-pump', 'fa-lightbulb'];
+        let vcEdit = null;
+        function openVcTopicEditor() {
+            if (authRole() !== 'admin') return;
+            vcEdit = JSON.parse(JSON.stringify(vcSections().map(({ no, ...rest }) => rest)));
+            openModal('แก้ไขหัวข้อการตรวจเช็คสภาพรถ (ข้อ 2)', '<div id="vcEditBody" class="space-y-4"></div>', { type: 'vcTopics' });
+            setModalWide(true);
+            document.getElementById('modalSaveBtn').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1.5"></i> บันทึกหัวข้อ';
+            vcEditDraw();
+        }
+        function vcEditDraw() {
+            const box = document.getElementById('vcEditBody');
+            if (!box) return;
+            const lvCls = ['border-emerald-300 bg-emerald-50', 'border-amber-300 bg-amber-50', 'border-red-300 bg-red-50'];
+            box.innerHTML = `
+                <div class="rounded-2xl p-3 bg-amber-50/70 border border-amber-200 text-xs text-gray-700 leading-relaxed">
+                    <i class="fa-solid fa-circle-info text-gold-600 mr-1"></i>แก้ไขชื่อหมวด ข้อความสถานะ 3 ระดับ (ปกติ / เฝ้าระวัง / ชำรุด) และหัวข้อย่อยได้ • “ชื่อย่อ” ใช้ในข้อความ/ภาพส่งออก •
+                    ผลการตรวจเดิมยังคงอยู่ (หัวข้อที่ลบจะไม่แสดงในฟอร์มใหม่) • ค่าที่วัดได้ (ลมยาง/DOT, แบตเตอรี่) จะแสดงในหมวดยางและหมวดแบตเตอรี่เดิม
+                </div>
+                ${vcEdit.map((sec, si) => `
+                <div class="rounded-2xl border border-gold-500/40 overflow-hidden">
+                    <div class="flex items-center gap-2 px-3 py-2.5 bg-navy-900">
+                        <span class="text-gold-300 text-xs font-bold shrink-0">2.1.${si + 2}</span>
+                        <select onchange="vcEditSet(${si}, null, 'icon', this.value); vcEditDraw()" class="rounded-lg px-1.5 py-1 text-sm bg-navy-800 text-gold-300 border border-white/10 shrink-0" title="ไอคอน">
+                            ${VC_ICON_CHOICES.map(ic => `<option value="${ic}" ${sec.icon === ic ? 'selected' : ''}>${ic.replace('fa-', '')}</option>`).join('')}
+                        </select>
+                        <i class="fa-solid ${escHtml(sec.icon)} text-gold-400"></i>
+                        <input type="text" value="${escHtml(sec.title)}" oninput="vcEditSet(${si}, null, 'title', this.value)" class="flex-grow min-w-0 rounded-lg px-2.5 py-1.5 text-sm font-semibold bg-white" placeholder="ชื่อหมวด">
+                        <button type="button" onclick="vcEditMoveSec(${si}, -1)" ${si === 0 ? 'disabled' : ''} class="w-8 h-8 rounded-lg text-gold-300 hover:bg-white/10 disabled:opacity-30 shrink-0" title="เลื่อนขึ้น"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" onclick="vcEditMoveSec(${si}, 1)" ${si === vcEdit.length - 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg text-gold-300 hover:bg-white/10 disabled:opacity-30 shrink-0" title="เลื่อนลง"><i class="fa-solid fa-arrow-down"></i></button>
+                        <button type="button" onclick="vcEditDelSec(${si})" class="w-8 h-8 rounded-lg text-red-300 hover:bg-white/10 shrink-0" title="ลบหมวด"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="p-3 space-y-3 bg-white">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                            <div><label class="block text-[11px] text-gray-500 mb-0.5">ชื่อย่อหมวด</label><input type="text" value="${escHtml(sec.short || '')}" oninput="vcEditSet(${si}, null, 'short', this.value)" class="w-full border rounded-lg px-2 py-1.5 text-sm"></div>
+                            ${sec.levels.map((l, li) => `<div><label class="block text-[11px] text-gray-500 mb-0.5">สถานะระดับ ${li + 1}</label><input type="text" value="${escHtml(l)}" oninput="vcEditLevel(${si}, ${li}, this.value)" class="w-full border rounded-lg px-2 py-1.5 text-sm ${lvCls[li]}"></div>`).join('')}
+                        </div>
+                        <div class="space-y-1.5">
+                            ${sec.items.map((it, ii) => `
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[11px] text-gold-600 font-semibold w-12 shrink-0">2.1.${si + 2}.${ii + 1}</span>
+                                <input type="text" value="${escHtml(it.t)}" oninput="vcEditSet(${si}, ${ii}, 't', this.value)" class="flex-grow min-w-0 border rounded-lg px-2 py-1.5 text-sm" placeholder="หัวข้อการตรวจ">
+                                <input type="text" value="${escHtml(it.s || '')}" oninput="vcEditSet(${si}, ${ii}, 's', this.value)" class="w-28 sm:w-36 border rounded-lg px-2 py-1.5 text-sm bg-gray-50 shrink-0" placeholder="ชื่อย่อ">
+                                <button type="button" onclick="vcEditMoveItem(${si}, ${ii}, -1)" ${ii === 0 ? 'disabled' : ''} class="w-7 h-7 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 shrink-0"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                                <button type="button" onclick="vcEditMoveItem(${si}, ${ii}, 1)" ${ii === sec.items.length - 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 shrink-0"><i class="fa-solid fa-arrow-down text-xs"></i></button>
+                                <button type="button" onclick="vcEditDelItem(${si}, ${ii})" class="w-7 h-7 rounded-lg text-red-500 hover:bg-red-50 shrink-0"><i class="fa-solid fa-xmark"></i></button>
+                            </div>`).join('') || '<div class="text-xs text-gray-400">ยังไม่มีหัวข้อ</div>'}
+                        </div>
+                        <button type="button" onclick="vcEditAddItem(${si})" class="text-xs font-semibold text-navy-900 px-3 py-1.5 rounded-lg border border-dashed border-gold-500 hover:bg-amber-50"><i class="fa-solid fa-plus text-gold-600 mr-1"></i>เพิ่มหัวข้อการตรวจ</button>
+                    </div>
+                </div>`).join('')}
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="vcEditAddSec()" class="py-2.5 rounded-xl border-2 border-dashed border-gold-500 text-navy-900 text-sm font-semibold hover:bg-amber-50"><i class="fa-solid fa-folder-plus text-gold-600 mr-1.5"></i>เพิ่มหมวดการตรวจ</button>
+                    <button type="button" onclick="vcEditReset()" class="py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50"><i class="fa-solid fa-rotate-left mr-1.5"></i>คืนค่าหัวข้อเริ่มต้น</button>
+                </div>`;
+        }
+        function vcEditSet(si, ii, k, v) { if (ii === null) vcEdit[si][k] = v; else vcEdit[si].items[ii][k] = v; }
+        function vcEditLevel(si, li, v) { vcEdit[si].levels[li] = v; }
+        function vcEditAddItem(si) {
+            vcEdit[si].items.push({ k: uid('i'), t: '', s: '' });
+            vcEditDraw();
+            const ins = document.querySelectorAll(`#vcEditBody input[placeholder="หัวข้อการตรวจ"]`);
+            const last = Array.from(ins).filter(x => !x.value).pop();
+            if (last) last.focus();
+        }
+        function vcEditDelItem(si, ii) { vcEdit[si].items.splice(ii, 1); vcEditDraw(); }
+        function vcEditMoveItem(si, ii, d) { const a = vcEdit[si].items, j = ii + d; if (j < 0 || j >= a.length) return; [a[ii], a[j]] = [a[j], a[ii]]; vcEditDraw(); }
+        function vcEditMoveSec(si, d) { const j = si + d; if (j < 0 || j >= vcEdit.length) return; [vcEdit[si], vcEdit[j]] = [vcEdit[j], vcEdit[si]]; vcEditDraw(); }
+        function vcEditAddSec() {
+            vcEdit.push({ key: uid('sec'), icon: 'fa-list-check', title: 'หมวดการตรวจใหม่', short: 'หมวดใหม่', levels: ['ปกติ', 'ควรเฝ้าระวัง', 'ชำรุด / ต้องซ่อม'], items: [{ k: uid('i'), t: '', s: '' }] });
+            vcEditDraw();
+        }
+        function vcEditDelSec(si) {
+            if (vcEdit.length <= 1) { showStatusPopup('ลบไม่ได้', 'ต้องมีหมวดการตรวจอย่างน้อย 1 หมวด', 'edit', 2000); return; }
+            vcEdit.splice(si, 1); vcEditDraw();
+        }
+        function vcEditReset() {
+            vcConfirm('คืนค่าหัวข้อเริ่มต้น', 'แทนที่หัวข้อการตรวจทั้งหมดด้วยหัวข้อเริ่มต้นของระบบ (มีผลเมื่อกด “บันทึกหัวข้อ”)', 'คืนค่า', () => {
+                vcEdit = JSON.parse(JSON.stringify(VC_DEFAULT_SECTIONS)); vcEditDraw();
+            }, 'fa-rotate-left');
+        }
+        function vcTopicSave() {
+            const clean = vcEdit.map(sec => ({
+                key: sec.key, icon: sec.icon || 'fa-list-check', title: String(sec.title || '').trim(), short: String(sec.short || '').trim() || String(sec.title || '').trim(),
+                levels: sec.levels.map((l, i) => String(l || '').trim() || ['ปกติ', 'ควรเฝ้าระวัง', 'ชำรุด'][i]),
+                items: sec.items.map(it => ({ k: it.k, t: String(it.t || '').trim(), s: String(it.s || '').trim() })).filter(it => it.t).map(it => ({ ...it, s: it.s || it.t }))
+            })).filter(sec => sec.title);
+            if (!clean.length || !clean.some(sec => sec.items.length)) { showStatusPopup('บันทึกไม่ได้', 'ต้องมีอย่างน้อย 1 หมวดที่มีหัวข้อการตรวจ', 'edit', 2200); return; }
+            db.appConfig = db.appConfig || {};
+            db.appConfig.vcSections = clean;
+            saveDB();
+            closeModal();
+            render();
+            showStatusPopup('บันทึกหัวข้อการตรวจแล้ว', `${clean.length} หมวด • ${clean.reduce((a, s) => a + s.items.length, 0)} หัวข้อ — แบบฟอร์มของเจ้าหน้าที่อัปเดตตามนี้`, 'success', 2400);
+        }
     </script>
 </body>
 </html>
