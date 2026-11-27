@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.2.1: สรุปภารกิจอ่านง่ายขึ้น — อุปกรณ์/อาวุธ/การแต่งกายใช้สีเรียบแบบทางการ, ชื่อเล่นและหน้าที่จัดกึ่งกลางช่อง และรวมช่อง (merge) หน้าที่ที่ซ้ำกัน">
-    <meta name="app-version" content="2.2.1">
+    <meta name="app-update-note" content="อัปเดต v2.2.2: ทุกช่องเลือกวันที่ใช้ปฏิทินไทย (วัน เดือน พ.ศ.) แบบเดียวกันทั้งแอป — ฟอร์มตารางเวร, เวร ว.5, ภารกิจ, ตัวกรองวันที่ และนัดหมายในวิเคราะห์ภารกิจ">
+    <meta name="app-version" content="2.2.2">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -565,6 +565,7 @@
         .tdp-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: .5rem .75rem; border: 1px solid #d1d5db; border-radius: .75rem; background: #fff; font-weight: 600; color: #0a1128; text-align: left; font-family: 'Sarabun', 'Prompt', sans-serif; }
         .tdp-btn:hover { border-color: var(--hn-gold); }
         .tdp-ph { color: #94a3b8; font-weight: 400; }
+        .tdp-btn.tdp-sm { padding: .375rem .5rem; gap: 6px; font-size: .75rem; border-radius: .5rem; white-space: nowrap; overflow: hidden; }
         body.theme-dark .tdp-btn { background: #0f172a; color: #f8fafc; border-color: #475569; }
         body.theme-eyecare .tdp-btn { background: #fffdf8; color: #3b3126; border-color: #cbb894; }
         details > summary { list-style: none; }
@@ -2377,7 +2378,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium mb-1">เริ่มวันที่</label>
-                        <input type="date" id="dha_start" value="${dhaState.start}" onchange="dhaSetField('start', this.value)" class="w-full border rounded-xl px-3 py-2">
+                        ${thaiDateBtnHtml('dha_start', dhaState.start, 'dhaStartPicked', 'เลือกวันที่', { noClear: true })}
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ระยะเวลา</label>
@@ -6366,11 +6367,11 @@ ${st.leader2Name}
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ตั้งแต่วันที่</label>
-                        <input type="date" id="f_startDate" value="${item.startDate || ''}" class="w-full border rounded-xl px-3 py-2" required>
+                        ${thaiDateBtnHtml('f_startDate', item.startDate || '')}
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">ถึงวันที่</label>
-                        <input type="date" id="f_endDate" value="${item.endDate || ''}" class="w-full border rounded-xl px-3 py-2" required>
+                        ${thaiDateBtnHtml('f_endDate', item.endDate || '')}
                     </div>
                 </div>
                 <div>
@@ -6391,7 +6392,7 @@ ${st.leader2Name}
             openModal(id ? 'แก้ไขตารางเวร ว.5' : 'เพิ่มตารางเวร ว.5', `
                 <div>
                     <label class="block text-sm font-medium mb-1">วัน / เดือน / ปี</label>
-                    <input type="date" id="f_date" value="${escHtml(item.date || presetDate || '')}" onchange="w5ModalBusyHint()" class="w-full border rounded-xl px-3 py-2" required>
+                    ${thaiDateBtnHtml('f_date', item.date || presetDate || '', 'w5ModalBusyHint')}
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
@@ -6444,7 +6445,7 @@ ${st.leader2Name}
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">วัน / เดือน / ปี</label>
-                        <input type="date" id="f_date" value="${m.date || ''}" class="w-full border rounded-xl px-3 py-2" required>
+                        ${thaiDateBtnHtml('f_date', m.date || '')}
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 rounded-xl border px-3 py-2 ${m.status === 'cancelled' ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}">
@@ -7083,9 +7084,10 @@ ${st.leader2Name}
 
         // ---------- 7.2 ปฏิทินไทยแบบป๊อปอัพ (ใช้ได้กับทุกฟอร์ม) ----------
         let tdpState = null;
-        function thaiDateBtnHtml(hiddenId, value, afterFn = '', placeholder = 'เลือกวันที่') {
-            return `<input type="hidden" id="${hiddenId}" value="${escHtml(value || '')}">
-                <button type="button" class="tdp-btn" onclick="openThaiDatePicker('${hiddenId}', '${afterFn}')">
+        // opts: { attrs: แอตทริบิวต์เพิ่มของ input ซ่อน, btnClass: คลาสเพิ่มของปุ่ม, noClear: ไม่ให้ล้างวันที่ (ช่องบังคับ) }
+        function thaiDateBtnHtml(hiddenId, value, afterFn = '', placeholder = 'เลือกวันที่', opts = {}) {
+            return `<input type="hidden" id="${hiddenId}" value="${escHtml(value || '')}" data-tdp-ph="${escHtml(placeholder)}"${opts.noClear ? ' data-tdp-noclear="1"' : ''} ${opts.attrs || ''}>
+                <button type="button" class="tdp-btn ${opts.btnClass || ''}" onclick="openThaiDatePicker('${hiddenId}', '${afterFn}')">
                     <i class="fa-regular fa-calendar-days text-gold-600"></i>
                     <span id="${hiddenId}_disp">${value ? fmtThaiDMY(value) : `<span class="tdp-ph">${placeholder}</span>`}</span>
                 </button>`;
@@ -7094,7 +7096,7 @@ ${st.leader2Name}
             const hid = document.getElementById(hiddenId);
             if (!hid) return;
             const p = (hid.value || todayIso()).split('-');
-            tdpState = { hiddenId, afterFn, month: parseInt(p[1], 10) - 1, year: parseInt(p[0], 10) };
+            tdpState = { hiddenId, afterFn, month: parseInt(p[1], 10) - 1, year: parseInt(p[0], 10), noClear: hid.dataset.tdpNoclear === '1', placeholder: hid.dataset.tdpPh || 'เลือกวันที่' };
             renderThaiDatePicker();
             document.getElementById('thaiDatePickerPop').classList.remove('hidden');
         }
@@ -7104,9 +7106,9 @@ ${st.leader2Name}
             const sel = hid ? hid.value : '';
             document.getElementById('thaiDatePickerBody').innerHTML =
                 renderThaiMiniCalendar(sel, tdpState.month, tdpState.year, 'tdpSelect', 'tdpNav') + `
-                <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="grid ${tdpState.noClear ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-3">
                     <button type="button" onclick="tdpSelect(todayIso())" class="py-2 rounded-xl bg-navy-900 text-gold-400 text-xs font-semibold">วันนี้</button>
-                    <button type="button" onclick="tdpSelect('')" class="py-2 rounded-xl border text-xs text-red-600 bg-white">ล้างวันที่</button>
+                    ${tdpState.noClear ? '' : `<button type="button" onclick="tdpSelect('')" class="py-2 rounded-xl border text-xs text-red-600 bg-white">ล้างวันที่</button>`}
                     <button type="button" onclick="closeThaiDatePicker()" class="py-2 rounded-xl border text-xs bg-white text-navy-900">ปิด</button>
                 </div>`;
         }
@@ -7122,11 +7124,14 @@ ${st.leader2Name}
             const hid = document.getElementById(tdpState.hiddenId);
             if (hid) hid.value = d;
             const disp = document.getElementById(tdpState.hiddenId + '_disp');
-            if (disp) disp.innerHTML = d ? fmtThaiDMY(d) : '<span class="tdp-ph">เลือกวันที่</span>';
+            if (disp) disp.innerHTML = d ? fmtThaiDMY(d) : `<span class="tdp-ph">${escHtml(tdpState.placeholder)}</span>`;
             const fn = tdpState.afterFn;
             closeThaiDatePicker();
             if (fn && typeof window[fn] === 'function') window[fn](d);
         }
+        // ตัวช่วยเรียกหลังเลือกวันที่จากปฏิทินไทย
+        function dhaStartPicked(d) { dhaSetField('start', d); }
+        function w5FilterDatePicked(d) { setW5Filter({ filterDate: d }); }
         function closeThaiDatePicker() {
             tdpState = null;
             const el = document.getElementById('thaiDatePickerPop');
@@ -7477,7 +7482,7 @@ ${st.leader2Name}
                     </div>
                     <div>
                         <label class="block text-[11px] font-medium text-gray-600 mb-0.5">วันที่เจาะจง</label>
-                        <input type="date" value="${f.filterDate}" onchange="setW5Filter({ filterDate: this.value })" class="px-2.5 py-1.5 border rounded-lg text-sm">
+                        <div class="w-40">${thaiDateBtnHtml('w5_filter_date', f.filterDate, 'w5FilterDatePicked', 'ทุกวัน', { btnClass: 'tdp-sm' })}</div>
                     </div>
                     <button type="button" onclick="navigate('duty_w5', { view: '${f.view}' }, false)" class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 text-navy-900"><i class="fa-solid fa-calendar-day mr-1 text-gold-600"></i>เดือนนี้</button>
                     ${filterActive ? `<button type="button" onclick="navigate('duty_w5', { view: '${f.view}' }, false)" class="px-2 py-1.5 text-xs text-red-600 hover:underline">ล้างตัวกรอง</button>` : ''}
@@ -9339,7 +9344,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.2.1';
+        const APP_VERSION = '2.2.2';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -10111,7 +10116,7 @@ ${st.leader2Name}
             const apptRow = (x, i) => `
                 <div class="an-appt grid grid-cols-12 gap-1.5 items-start p-2 rounded-xl border border-gray-200 bg-white" data-i="${i}">
                     <select class="col-span-4 sm:col-span-2 border rounded-lg px-1.5 py-1.5 text-xs" data-k="kind">${Object.entries(APPT_KIND).map(([k, l]) => `<option value="${k}" ${x.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-                    <input type="date" class="col-span-5 sm:col-span-3 border rounded-lg px-1.5 py-1.5 text-xs" data-k="date" value="${escHtml(x.date)}">
+                    <div class="col-span-5 sm:col-span-3">${thaiDateBtnHtml('an_appt_date_' + i, x.date, '', 'วันที่', { attrs: 'data-k="date"', btnClass: 'tdp-sm' })}</div>
                     <input type="time" class="col-span-3 sm:col-span-2 border rounded-lg px-1.5 py-1.5 text-xs" data-k="time" value="${escHtml(x.time)}">
                     <input type="text" class="col-span-12 sm:col-span-4 border rounded-lg px-2 py-1.5 text-xs" data-k="place" value="${escHtml(x.place)}" placeholder="สถานที่">
                     <button type="button" onclick="anRemoveRow('appointments', ${i})" class="hidden sm:block col-span-1 text-red-500 hover:text-red-700 py-1.5"><i class="fa-solid fa-trash-can"></i></button>
@@ -10143,7 +10148,7 @@ ${st.leader2Name}
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="sm:col-span-3"><label class="block text-xs font-medium text-gray-600 mb-1">ชื่อภารกิจ</label>${inp('an_name', a.missionName || a.docTitle, 'ชื่อภารกิจ')}</div>
-                            <div><label class="block text-xs font-medium text-gray-600 mb-1">วันปฏิบัติ</label>${inp('an_date', a.missionDate, '', 'date')}</div>
+                            <div><label class="block text-xs font-medium text-gray-600 mb-1">วันปฏิบัติ</label>${thaiDateBtnHtml('an_date', a.missionDate)}</div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">เวลา</label>${inp('an_time', a.missionTime, '', 'time')}</div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">สถานที่</label>${inp('an_place', a.place, 'สถานที่ปฏิบัติ')}</div>
                             <div class="sm:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1">หน่วยงานเจ้าของเรื่อง / ที่เกี่ยวข้อง</label>${inp('an_support', a.supportUnits || a.issuer)}</div>
