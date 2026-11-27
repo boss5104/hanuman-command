@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.8.0: ส่งออกรายงานยานพาหนะ (ผลการตรวจสภาพ / สถานะรถ) เลือกได้ว่าจะใส่รายละเอียดใดบ้างก่อนส่งออก พร้อมดูตัวอย่างทันที • หน้าแรกผู้ดูแลระบบเพิ่มเมนูลัด รายงานผู้บังคับบัญชา และรายงาน ทม.">
-    <meta name="app-version" content="2.8.0">
+    <meta name="app-update-note" content="อัปเดต v2.8.1: เจ้าหน้าที่ตรวจเช็คสภาพรถ เก็บข้อมูลแยกเป็นรายวัน — เมื่อขึ้นวันใหม่ระบบรีเซ็ตเป็นการตรวจครั้งใหม่เสมอ (วันที่ เวลา ผู้ตรวจ ทีม และแบบฟอร์มค้าง) ผลการตรวจวันก่อนยังดูได้ในประวัติ">
+    <meta name="app-version" content="2.8.1">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -10232,7 +10232,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.8.0';
+        const APP_VERSION = '2.8.1';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
@@ -12408,13 +12408,34 @@ ${st.leader2Name}
         function vcBlankItems() { return { mileage: '', items: {}, psi: { fl: '', fr: '', rl: '', rr: '' }, dot: { w: '', y: '' }, volt: '', cca: '', overall: '', overallManual: false, watch: '', action: '' }; }
         function vcNewDraft(keep) {
             return Object.assign({ step: 'setup', date: todayIso(), time: vcNowHM(), inspectorId: '', inspectorName: '', team: '', vehicleId: '', recId: '', dirty: false, vtype: 'all' },
-                keep || {}, vcBlankItems());
+                keep || {}, vcBlankItems(), { day: todayIso() });
         }
+        // v2.8.1: แบบร่างการตรวจรถผูกกับ "วัน" — ขึ้นวันใหม่ = เริ่มการตรวจครั้งใหม่เสมอ
+        //         (วันที่ / เวลา / ผู้ตรวจ / ทีม / แบบฟอร์มที่เปิดค้าง ถูกรีเซ็ต • ผลการตรวจของวันก่อนยังเก็บไว้แยกตามวันที่ในประวัติ)
+        const vcUiPrefs = d => ({ vtype: (d && d.vtype) || 'all', vview: (d && d.vview) || 'card' });
         let vcDraft = (() => {
-            try { const d = JSON.parse(localStorage.getItem('hanuman_vc_draft') || 'null'); if (d && d.date) return Object.assign(vcNewDraft(), d); } catch (e) {}
+            try {
+                const d = JSON.parse(localStorage.getItem('hanuman_vc_draft') || 'null');
+                if (d && d.date) return d.day === todayIso() ? Object.assign(vcNewDraft(), d) : vcNewDraft(vcUiPrefs(d));
+            } catch (e) {}
             return vcNewDraft();
         })();
         function vcPersist() { try { localStorage.setItem('hanuman_vc_draft', JSON.stringify(vcDraft)); } catch (e) {} }
+        // คืนค่า true ถ้ามีการรีเซ็ต • ไม่ล้างแบบฟอร์มที่กำลังกรอกค้างอยู่ข้ามเที่ยงคืน (บันทึกเสร็จแล้วจึงเริ่มวันใหม่)
+        function vcEnsureToday() {
+            if (vcDraft.day === todayIso()) return false;
+            if (vcDraft.step === 'form' && vcDraft.dirty) return false;
+            vcDraft = vcNewDraft(vcUiPrefs(vcDraft));
+            vcPersist();
+            return true;
+        }
+        function vcDayWatch() {
+            if (!vcEnsureToday()) return;
+            const pg = currentRoute && currentRoute.page;
+            if (pg === 'vcheck' || (pg === 'home' && authRole() === 'staff')) render();
+        }
+        setInterval(vcDayWatch, 60000);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') vcDayWatch(); });
         function vcTouch() { vcDraft.dirty = true; vcPersist(); }
         function vcRerender() { const y = window.scrollY; render(); window.scrollTo(0, y); }
 
@@ -12446,6 +12467,7 @@ ${st.leader2Name}
 
         // ---------- 4) หน้าแรกของเจ้าหน้าที่ ----------
         function renderStaffHome(container) {
+            vcEnsureToday();
             navigationHistory = [];
             updateBreadcrumbs([]);
             const today = todayIso();
@@ -12517,6 +12539,7 @@ ${st.leader2Name}
                 </div>`;
         }
         function vcStart() {
+            vcEnsureToday();
             if (vcDraft.date !== todayIso() && !vcDraft.vehicleId) vcDraft.date = todayIso();
             if (vcDraft.step === 'form' && !vcVehicleById(vcDraft.vehicleId)) vcDraft.step = 'setup';
             vcPersist();
@@ -12532,6 +12555,7 @@ ${st.leader2Name}
             updateBreadcrumbs(items);
         }
         function renderVehicleCheck(container) {
+            vcEnsureToday();
             if (vcDraft.step === 'form' && vcVehicleById(vcDraft.vehicleId)) return renderVcForm(container);
             vcDraft.step = 'setup';
             renderVcSetup(container);
