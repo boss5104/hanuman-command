@@ -8,8 +8,8 @@
          app-update-required = 1 (ค่าเริ่มต้น) => แก้โค้ดแล้ว บังคับทุกเครื่องที่เปิดอยู่ให้รีเฟรช / 0 => แค่แจ้งเตือนให้กดรีเฟรชเอง
          app-update-note = (ไม่บังคับ) ข้อความสรุปสิ่งที่แก้ไข แสดงในแจ้งเตือน — เว้นว่างได้ -->
     <meta name="app-update-required" content="1">
-    <meta name="app-update-note" content="อัปเดต v2.3.3: ส่งออกตารางเวร ว.5 (ภาพและข้อความ) แสดงผู้ติดภารกิจในแต่ละวัน พร้อมรายการผู้ติดภารกิจ / ราชการ (ชื่อ ชื่อเล่น ภารกิจ หมายเหตุ)">
-    <meta name="app-version" content="2.3.3">
+    <meta name="app-update-note" content="อัปเดต v2.3.4: ภาพส่งออกตารางเวร ว.5 แก้ช่องวันที่ของผู้ติดภารกิจทับกับชื่อ (กรณีช่วงวันข้ามเดือน) • ส่งออกภาพและข้อความแสดงผู้ติดภารกิจในแต่ละวัน">
+    <meta name="app-version" content="2.3.4">
     <!-- ===== ไอคอนแอป: หน้าจอโทรศัพท์ (iPhone/iPad/Android) + MacBook (Safari "เพิ่มไปยัง Dock" / Chrome ติดตั้งแอป) ===== -->
     <link rel="icon" href="icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -7815,7 +7815,7 @@ ${st.leader2Name}
             const tables = cols.map(c => `<table class="xp-table" style="table-layout:fixed"><colgroup><col style="width:96px"><col style="width:52px"><col><col style="width:78px"></colgroup><thead><tr><th class="ctr">วันที่</th><th class="ctr">วัน</th><th>นายตำรวจเวร</th><th class="ctr">ชื่อเล่น</th></tr></thead><tbody>${c.map(rowHtml).join('')}</tbody></table>`).join('');
             const busy = getW5BusyList();
             const busyHtml = busy.length ? `<div class="xp-sec">ผู้ติดภารกิจ / ราชการ (${busy.length} รายการ)</div>
-                <table class="xp-table" style="table-layout:fixed"><colgroup><col style="width:120px"><col><col style="width:90px"><col style="width:36%"></colgroup><thead><tr><th class="ctr">วันที่</th><th>กำลังพล</th><th class="ctr">ชื่อเล่น</th><th>ภารกิจ / หมายเหตุ</th></tr></thead><tbody>
+                <table class="xp-table" style="table-layout:fixed"><colgroup><col style="width:190px"><col><col style="width:90px"><col style="width:32%"></colgroup><thead><tr><th class="ctr">วันที่</th><th>กำลังพล</th><th class="ctr">ชื่อเล่น</th><th>ภารกิจ / หมายเหตุ</th></tr></thead><tbody>
                 ${busy.map(b => { const n = busyExportName(b); return `<tr><td class="ctr" style="white-space:nowrap;font-weight:600">${fmtThaiRange(b.startDate, b.endDate)}</td><td>${escHtml(n.full)}</td><td class="ctr" style="font-weight:700">${escHtml(n.nick || '-')}</td><td><span style="color:#be123c;font-weight:600">${escHtml(b.task || '-')}</span>${b.note ? `<div style="font-size:11px;color:#64748b">${escHtml(b.note)}</div>` : ''}</td></tr>`; }).join('')}</tbody></table>` : '';
             return `<div class="xp-sheet">
                 ${xpHeadHtml('DUTY ROSTER • ว.5', escHtml(w5TitleText()), `จำนวน ${list.length} วัน`)}
@@ -9604,7 +9604,7 @@ ${st.leader2Name}
         // v2.0 — ส่วนขยาย: เวอร์ชัน / ขนาดการแสดงผล / ไฟล์แนบภารกิจ / วิเคราะห์เอกสาร (AI + ในเครื่อง)
         //        / Google Calendar หลายบัญชี + Google Drive / ปฏิทินภารกิจ / ภารกิจที่กำลังจะถึง
         // =====================================================================
-        const APP_VERSION = '2.3.3';
+        const APP_VERSION = '2.3.4';
         const CDN = {
             anthropic: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.6.0/+esm',
             pdfjs: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs',
